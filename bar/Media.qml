@@ -1,0 +1,1682 @@
+pragma ComponentBehavior: Bound
+
+// ---------------------------------------------------------
+// 0) IMPORTS
+// ---------------------------------------------------------
+import qs.modules.common
+import qs.modules.common.widgets
+import qs.modules.common.models
+import qs.services
+import qs
+import qs.modules.common.functions
+import QtQuick
+import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
+import Quickshell.Services.Mpris
+import Quickshell.Hyprland
+import Quickshell.Io
+import "../../common/utils"
+
+// ---------------------------------------------------------
+// 1) ROOT
+// ---------------------------------------------------------
+Item {
+    id: root
+
+    // =====================================================
+    // 1.1) CONFIG BASE (toggles + tamaños + tiempos)
+    // =====================================================
+    property bool islandEnabled: true
+    property bool expandOnHover: true
+    property int  islandCollapsedWidth: 260
+
+    // Altura colapsada adaptativa (AJUSTADO a tu rango 30..50)
+    property int islandCollapsedHeight: {
+        var barSize = 0
+        if (root.parent) {
+            barSize = root.barIsVertical ? root.parent.width : root.parent.height
+        }
+        if (barSize >= 30 && barSize <= 50) return barSize
+        return 44
+    }
+
+    // Altura expandida capada por barHeightLimit
+    property int  islandExpandedHeight: barHeightLimit
+
+    property int  islandRadius: 999
+    property int  islandPaddingH: 10
+    property int  islandPaddingV: 6
+
+    // Layout / opacity
+    property int islandExpandAnimMs: 260
+    property int islandFadeAnimMs: 180
+
+    // Pulso al cambiar lyric line
+    property bool islandPulseOnLyricChange: true
+    property int  islandPulseAnimMs: 220
+    property real islandPulseScale: 1.000
+
+    // Bordes + límites
+    property int islandBorderWidthCollapsed: 4
+    property int islandBorderWidthExpanded: 4
+    property int islandMaxWidth: 780
+
+    // =====================================================
+    // 1.2) EFECTOS VISUALES (toggles)
+    // =====================================================
+    property bool fxDropShadows: true
+    property bool fxCoverMaskCircle: true
+    property bool fxCoverRing: true
+    property bool fxWaves: true
+    property bool fxLyricsGradientMask: true
+
+    // =====================================================
+    // 1.3) ANIMACIONES (toggles globales)
+    // =====================================================
+    property bool animEnabled: true
+    property bool animMarquee: true
+    property bool animLyricScroller: true
+    property bool animLayoutTransitions: true
+
+    // =====================================================
+    // 1.4) “ALIVE FX” (breathing) + OVERSHOOT (iOS feel)
+    // =====================================================
+    property bool islandAliveFx: true
+
+    // breathing (se “auto-tunea” más abajo con barT)
+    property real islandBreatheScaleIdle: tunedBreatheIdle
+    property real islandBreatheScalePlay: tunedBreathePlay
+    property int  islandBreatheMsPlay: tunedBreatheMsPlay
+    property int  islandBreatheMsIdle: tunedBreatheMsIdle
+
+    // overshoot (se “auto-tunea” más abajo con barT)
+    property bool islandOvershootEnabled: true
+    property real islandOvershootScaleExpand: tunedOvershootExpand
+    property real islandOvershootScaleCollapse: tunedOvershootCollapse
+    property int  islandOvershootMs: tunedOvershootMs
+
+    // UI: indicadores
+    property bool uiShowLoadingIndicator: true
+
+    // Intervalos
+    property int  pollIntervalMs: 80
+    property int  lyricScrollAnimMs: 240
+    property int  progressAnimMs: 120
+
+    // Ring continuo (se “auto-tunea” más abajo con barT)
+    property int ringCycleMsPlay: tunedRingMsPlay
+    property int ringCycleMsIdle: tunedRingMsIdle
+
+
+    // =====================================================
+    // 2) MPRIS: bootstrap + estado del player + metadata
+    // =====================================================
+    property int _mprisRefreshTick: 0
+
+    Timer {
+        id: mprisBootstrap
+        interval: 500
+        repeat: true
+        running: true
+        triggeredOnStart: true
+        onTriggered: {
+            _mprisRefreshTick++
+            if (MprisController.activePlayer !== null)
+                running = false
+        }
+    }
+
+    readonly property MprisPlayer activePlayer: {
+        _mprisRefreshTick
+        return MprisController.activePlayer
+    }
+
+    readonly property bool barIsVertical: (
+        Config.runtime.bar.position === "left" ||
+        Config.runtime.bar.position === "right"
+    )
+
+    readonly property bool hasMedia: activePlayer != null
+        && activePlayer.playbackState !== MprisPlaybackState.Stopped
+
+    readonly property bool isPlaying: activePlayer != null
+        && activePlayer.playbackState === MprisPlaybackState.Playing
+
+    readonly property string trackTitle: StringUtils.cleanMusicTitle(activePlayer ? activePlayer.trackTitle : "") || ""
+    readonly property string trackArtist: (activePlayer ? activePlayer.trackArtist : "") || ""
+    readonly property string fullText: trackTitle + (trackArtist ? " • " + trackArtist : "")
+
+
+    // =====================================================
+    // 3) ART (carátula)
+    // =====================================================
+    function normalizeArtUrl(u) {
+        if (!u) return ""
+        if (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("file://") || u.startsWith("image://"))
+            return u
+        if (u.startsWith("file:/") && !u.startsWith("file://"))
+            return "file://" + u.slice("file:".length)
+        if (u.startsWith("/"))
+            return "file://" + u
+        return u
+    }
+
+    readonly property string trackArtRaw: {
+        if (!activePlayer) return ""
+        var u = activePlayer.artUrl
+        if (!u) u = activePlayer.trackArtUrl
+        if (!u) u = activePlayer.coverUrl
+        return u || ""
+    }
+    readonly property string trackArt: normalizeArtUrl(trackArtRaw)
+
+
+    // =====================================================
+    // 4) LYRICS: config + loader + estado derivado
+    // =====================================================
+    readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
+    readonly property bool useGradientMask: Config.options.bar.mediaPlayer.lyrics.useGradientMask
+    readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style // "static" | "scrolling"
+    readonly property bool showLoadingIndicator: Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator
+    readonly property int  lyricsManualOffsetMs: (Config.options?.bar?.mediaPlayer?.lyrics?.manualOffsetMs ?? 1500)
+    readonly property bool lyricsAdaptiveSync: (Config.options?.bar?.mediaPlayer?.lyrics?.adaptiveSync ?? true)
+    readonly property int  lyricsSmoothSlackMs: (Config.options?.bar?.mediaPlayer?.lyrics?.smoothSlackMs ?? 160)
+
+    // Polling de posición/duración (ms)
+    property int polledPositionMs: 0
+    property int polledDurationMs: 0
+
+    function _looksLikeUs(x) { return x >= 100000000 }
+    function _looksLikeMs(x) { return x >= 20000 }
+    function _toMs(x) {
+        if (x === null || x === undefined) return 0
+        if (isNaN(x)) return 0
+        if (x < 0) return 0
+        if (_looksLikeUs(x)) return Math.round(x / 1000.0)
+        if (_looksLikeMs(x)) return Math.round(x)
+        return Math.round(x * 1000.0)
+    }
+
+    Timer {
+        id: positionPoller
+        running: root.animEnabled
+              && root.hasMedia
+              && (root.lyricsEnabled || root.isPlaying || GlobalStates.mediaControlsOpen)
+        interval: root.pollIntervalMs
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!root.activePlayer) return
+            root.polledPositionMs = _toMs(root.activePlayer.position ?? 0)
+            root.polledDurationMs = _toMs(root.activePlayer.length ?? 0)
+        }
+    }
+
+    Loader {
+        id: lyricsLoader
+        active: root.lyricsEnabled && root.hasMedia
+        sourceComponent: LrclibLyrics {
+            enabled: (root.trackTitle.length > 0)
+                  && (root.trackArtist.length > 0)
+                  && root.visible
+                  && root.lyricsEnabled
+                  && root.hasMedia
+
+            title: root.trackTitle
+            artist: root.trackArtist
+
+            duration: root.polledDurationMs
+            position: root.polledPositionMs
+
+            selectedId: 0
+            manualOffsetMs: root.lyricsManualOffsetMs
+
+            adaptiveSync: root.lyricsAdaptiveSync
+            smoothPosition: true
+            smoothSlackMs: root.lyricsSmoothSlackMs
+        }
+    }
+
+    readonly property bool hasLyricsItem: root.lyricsEnabled && root.hasMedia
+        && (lyricsLoader.item !== null) && (lyricsLoader.item !== undefined)
+
+    readonly property bool hasSyncedLines: hasLyricsItem
+        && (lyricsLoader.item?.lines && lyricsLoader.item.lines.length > 0)
+
+    readonly property bool lyricsLoading: root.uiShowLoadingIndicator
+        && root.showLoadingIndicator
+        && root.lyricsEnabled
+        && root.hasMedia
+        && !root.hasSyncedLines
+        && (lyricsLoader.item?.loading === true)
+
+    readonly property int effectiveLyricsPositionMsForUi: {
+        var ms = root.polledPositionMs + root.lyricsManualOffsetMs
+        if (root.lyricsAdaptiveSync && root.hasLyricsItem)
+            ms += (lyricsLoader.item?.autoOffsetMs ?? 0)
+        return Math.max(0, ms)
+    }
+
+    readonly property string currentLyricText: root.hasSyncedLines
+        ? ((lyricsLoader.item?.currentLineText ?? "") || "♪")
+        : ""
+
+    readonly property int currentLyricIndex: root.hasSyncedLines
+        ? (lyricsLoader.item?.currentIndex ?? -1)
+        : -1
+
+
+    // =====================================================
+    // 5) WIDTH: límites + cálculos + “stable width” (anti-jitter)
+    // =====================================================
+    property int maxWidthLyrics: 900
+    property int maxWidthNoLyrics: 430
+    property int minWidthNoLyrics: 180
+    property int noLyricsSidePadding: 14
+    property int lyricsSidePadding: 30
+    property int rowSpacing: 8
+    property int rightMargin: 10
+    property int leftMargin: 0
+
+    property int stableWidthLyrics: 0
+    property int shrinkDelayMsLyrics: 900
+
+    TextMetrics {
+        id: lyricMetrics
+        font.pixelSize: Appearance.font.pixelSize.smallie + 2
+        font.bold: true
+        text: root.currentLyricText
+    }
+
+    TextMetrics {
+        id: titleMetrics
+        font.pixelSize: Appearance.font.pixelSize.smallie + 2
+        font.bold: true
+        text: root.fullText
+    }
+
+    readonly property int coverW: 38
+    readonly property int bongoH: Math.max(22, root.islandExpandedHeight - 8)
+    readonly property int bongoW: Math.round(bongoH * 1.35)
+
+    readonly property int lyricsImplicitWidth: {
+        if (!root.lyricsEnabled || !root.hasSyncedLines) return 0
+        var softMin = Math.round(root.islandExpandedHeight * 5.2)
+        var measured = Math.round(lyricMetrics.width) + root.lyricsSidePadding
+        return Math.min(root.maxWidthLyrics, Math.max(softMin, measured))
+    }
+
+    readonly property int noLyricsViewportWidth: {
+        var measured = Math.round(titleMetrics.width) + root.noLyricsSidePadding
+        return Math.min(root.maxWidthNoLyrics, Math.max(root.minWidthNoLyrics, measured))
+    }
+
+    readonly property int targetWidthNoLyrics: {
+        var w = root.leftMargin
+              + root.bongoW + root.rowSpacing
+              + root.coverW + root.rowSpacing
+              + root.noLyricsViewportWidth
+              + root.rightMargin
+        return Math.min(root.maxWidthNoLyrics, Math.max(0, w))
+    }
+
+    readonly property int targetWidthLyrics: {
+        var w = root.leftMargin
+              + root.bongoW + root.rowSpacing
+              + root.coverW + root.rowSpacing
+              + root.lyricsImplicitWidth
+              + root.rightMargin
+        return Math.min(root.maxWidthLyrics, Math.max(0, w))
+    }
+
+    Timer {
+        id: shrinkTimerLyrics
+        interval: root.shrinkDelayMsLyrics
+        repeat: false
+        onTriggered: {
+            if (!root.hasMedia || !root.hasSyncedLines) return
+            if (root.targetWidthLyrics > 0 && root.targetWidthLyrics < root.stableWidthLyrics)
+                root.stableWidthLyrics = root.targetWidthLyrics
+        }
+    }
+
+    function syncLyricsWidthNow() {
+        if (!root.hasMedia || !root.hasSyncedLines) return
+        if (root.targetWidthLyrics <= 0) return
+        root.stableWidthLyrics = root.targetWidthLyrics
+        shrinkTimerLyrics.stop()
+    }
+
+    function updateStableLyricsWidth() {
+        if (!root.hasMedia || !root.hasSyncedLines) return
+        if (root.targetWidthLyrics <= 0) return
+
+        if (root.stableWidthLyrics <= 0) {
+            root.stableWidthLyrics = root.targetWidthLyrics
+            return
+        }
+
+        if (root.targetWidthLyrics > root.stableWidthLyrics) {
+            root.stableWidthLyrics = root.targetWidthLyrics
+            shrinkTimerLyrics.stop()
+        } else if (root.targetWidthLyrics < root.stableWidthLyrics) {
+            shrinkTimerLyrics.restart()
+        }
+    }
+
+    onTargetWidthLyricsChanged: updateStableLyricsWidth()
+
+    onHasSyncedLinesChanged: {
+        if (root.hasSyncedLines) syncLyricsWidthNow()
+        else {
+            stableWidthLyrics = 0
+            shrinkTimerLyrics.stop()
+        }
+    }
+
+    onHasMediaChanged: {
+        if (!hasMedia) {
+            stableWidthLyrics = 0
+            shrinkTimerLyrics.stop()
+            polledPositionMs = 0
+            polledDurationMs = 0
+        } else {
+            if (root.hasSyncedLines) syncLyricsWidthNow()
+        }
+    }
+
+
+    // =====================================================
+    // 6) WAVEVISUALIZER (cava): proceso + puntos
+    // (CORREGIDO: solo UNA declaración de visualizerPoints)
+    // =====================================================
+    property list<real> visualizerPoints: []
+
+    Process {
+        id: cavaProc
+        running: root.animEnabled
+              && root.hasMedia
+              && root.visible
+              && root.fxWaves
+              && (!root.lyricsEnabled || !root.hasSyncedLines)
+              && (root.isPlaying || GlobalStates.mediaControlsOpen)
+
+        onRunningChanged: {
+            if (!cavaProc.running)
+                root.visualizerPoints = []
+        }
+
+        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
+
+        stdout: SplitParser {
+            onRead: data => {
+                let points = data.split(";")
+                    .map(p => parseFloat(p.trim()))
+                    .filter(p => !isNaN(p))
+                root.visualizerPoints = points
+            }
+        }
+    }
+
+
+    // =====================================================
+    // 7) Anti-recorte: boot refresh + barHeightLimit
+    // =====================================================
+    property int _bootRefresh: 0
+
+    Timer {
+        id: bootTimer
+        interval: 200
+        repeat: true
+        running: _bootRefresh < 20
+        triggeredOnStart: true
+        onTriggered: _bootRefresh++
+    }
+
+    readonly property int _parentBarH: (root.parent && root.parent.height > 0)
+        ? Math.floor(root.parent.height)
+        : 0
+
+    readonly property int _cfgBarH: {
+        var h = Math.floor(Appearance.sizes.barHeight)
+        if (h <= 0) h = 44
+        return h
+    }
+
+    readonly property int barHeightLimit: {
+        _bootRefresh
+        var h = (_parentBarH > 10) ? _parentBarH : _cfgBarH
+        return Math.max(24, h)
+    }
+
+
+    // =====================================================
+    // 7.1) TUNING ADAPTATIVO (PONER AQUÍ)
+    // Este bloque es el que te decía: depende de barHeightLimit.
+    // =====================================================
+    readonly property real barT: {
+        // 0 en 30px, 1 en 50px
+        var t = (root.barHeightLimit - 30) / 20.0
+        return Math.max(0.0, Math.min(1.0, t))
+    }
+
+    // Overshoot adaptativo
+    readonly property real tunedOvershootExpand: 1.012 + (0.010 * barT)      // 1.012..1.022
+    readonly property real tunedOvershootCollapse: 0.992 - (0.006 * barT)    // 0.992..0.986
+    readonly property int  tunedOvershootMs: Math.round(190 + 60 * barT)     // 190..250
+
+    // Breathing adaptativo
+    readonly property real tunedBreatheIdle: 1.0022 + (0.0010 * barT)        // 1.0022..1.0032
+    readonly property real tunedBreathePlay: 1.0070 + (0.0040 * barT)        // 1.007..1.011
+    readonly property int  tunedBreatheMsIdle: Math.round(2600 + 300 * barT) // 2600..2900
+    readonly property int  tunedBreatheMsPlay: Math.round(1700 + 250 * barT) // 1700..1950
+
+    // Ring adaptativo
+    readonly property int tunedRingMsIdle: Math.round(1850 + 250 * barT)     // 1850..2100
+    readonly property int tunedRingMsPlay: Math.round(1050 + 200 * barT)     // 1050..1250
+
+
+    // =====================================================
+    // 8) Expand/Collapse: regla + tamaños finales
+    // =====================================================
+    readonly property bool islandExpanded: root.hasMedia && (
+        GlobalStates.mediaControlsOpen ||
+        (root.islandEnabled && root.expandOnHover && islandHover.hovered) ||
+        (root.lyricsEnabled && root.hasSyncedLines)
+    )
+
+    readonly property int expandedWidth: root.hasMedia
+        ? (root.hasSyncedLines
+            ? Math.max(1, (root.stableWidthLyrics > 0 ? root.stableWidthLyrics : root.targetWidthLyrics))
+            : root.targetWidthNoLyrics)
+        : 0
+
+    readonly property int collapsedWidth: Math.max(root.islandCollapsedWidth, 240)
+
+    readonly property int targetIslandWidth: {
+        if (!root.hasMedia) return 0
+        if (!root.islandEnabled) return Math.min(expandedWidth, root.islandMaxWidth)
+        var w = root.islandExpanded ? expandedWidth : collapsedWidth
+        return Math.min(w, root.islandMaxWidth)
+    }
+
+    readonly property int targetIslandHeight: {
+        if (!root.hasMedia) return 0
+        var minSafeH = (_bootRefresh < 6) ? 34 : 24
+        var expandedH = Math.max(minSafeH, Math.floor(barHeightLimit))
+        var collapsedH = Math.max(minSafeH, Math.floor(root.islandCollapsedHeight))
+
+        var desired = (!root.islandEnabled)
+            ? expandedH
+            : (root.islandExpanded ? expandedH : collapsedH)
+
+        return Math.max(minSafeH, Math.min(desired, barHeightLimit))
+    }
+
+
+    // =====================================================
+    // 9) Hover “suavizado” (0..1) para reacciones (ring, etc.)
+    // =====================================================
+    property real hoverAmount: islandHover.hovered ? 1.0 : 0.0
+    Behavior on hoverAmount {
+        enabled: root.animEnabled && root.animLayoutTransitions
+        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+    }
+
+
+    // =====================================================
+    // 10) Pulse al cambiar lyric line
+    // =====================================================
+    property real islandScale: 1.0
+    property int _lastPulseIndex: -999
+
+    function maybePulseIsland() {
+        if (!root.animEnabled || !root.animLayoutTransitions) return
+        if (!root.islandEnabled || !root.islandPulseOnLyricChange) return
+        if (!root.hasSyncedLines) return
+        if (!root.islandExpanded) return
+
+        if (root.currentLyricIndex === root._lastPulseIndex) return
+        root._lastPulseIndex = root.currentLyricIndex
+        islandPulse.restart()
+    }
+
+    onCurrentLyricIndexChanged: maybePulseIsland()
+
+    SequentialAnimation {
+        id: islandPulse
+        running: false
+        PropertyAction { target: root; property: "islandScale"; value: 1.0 }
+        NumberAnimation {
+            target: root
+            property: "islandScale"
+            to: root.islandPulseScale
+            duration: Math.round(root.islandPulseAnimMs * 0.45)
+            easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: root
+            property: "islandScale"
+            to: 1.0
+            duration: Math.round(root.islandPulseAnimMs * 0.55)
+            easing.type: Easing.OutCubic
+        }
+    }
+
+
+    // =====================================================
+    // 11) Overshoot iOS-like (inercia visual en X)
+    // =====================================================
+    property real overshootX: 1.0
+
+    function triggerOvershoot(expanding) {
+        if (!root.animEnabled || !root.animLayoutTransitions || !root.islandOvershootEnabled) return
+        overshootAnim.stop()
+        overshootAnim.expanding = expanding
+        overshootAnim.restart()
+    }
+
+    onIslandExpandedChanged: {
+        if (!root.hasMedia) return
+        triggerOvershoot(root.islandExpanded)
+    }
+
+    SequentialAnimation {
+        id: overshootAnim
+        property bool expanding: true
+        running: false
+
+        PropertyAction { target: root; property: "overshootX"; value: 1.0 }
+
+        NumberAnimation {
+            target: root
+            property: "overshootX"
+            to: overshootAnim.expanding ? root.islandOvershootScaleExpand : root.islandOvershootScaleCollapse
+            duration: Math.round(root.islandOvershootMs * 0.50)
+            easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: root
+            property: "overshootX"
+            to: 1.0
+            duration: Math.round(root.islandOvershootMs * 0.50)
+            easing.type: Easing.OutCubic
+        }
+    }
+
+
+    // =====================================================
+    // 12) Layout / Visibilidad
+    // =====================================================
+    property int _layoutNudgePx: 0
+
+    Timer {
+        id: layoutNudgeTimer
+        interval: 200
+        repeat: true
+        running: true
+        triggeredOnStart: true
+        property int checks: 0
+        onTriggered: {
+            checks++
+            if (root.height < 40 && root.hasMedia) {
+                root._layoutNudgePx = (root._layoutNudgePx === 0 ? 1 : 0)
+                if (root.parent && typeof root.parent.forceLayout === "function")
+                    root.parent.forceLayout()
+            } else {
+                if (checks > 10) running = false
+            }
+        }
+    }
+
+    Layout.alignment: Qt.AlignVCenter
+    Layout.fillHeight: false
+    Layout.fillWidth: false
+
+    readonly property int _hardMinH: 42
+    Layout.minimumHeight: Math.max(_hardMinH, root.targetIslandHeight)
+    Layout.preferredHeight: Math.max(_hardMinH, root.targetIslandHeight)
+    Layout.minimumWidth: root.targetIslandWidth
+    Layout.preferredWidth: root.targetIslandWidth
+
+    implicitWidth: root.targetIslandWidth
+    implicitHeight: Math.max(_hardMinH, root.targetIslandHeight)
+
+    clip: false
+    visible: root.hasMedia && (root.targetIslandWidth > 10)
+    opacity: root.hasMedia ? 1 : 0
+
+    Behavior on implicitWidth {
+        enabled: root.animLayoutTransitions && root.animEnabled
+        NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
+    }
+    Behavior on implicitHeight { enabled: false }
+    Behavior on opacity {
+        enabled: root.animLayoutTransitions && root.animEnabled
+        NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
+    }
+
+
+    // =====================================================
+    // 13) SHELL VISUAL: fondo, borde, sombra, hover, aliveFx
+    // =====================================================
+    Item {
+        id: islandShell
+        anchors.fill: parent
+        visible: root.hasMedia
+        clip: true
+
+        transform: Scale {
+            origin.x: islandShell.width / 2
+            origin.y: islandShell.height / 2
+
+            xScale: root.islandScale
+                  * root.overshootX
+                  * ((root.animEnabled && root.islandAliveFx && root.hasMedia) ? aliveFx.breatheX : 1.0)
+
+            yScale: root.islandScale
+                  * ((root.animEnabled && root.islandAliveFx && root.hasMedia) ? aliveFx.breatheY : 1.0)
+        }
+
+        Rectangle {
+            id: islandBg
+            anchors.fill: parent
+            radius: root.islandRadius
+            color: Qt.rgba(0.08, 0.08, 0.10, 0.72)
+
+            border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
+            border.color: Qt.rgba(1, 1, 1, root.islandExpanded ? 0.13 : 0.11)
+        }
+
+        layer.enabled: root.fxDropShadows
+        layer.effect: DropShadow {
+            horizontalOffset: 0
+            verticalOffset: 1
+            radius: root.islandExpanded ? 12 : 10
+            samples: 18
+            color: Qt.rgba(0, 0, 0, root.islandExpanded ? 0.34 : 0.30)
+        }
+
+        HoverHandler {
+            id: islandHover
+            enabled: root.islandEnabled && root.expandOnHover
+        }
+
+        // Alive FX: breathing también en pausa (tuneado por barT)
+        Item {
+            id: aliveFx
+            anchors.fill: parent
+            visible: root.animEnabled && root.animLayoutTransitions && root.islandAliveFx && root.hasMedia
+            clip: true
+
+            property real breatheX: 1.0
+            property real breatheY: 1.0
+
+            readonly property bool active: root.hasMedia
+
+            readonly property real targetScale: root.isPlaying
+                ? root.islandBreatheScalePlay
+                : root.islandBreatheScaleIdle
+
+            readonly property int breatheMs: root.isPlaying
+                ? root.islandBreatheMsPlay
+                : root.islandBreatheMsIdle
+
+            SequentialAnimation on breatheX {
+                running: aliveFx.visible && aliveFx.active
+                loops: Animation.Infinite
+                NumberAnimation {
+                    to: aliveFx.targetScale
+                    duration: Math.round(aliveFx.breatheMs * 0.52)
+                    easing.type: Easing.InOutSine
+                }
+                NumberAnimation {
+                    to: 1.0
+                    duration: Math.round(aliveFx.breatheMs * 0.48)
+                    easing.type: Easing.InOutSine
+                }
+            }
+
+            SequentialAnimation on breatheY {
+                running: aliveFx.visible && aliveFx.active
+                loops: Animation.Infinite
+                NumberAnimation {
+                    to: Math.min(1.03, aliveFx.targetScale + 0.002)
+                    duration: Math.round(aliveFx.breatheMs * 0.52)
+                    easing.type: Easing.InOutSine
+                }
+                NumberAnimation {
+                    to: 1.0
+                    duration: Math.round(aliveFx.breatheMs * 0.48)
+                    easing.type: Easing.InOutSine
+                }
+            }
+        }
+
+
+        // =================================================
+        // 14) INPUT: MouseArea global
+        // =================================================
+        MouseArea {
+            id: mouseControl
+            anchors.fill: parent
+            hoverEnabled: true
+            z: 50
+            preventStealing: true
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton | Qt.BackButton | Qt.ForwardButton
+
+            onPressed: function (event) {
+                event.accepted = true
+                if (!root.activePlayer) return
+
+                if (event.button === Qt.MiddleButton) {
+                    root.activePlayer.togglePlaying()
+                } else if (event.button === Qt.BackButton) {
+                    root.activePlayer.previous()
+                } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
+                    root.activePlayer.next()
+                } else if (event.button === Qt.LeftButton) {
+                    GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+                }
+            }
+
+            onWheel: function (wheel) {
+                wheel.accepted = true
+                if (wheel.angleDelta.y > 0) Audio.incrementVolume()
+                else Audio.decrementVolume()
+            }
+        }
+
+
+        // =================================================
+        // 15) CONTENIDO: Collapsed / Expanded con STATE + Transition
+        // =================================================
+        Item {
+            id: contentRoot
+            anchors.fill: parent
+
+            states: [
+                State {
+                    name: "collapsed"
+                    when: root.islandEnabled && !root.islandExpanded
+                    PropertyChanges { target: collapsedView; opacity: 1 }
+                    PropertyChanges { target: expandedView;  opacity: 0 }
+                },
+                State {
+                    name: "expanded"
+                    when: !root.islandEnabled || root.islandExpanded
+                    PropertyChanges { target: collapsedView; opacity: 0 }
+                    PropertyChanges { target: expandedView;  opacity: 1 }
+                }
+            ]
+
+            transitions: [
+                Transition {
+                    from: "collapsed"; to: "expanded"
+                    enabled: root.animEnabled && root.animLayoutTransitions && root.islandEnabled
+                    NumberAnimation { properties: "opacity"; duration: 170; easing.type: Easing.OutCubic }
+                },
+                Transition {
+                    from: "expanded"; to: "collapsed"
+                    enabled: root.animEnabled && root.animLayoutTransitions && root.islandEnabled
+                    NumberAnimation { properties: "opacity"; duration: 160; easing.type: Easing.OutCubic }
+                }
+            ]
+
+            // ---------------------------------------------
+            // 15.1) Vista COLAPSADA
+            // ---------------------------------------------
+            Item {
+                id: collapsedView
+                anchors.fill: parent
+                opacity: 1
+                visible: opacity > 0.01
+                clip: true
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: root.islandPaddingH
+                    anchors.rightMargin: root.islandPaddingH
+                    anchors.topMargin: root.islandPaddingV
+                    anchors.bottomMargin: root.islandPaddingV
+                    spacing: 10
+
+                    BongoCat {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: Math.round(30 * 1.35)
+                        visible: root.hasMedia
+                        animate: root.animEnabled && root.isPlaying
+                        gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
+                        isVertical: root.barIsVertical
+                    }
+
+                    Item {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 28
+                        Layout.preferredHeight: 28
+
+                        Item {
+                            id: coverCircleSmall
+                            anchors.centerIn: parent
+                            width: 28
+                            height: 28
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: Qt.rgba(1, 1, 1, 0.06)
+                                border.width: 1
+                                border.color: Qt.rgba(1, 1, 1, 0.10)
+                            }
+
+                            Image {
+                                id: coverImgSmall
+                                anchors.fill: parent
+                                source: root.trackArt
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                                asynchronous: true
+                                cache: true
+                                visible: (status === Image.Ready)
+
+                                layer.enabled: root.fxCoverMaskCircle
+                                layer.effect: OpacityMask {
+                                    maskSource: Rectangle {
+                                        width: coverCircleSmall.width
+                                        height: coverCircleSmall.height
+                                        radius: width / 2
+                                        color: "black"
+                                    }
+                                }
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: root.isPlaying ? "pause" : "play_arrow"
+                                fill: 1
+                                iconSize: 16
+                                color: Qt.rgba(1, 1, 1, 0.80)
+                                visible: (coverImgSmall.status !== Image.Ready)
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Qt.rgba(
+                                    Appearance.m3colors.m3primary.r,
+                                    Appearance.m3colors.m3primary.g,
+                                    Appearance.m3colors.m3primary.b,
+                                    root.isPlaying ? 0.65 : 0.40
+                                )
+                            }
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 1
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: root.trackArtist.length ? root.trackArtist
+                                 : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
+                            color: Appearance.colors.colOnLayer1
+                            font.pixelSize: Appearance.font.pixelSize.smallie + 1
+                            font.bold: true
+                            elide: Text.ElideRight
+                            wrapMode: Text.NoWrap
+                            maximumLineCount: 1
+                            opacity: 0.98
+                        }
+
+                        Item {
+                            id: collapsedLyricViewport
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: Math.max(14, Appearance.font.pixelSize.smaller + 2)
+                            clip: true
+
+                            readonly property string lineText: root.hasSyncedLines
+                                ? root.currentLyricText
+                                : (root.trackTitle.length ? root.trackTitle : "")
+
+                            TextMetrics {
+                                id: collapsedLyricMetrics
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.bold: false
+                                text: collapsedLyricViewport.lineText
+                            }
+
+                            readonly property int textW: Math.round(collapsedLyricMetrics.width)
+                            readonly property int delta: Math.max(0, textW - collapsedLyricViewport.width)
+                            readonly property bool shouldScroll: root.animEnabled
+                                && root.animMarquee
+                                && collapsedLyricViewport.delta > 2
+                                && collapsedLyricViewport.visible
+
+                            Item {
+                                id: collapsedStrip
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: parent.height
+                                x: 0
+                                width: Math.max(parent.width, collapsedLyricViewport.textW)
+                                function reset() { x = 0 }
+                            }
+
+                            StyledText {
+                                parent: collapsedStrip
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: collapsedLyricViewport.lineText
+                                color: Qt.rgba(1, 1, 1, 0.82)
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.bold: false
+                                elide: Text.ElideNone
+                                wrapMode: Text.NoWrap
+                            }
+
+                            SequentialAnimation {
+                                id: collapsedLyricMarquee
+                                running: collapsedLyricViewport.shouldScroll
+                                loops: Animation.Infinite
+                                onRunningChanged: collapsedStrip.reset()
+
+                                PauseAnimation { duration: 850 }
+                                NumberAnimation {
+                                    target: collapsedStrip
+                                    property: "x"
+                                    from: 0
+                                    to: -collapsedLyricViewport.delta
+                                    duration: Math.max(2000, collapsedLyricViewport.textW * 20)
+                                    easing.type: Easing.Linear
+                                }
+                                PauseAnimation { duration: 650 }
+                                PropertyAction { target: collapsedStrip; property: "x"; value: 0 }
+                            }
+
+                            Connections {
+                                target: root
+                                function onCurrentLyricTextChanged() { collapsedStrip.reset() }
+                            }
+                            onWidthChanged: collapsedStrip.reset()
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 8
+                        Layout.preferredHeight: 8
+                        radius: 4
+                        color: Qt.rgba(
+                            Appearance.m3colors.m3primary.r,
+                            Appearance.m3colors.m3primary.g,
+                            Appearance.m3colors.m3primary.b,
+                            root.isPlaying ? 0.85 : 0.25
+                        )
+                    }
+                }
+            }
+
+
+            // ---------------------------------------------
+            // 15.2) Vista EXPANDIDA
+            // ---------------------------------------------
+            Item {
+                id: expandedView
+                anchors.fill: parent
+                opacity: 0
+                visible: opacity > 0.01
+                clip: true
+
+                readonly property int contentH: Math.max(1, height - (root.islandPaddingV * 2))
+                readonly property int bongoH: Math.max(18, Math.min(30, contentH))
+                readonly property int bongoW: Math.round(bongoH * 1.35)
+                readonly property int coverSlotSize: Math.max(20, Math.min(root.coverW, contentH))
+                readonly property int coverCircleSize: Math.max(18, Math.min(24, coverSlotSize - 2))
+
+                RowLayout {
+                    id: rowLayout
+                    spacing: root.rowSpacing
+                    anchors.fill: parent
+                    anchors.leftMargin: root.islandPaddingH
+                    anchors.rightMargin: root.islandPaddingH
+                    anchors.topMargin: root.islandPaddingV
+                    anchors.bottomMargin: root.islandPaddingV
+                    visible: root.hasMedia
+                    clip: true
+
+                    BongoCat {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.leftMargin: 2
+                        visible: root.hasMedia
+                        animate: root.animEnabled && root.isPlaying
+                        Layout.preferredHeight: expandedView.bongoH
+                        Layout.preferredWidth: expandedView.bongoW
+                        gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
+                        isVertical: root.barIsVertical
+                        layer.enabled: false
+                    }
+
+                    // Cover + ring + glow
+                    Item {
+                        id: coverSlot
+                        Layout.alignment: Qt.AlignVCenter
+                        implicitWidth: expandedView.coverSlotSize
+                        implicitHeight: expandedView.coverSlotSize
+                        clip: false
+
+                        readonly property int fxPad: 3
+
+                        // Ring animado suave + hover boost (incluso en pausa)
+                        Item {
+                            id: ringFx
+                            anchors.fill: parent
+                            anchors.margins: coverSlot.fxPad
+                            visible: root.hasMedia && root.fxCoverRing
+
+                            readonly property real hoverT: root.hoverAmount
+
+                            // Opacidad base + boost por hover (ADAPTATIVO 30..50)
+                            readonly property real baseOpacity: root.isPlaying ? 1.0 : 0.58
+                            readonly property real hoverBoost: (0.20 + 0.10 * root.barT) * hoverT // 0.20..0.30
+                            opacity: Math.min(1.0, baseOpacity + hoverBoost)
+
+                            // Phase continuo; corre al play o al hover (en pausa)
+                            property real phase: 0
+                            NumberAnimation on phase {
+                                running: root.animEnabled && root.hasMedia && root.fxCoverRing
+                                      && (root.isPlaying || ringFx.hoverT > 0.01)
+                                from: 0
+                                to: Math.PI * 2
+                                duration: root.isPlaying ? root.ringCycleMsPlay : root.ringCycleMsIdle
+                                loops: Animation.Infinite
+                                easing.type: Easing.Linear
+                            }
+
+                            Canvas {
+                                id: ringCanvas
+                                anchors.fill: parent
+                                antialiasing: true
+
+                                onPaint: {
+                                    var ctx = getContext("2d")
+                                    ctx.clearRect(0, 0, width, height)
+
+                                    var c = Appearance.m3colors.m3primary
+                                    var cx = width / 2
+                                    var cy = height / 2
+
+                                    var minSide = Math.min(width, height)
+                                    var maxR = (minSide / 2) - 1.5
+
+                                    var r0 = minSide * 0.38
+
+                                    var amp = root.isPlaying ? 0.85 : (0.28 + 0.42 * ringFx.hoverT)
+                                    var breathe = (root.isPlaying ? 1.0 : (0.35 + 0.65 * ringFx.hoverT))
+                                                * (Math.sin(ringFx.phase * 2.0) * 0.035)
+
+                                    for (var i = 0; i < 4; i++) {
+                                        var k = i / 4.0
+                                        var r = r0
+                                              + (k * 2.1)
+                                              + (Math.sin(ringFx.phase * 1.7 + i) * amp)
+                                              + (r0 * breathe)
+
+                                        if (r > maxR) r = maxR
+
+                                        var baseA = root.isPlaying ? (0.30 - k * 0.07) : (0.14 - k * 0.04)
+                                        var a = baseA + (0.10 * ringFx.hoverT)
+                                        ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, Math.max(0, a))
+
+                                        // Grosor ADAPTATIVO 30..50 (más fino en 30)
+                                        ctx.lineWidth =
+                                            (1.25 + 0.25 * root.barT) +
+                                            ((0.25 + 0.15 * root.barT) * ringFx.hoverT)
+
+                                        ctx.beginPath()
+                                        ctx.arc(cx, cy, r, 0, Math.PI * 2, false)
+                                        ctx.stroke()
+                                    }
+                                }
+
+                                Connections { target: ringFx; function onPhaseChanged() { ringCanvas.requestPaint() } }
+                                Connections {
+                                    target: root
+                                    function onIsPlayingChanged() { ringCanvas.requestPaint() }
+                                    function onHoverAmountChanged() { ringCanvas.requestPaint() }
+                                    function onFxCoverRingChanged() { ringCanvas.requestPaint() }
+                                }
+
+                                onWidthChanged: requestPaint()
+                                onHeightChanged: requestPaint()
+                                Component.onCompleted: requestPaint()
+                            }
+                        }
+
+                        // Carátula circular
+                        Item {
+                            id: coverCircle
+                            anchors.centerIn: parent
+                            width: expandedView.coverCircleSize
+                            height: expandedView.coverCircleSize
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: Qt.rgba(1, 1, 1, 0.06)
+                                border.width: 1
+                                border.color: Qt.rgba(1, 1, 1, 0.10)
+                            }
+
+                            Image {
+                                id: coverImg
+                                anchors.fill: parent
+                                source: root.trackArt
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                                asynchronous: true
+                                cache: true
+                                visible: (status === Image.Ready)
+                                layer.enabled: false
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "music_note"
+                                fill: 1
+                                iconSize: Math.max(14, Math.round(expandedView.coverCircleSize * 0.75))
+                                color: Qt.rgba(1, 1, 1, 0.70)
+                                visible: (coverImg.status !== Image.Ready)
+                            }
+
+                            Rectangle {
+                                id: coverStroke
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Qt.rgba(
+                                    Appearance.m3colors.m3primary.r,
+                                    Appearance.m3colors.m3primary.g,
+                                    Appearance.m3colors.m3primary.b,
+                                    root.isPlaying ? 0.70 : (0.45 + 0.18 * root.hoverAmount)
+                                )
+                                layer.enabled: false
+                            }
+
+                            Rectangle {
+                                id: coverGlowSource
+                                anchors.centerIn: parent
+                                width: parent.width
+                                height: parent.height
+                                radius: width / 2
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Qt.rgba(
+                                    Appearance.m3colors.m3primary.r,
+                                    Appearance.m3colors.m3primary.g,
+                                    Appearance.m3colors.m3primary.b,
+                                    0.95
+                                )
+
+                                visible: root.lyricsLoading
+                                opacity: root.lyricsLoading ? 1.0 : 0.0
+
+                                layer.enabled: visible && root.fxDropShadows
+                                layer.effect: DropShadow {
+                                    horizontalOffset: 0
+                                    verticalOffset: 0
+                                    radius: 14
+                                    samples: 28
+                                    color: Qt.rgba(
+                                        Appearance.m3colors.m3primary.r,
+                                        Appearance.m3colors.m3primary.g,
+                                        Appearance.m3colors.m3primary.b,
+                                        0.35
+                                    )
+                                }
+
+                                Behavior on opacity {
+                                    enabled: root.animEnabled && root.animLayoutTransitions
+                                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                                }
+                            }
+                        }
+
+                        Loader {
+                            anchors.centerIn: parent
+                            active: root.lyricsLoading
+                            sourceComponent: MaterialLoadingIndicator {
+                                implicitSize: 18
+                                loading: true
+                                color: Appearance.colors.colPrimaryContainer
+                                shapeColor: Appearance.colors.colOnPrimaryContainer
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            z: 101
+                            onClicked: {
+                                if (root.activePlayer) root.activePlayer.togglePlaying()
+                            }
+                        }
+                    }
+
+
+                    // =========================================
+                    // 15.2.1) LYRICS SCROLLER
+                    // =========================================
+                    Item {
+                        id: lyricScroller
+                        Layout.fillWidth: false
+                        Layout.preferredWidth: implicitWidth
+                        Layout.fillHeight: true
+                        clip: true
+
+                        visible: root.lyricsEnabled && root.hasSyncedLines
+                        implicitWidth: root.lyricsImplicitWidth
+
+                        readonly property int rowHeight: Math.max(12, Math.min(Math.floor(height / 3), Appearance.font.pixelSize.smallie + 2))
+                        readonly property real baseY: Math.max(0, Math.round((height - rowHeight * 3) / 2))
+                        readonly property real downScale: Math.max(0.86, Appearance.font.pixelSize.smaller / Math.max(1, (Appearance.font.pixelSize.smallie + 2)))
+
+                        readonly property int targetCurrentIndex: root.hasSyncedLines ? (lyricsLoader.item?.currentIndex ?? -1) : -1
+                        readonly property string targetPrev: root.hasSyncedLines ? (lyricsLoader.item?.prevLineText ?? "") : ""
+                        readonly property string targetCurrent: root.hasSyncedLines ? (((lyricsLoader.item?.currentLineText ?? "") || "♪")) : "♪"
+                        readonly property string targetNext: root.hasSyncedLines ? (lyricsLoader.item?.nextLineText ?? "") : ""
+
+                        readonly property int curLineStartMs: (root.hasSyncedLines && targetCurrentIndex >= 0)
+                            ? (lyricsLoader.item?.lines?.[targetCurrentIndex]?.timeMs ?? 0)
+                            : 0
+
+                        readonly property int nextLineStartMs: (root.hasSyncedLines && targetCurrentIndex >= 0)
+                            ? (lyricsLoader.item?.lines?.[targetCurrentIndex + 1]?.timeMs ?? (curLineStartMs + 3000))
+                            : (curLineStartMs + 3000)
+
+                        readonly property real lineProgress: {
+                            if (!root.hasSyncedLines || targetCurrentIndex < 0) return 0
+                            var currentPos = root.effectiveLyricsPositionMsForUi
+                            if (currentPos < curLineStartMs) return 0
+                            if (currentPos >= nextLineStartMs) return 1
+                            var span = Math.max(1, nextLineStartMs - curLineStartMs)
+                            return (currentPos - curLineStartMs) / span
+                        }
+
+                        property int lastIndex: -1
+                        property bool isMovingForward: true
+                        property real scrollOffset: 0
+
+                        readonly property real animProgress: Math.abs(scrollOffset) / rowHeight
+                        readonly property real dimOpacity: 0.55
+                        readonly property real activeOpacity: 1.0
+                        property int staticLineAnimDuration: 110
+
+                        readonly property real activeLineBottomY: Math.round(
+                            (lyricScroller.baseY - lyricScroller.scrollOffset) + (lyricScroller.rowHeight * 2)
+                        )
+
+                        Item {
+                            x: 0
+                            width: parent.width
+                            height: 2
+                            y: Math.max(0, Math.min(parent.height - height, lyricScroller.activeLineBottomY + 1))
+                            opacity: 0.95
+                            visible: root.lyricsEnabled && root.hasSyncedLines
+
+                            Rectangle { anchors.fill: parent; radius: 2; color: Qt.rgba(1, 1, 1, 0.10) }
+
+                            Rectangle {
+                                width: Math.round(parent.width * lyricScroller.lineProgress)
+                                height: parent.height
+                                radius: 2
+                                color: Qt.rgba(
+                                    Appearance.m3colors.m3primary.r,
+                                    Appearance.m3colors.m3primary.g,
+                                    Appearance.m3colors.m3primary.b,
+                                    0.52
+                                )
+                                Behavior on width { enabled: false }
+
+                                Rectangle {
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 10
+                                    height: parent.height
+                                    radius: 2
+                                    color: Qt.rgba(1, 1, 1, 0.18)
+                                    visible: parent.width > 12
+                                }
+                            }
+                        }
+
+                        onTargetCurrentIndexChanged: {
+                            if (!root.animEnabled || !root.animLyricScroller) {
+                                lastIndex = targetCurrentIndex
+                                isMovingForward = true
+                                scrollOffset = 0
+                                staticLyricLine.text = targetCurrent
+                                staticLyricLine.opacity = 1.0
+                                return
+                            }
+
+                            if (targetCurrentIndex !== lastIndex) {
+                                staticLyricBlinkAnimation.start()
+                                isMovingForward = targetCurrentIndex > lastIndex
+                                lastIndex = targetCurrentIndex
+                                scrollAnimation.restart()
+                            }
+                        }
+
+                        SequentialAnimation {
+                            id: scrollAnimation
+                            running: false
+                            PropertyAction {
+                                target: lyricScroller
+                                property: "scrollOffset"
+                                value: lyricScroller.isMovingForward ? -lyricScroller.rowHeight : lyricScroller.rowHeight
+                            }
+                            NumberAnimation {
+                                target: lyricScroller
+                                property: "scrollOffset"
+                                to: 0
+                                duration: root.lyricScrollAnimMs
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        SequentialAnimation {
+                            id: staticLyricBlinkAnimation
+                            running: false
+                            NumberAnimation {
+                                target: staticLyricLine
+                                property: "opacity"
+                                from: 1.0
+                                to: 0.0
+                                duration: lyricScroller.staticLineAnimDuration
+                                easing.type: Easing.InOutSine
+                            }
+                            PropertyAction {
+                                target: staticLyricLine
+                                property: "text"
+                                value: lyricScroller.targetCurrent
+                            }
+                            NumberAnimation {
+                                target: staticLyricLine
+                                property: "opacity"
+                                from: 0.0
+                                to: 1.0
+                                duration: lyricScroller.staticLineAnimDuration
+                                easing.type: Easing.InOutSine
+                            }
+                        }
+
+                        LyricLine {
+                            id: staticLyricLine
+                            anchors.centerIn: parent
+                            highlight: true
+                            opacity: 0
+                            text: "♪"
+                            visible: root.lyricsStyle === "static"
+                            fillProgress: lyricScroller.lineProgress
+                            lineHeight: lyricScroller.rowHeight
+                        }
+
+                        Loader {
+                            anchors.fill: parent
+                            active: root.lyricsStyle === "scrolling"
+                            sourceComponent: Column {
+                                width: parent.width
+                                spacing: 0
+                                y: lyricScroller.baseY - lyricScroller.scrollOffset
+
+                                LyricLine {
+                                    text: lyricScroller.targetPrev
+                                    highlight: false
+                                    useGradient: true
+                                    gradientDirection: "top"
+                                    opacity: (lyricScroller.isMovingForward)
+                                        ? lyricScroller.dimOpacity + (lyricScroller.activeOpacity - lyricScroller.dimOpacity) * lyricScroller.animProgress
+                                        : lyricScroller.dimOpacity
+                                    scale: (lyricScroller.isMovingForward)
+                                        ? lyricScroller.downScale + (1.0 - lyricScroller.downScale) * lyricScroller.animProgress
+                                        : lyricScroller.downScale
+                                    lineHeight: lyricScroller.rowHeight
+                                }
+
+                                LyricLine {
+                                    text: lyricScroller.targetCurrent
+                                    highlight: true
+                                    useGradient: false
+                                    opacity: lyricScroller.activeOpacity
+                                        - (lyricScroller.activeOpacity - lyricScroller.dimOpacity) * lyricScroller.animProgress
+                                    scale: 1.0 - (1.0 - lyricScroller.downScale) * lyricScroller.animProgress
+                                    fillProgress: lyricScroller.lineProgress
+                                    lineHeight: lyricScroller.rowHeight
+                                }
+
+                                LyricLine {
+                                    text: lyricScroller.targetNext
+                                    highlight: false
+                                    useGradient: true
+                                    gradientDirection: "bottom"
+                                    opacity: (!lyricScroller.isMovingForward)
+                                        ? lyricScroller.dimOpacity + (lyricScroller.activeOpacity - lyricScroller.dimOpacity) * lyricScroller.animProgress
+                                        : lyricScroller.dimOpacity
+                                    scale: (!lyricScroller.isMovingForward)
+                                        ? lyricScroller.downScale + (1.0 - lyricScroller.downScale) * lyricScroller.animProgress
+                                        : lyricScroller.downScale
+                                    lineHeight: lyricScroller.rowHeight
+                                }
+                            }
+                        }
+                    }
+
+
+                    // =========================================
+                    // 15.2.2) NO LYRICS: marquee + waves
+                    // =========================================
+                    Item {
+                        id: marqueeViewport
+                        Layout.fillWidth: false
+                        Layout.preferredWidth: implicitWidth
+                        Layout.fillHeight: true
+                        clip: true
+
+                        implicitWidth: root.noLyricsViewportWidth
+                        visible: root.hasMedia && (!root.lyricsEnabled || !root.hasSyncedLines)
+
+                        readonly property int textW: Math.max(0, Math.round(titleMetrics.width))
+                        readonly property int delta: Math.max(0, textW - marqueeViewport.width)
+
+                        Item {
+                            id: movingStrip
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: parent.height
+                            x: 0
+                            width: Math.max(marqueeViewport.width, marqueeViewport.textW)
+                            property bool shouldScroll: marqueeViewport.delta > 1
+                            function reset() { x = 0 }
+                        }
+
+                        Text {
+                            id: scrollingText
+                            parent: movingStrip
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.fullText
+                            color: Appearance.colors.colOnLayer1
+                            font.pixelSize: Appearance.font.pixelSize.smallie + 2
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.NoWrap
+                            elide: Text.ElideNone
+                            width: marqueeViewport.textW
+                            layer.enabled: false
+                            onTextChanged: movingStrip.reset()
+                        }
+
+                        SequentialAnimation {
+                            id: marqueeAnim
+                            running: root.animEnabled
+                                  && root.animMarquee
+                                  && movingStrip.shouldScroll
+                                  && root.hasMedia
+                                  && marqueeViewport.visible
+                            loops: Animation.Infinite
+                            onRunningChanged: movingStrip.reset()
+
+                            PauseAnimation { duration: 2000 }
+                            NumberAnimation {
+                                target: movingStrip
+                                property: "x"
+                                from: 0
+                                to: -marqueeViewport.delta
+                                duration: Math.max(2500, marqueeViewport.textW * 18)
+                                easing.type: Easing.Linear
+                            }
+                            PauseAnimation { duration: 1000 }
+                            PropertyAction { target: movingStrip; property: "x"; value: 0 }
+                        }
+
+                        Item {
+                            id: waveBand
+                            parent: movingStrip
+                            anchors.left: scrollingText.left
+                            anchors.right: scrollingText.right
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 0
+                            height: Math.min(18, Math.max(0, marqueeViewport.height - 2))
+                            opacity: root.hasMedia ? 1 : 0
+                            visible: root.hasMedia && root.fxWaves && marqueeViewport.visible
+                            clip: true
+
+                            WaveVisualizer {
+                                anchors.fill: parent
+                                live: root.isPlaying
+                                points: root.visualizerPoints
+                                maxVisualizerValue: 650
+                                smoothing: 2
+                                color: Appearance.m3colors.m3primary
+                            }
+                        }
+
+                        onWidthChanged: movingStrip.reset()
+                    }
+                }
+            }
+        }
+    }
+
+     // =====================================================
+    // 16) COMPONENTE: LyricLine (seguro + limpio)
+    // =====================================================
+    component LyricLine: Item {
+        id: lyricLineItem
+
+        required property string text
+        property bool highlight: false
+        property bool useGradient: false
+        property string gradientDirection: "top" // "top" | "bottom"
+        property real fillProgress: 0.0
+
+        // Altura inyectada desde lyricScroller (evita depender de ids externos)
+        property int lineHeight: Math.max(12, Appearance.font.pixelSize.smallie + 4)
+
+        property bool reallyUseGradient: useGradient && root.useGradientMask && root.fxLyricsGradientMask
+
+        width: parent.width
+        height: lineHeight
+
+        TextMetrics {
+            id: textMeasurer
+            font.pixelSize: Appearance.font.pixelSize.smallie + (lyricLineItem.highlight ? 2 : 1)
+            font.bold: lyricLineItem.highlight
+            text: lyricLineItem.text
+        }
+
+        Item {
+            anchors.centerIn: parent
+            width: Math.min(parent.width, textMeasurer.width)
+            height: textMeasurer.height
+
+            StyledText {
+                anchors.centerIn: parent
+                text: lyricLineItem.text
+                color: lyricLineItem.highlight ? Qt.rgba(1, 1, 1, 0.3) : Appearance.colors.colSubtext
+                font: textMeasurer.font
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideNone
+                wrapMode: Text.NoWrap
+                visible: !lyricLineItem.reallyUseGradient
+            }
+
+            Item {
+                anchors.fill: parent
+                width: textMeasurer.width * lyricLineItem.fillProgress
+                clip: true
+                visible: lyricLineItem.highlight
+                      && lyricLineItem.fillProgress > 0.01
+                      && !lyricLineItem.reallyUseGradient
+
+                StyledText {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: lyricLineItem.text
+                    color: Appearance.colors.colOnLayer1
+                    font: textMeasurer.font
+                    elide: Text.ElideNone
+                    wrapMode: Text.NoWrap
+                    width: textMeasurer.width
+
+                    layer.enabled: root.fxDropShadows
+                    layer.effect: DropShadow {
+                        horizontalOffset: 0
+                        verticalOffset: 1
+                        radius: 6
+                        samples: 16
+                        color: Qt.rgba(0, 0, 0, 0.45)
+                    }
+                }
+            }
+        }
+
+        Item {
+            anchors.fill: parent
+            visible: lyricLineItem.reallyUseGradient
+            layer.enabled: visible
+            layer.effect: OpacityMask {
+                maskSource: Rectangle {
+                    width: lyricLineItem.width
+                    height: lyricLineItem.height
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: lyricLineItem.gradientDirection === "top" ? "transparent" : "black"
+                        }
+                        GradientStop {
+                            position: 1.0
+                            color: lyricLineItem.gradientDirection === "top" ? "black" : "transparent"
+                        }
+                    }
+                }
+            }
+
+            StyledText {
+                anchors.fill: parent
+                text: lyricLineItem.text
+                color: Appearance.colors.colSubtext
+                font.pixelSize: Appearance.font.pixelSize.smallie + 1
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideNone
+                wrapMode: Text.NoWrap
+            }
+        }
+    }
+}
+
