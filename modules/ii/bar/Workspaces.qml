@@ -50,7 +50,7 @@ Item {
     property bool premiumActiveIndicatorGlow: true   // brillo (glow) del indicador activo
     property bool premiumActiveIndicatorBorder: true // borde del indicador activo
     property bool neonBorders: true                  // borde neón giratorio (ConicalGradient)
-    property bool activeParticles: true              // partículas dentro del indicador
+    property bool activeParticles: false              // partículas dentro del indicador
 
     // FX Premium: hover sobre iconos
     property bool premiumIconHoverDot: false          // efecto feo 

@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 
 import Quickshell
@@ -12,6 +13,7 @@ import Quickshell.Services.Mpris
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.utils
 import Quickshell.Io
 import qs.modules.common.functions
 import qs.modules.common.widgets
@@ -23,20 +25,22 @@ LockScreen {
     // ============================================================
     // position (TU CONFIG ORIGINAL)
     // ============================================================
-    property int mediaBottomMargin: 490  //sube
     property int mediaSideMargin: 34
-    property int mediaHeight: 60
+    property int mediaTopMargin: 1450     //altura 
+
+    // Alto del nuevo diseño
+    property int mediaHeight: 230
 
     // ajuste (TU CONFIG ORIGINAL)
     property int mediaMaxWidth: 400
 
     // ============================================================
-    // ✅ NUEVO: OFFSETS PARA MOVERLO
+    // OFFSETS PARA MOVERLO
     // - mediaXOffset:  (-) izquierda, (+) derecha
-    // - mediaYOffset:  (+) más arriba, (-) más abajo  (porque usamos bottomMargin)
+    // - mediaYOffset:  (+) más abajo, (-) más arriba  (ahora usando topMargin)
     // ============================================================
-    property int mediaXOffset: -555
-    property int mediaYOffset:  -473
+    property int mediaXOffset: -010
+    property int mediaYOffset: 0
 
     readonly property url fallbackCover: Qt.resolvedUrl("../../assets/icons/cover.png")
 
@@ -48,18 +52,50 @@ LockScreen {
             id: lockMediaHost
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.bottom: parent.bottom
+            anchors.top: parent.top
             anchors.leftMargin: root.mediaSideMargin
             anchors.rightMargin: root.mediaSideMargin
 
-            // ✅ CAMBIO: ahora respeta offset vertical
-            anchors.bottomMargin: root.mediaBottomMargin + root.mediaYOffset
+            // ✅ Debajo de la hora/mensaje (zona superior)
+            anchors.topMargin: root.mediaTopMargin + root.mediaYOffset
 
             height: root.mediaHeight
             z: 500
 
             property var activePlayer: MprisController.activePlayer
 
+            // ====== LETRAS (integrado) ======
+            property bool lyricsMode: false
+
+            LrclibLyrics {
+                id: lyricsEngine
+                enabled: !!lockMediaHost.activePlayer
+                         && lockMediaHost.activePlayer.playbackState !== MprisPlaybackState.Stopped
+                         && (lockMediaHost.trackTitle && lockMediaHost.trackTitle.length > 0)
+
+                title: lockMediaHost.trackTitle
+                artist: lockMediaHost.trackArtist
+                duration: lockMediaHost.activePlayer ? (lockMediaHost.activePlayer.length || 0) : 0
+                position: lockMediaHost.activePlayer ? (lockMediaHost.activePlayer.position || 0) : 0
+
+                adaptiveSync: true
+                smoothPosition: true
+            }
+
+            property bool hasSyncedLyrics: {
+                if (!lyricsEngine.enabled) return false
+                var txt = (lyricsEngine.displayText || "").toString()
+                if (!txt || txt === "") return false
+                if (txt === "...") return false
+                if (txt.indexOf("No hay letras") !== -1) return false
+                if (txt.indexOf("Buscando") !== -1) return false
+                if (txt.indexOf("No synced lyrics") !== -1) return false
+                if (txt.indexOf("Fetching") !== -1) return false
+                if (txt.length < 5) return false
+                return true
+            }
+
+            // ===== Helpers originales =====
             function s(x) { return (x === undefined || x === null) ? "" : ("" + x) }
 
             function normalizeArtUrl(u) {
@@ -103,6 +139,7 @@ LockScreen {
 
             property string trackId: getMeta("mpris:trackid")
 
+            // hasMedia: hay algo “relevante” del player
             readonly property bool hasMedia: !!lockMediaHost.activePlayer
                                             && (
                                                 lockMediaHost.trackTitle !== ""
@@ -114,6 +151,8 @@ LockScreen {
                                              ? (lockMediaHost.activePlayer.playbackState === MprisPlaybackState.Stopped)
                                              : true
 
+            // ✅ Cuando no se reproduce nada: NO mostramos el card.
+            // Así se ve tu blur del lock de fondo (como pediste).
             visible: GlobalStates.screenLocked && lockMediaHost.hasMedia && !lockMediaHost.isStopped
 
             property list<real> visualizerPoints: []
@@ -121,7 +160,6 @@ LockScreen {
             Process {
                 id: cavaProc
 
-                // cava solo corre cuando realmente está reproduciendo (ok para pausa)
                 running: GlobalStates.screenLocked
                       && lockMediaHost.activePlayer !== null
                       && lockMediaHost.isPlaying
@@ -131,7 +169,11 @@ LockScreen {
                         lockMediaHost.visualizerPoints = []
                 }
 
-                command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
+                command: [
+                    "cava",
+                    "-p",
+                    FileUtils.trimFileProtocol(Directories.scriptPath) + "/cava/raw_output_config.txt"
+                ]
 
                 stdout: SplitParser {
                     onRead: data => {
@@ -144,8 +186,9 @@ LockScreen {
             }
 
             function forceReloadCover() {
-                albumArtImage.source = ""
-                albumArtImage.source = (artUrl !== "") ? artUrl : root.fallbackCover
+                coverArt.source = ""
+                coverArt.source = (artUrl !== "") ? artUrl : root.fallbackCover
+                bgSource.source = coverArt.source
             }
 
             onActivePlayerChanged: forceReloadCover()
@@ -221,480 +264,556 @@ LockScreen {
                 return m + ":" + (s2 < 10 ? "0" + s2 : s2)
             }
 
-            Rectangle {
+            function iconForIdentity(identity) {
+                var id2 = (identity || "").toString().toLowerCase()
+                if (id2.indexOf("firefox") !== -1) return "firefox"
+                if (id2.indexOf("chrome") !== -1) return "google-chrome"
+                if (id2.indexOf("spotify") !== -1) return "spotify"
+                if (id2.indexOf("vlc") !== -1) return "vlc"
+                return "audio-x-generic"
+            }
+
+            // ============================================================
+            // CARD (reproductor + modo letras)
+            // ============================================================
+            Item {
                 id: mediaCard
 
-                //  mover izquierda/derecha 
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.horizontalCenterOffset: root.mediaXOffset
 
                 width: Math.min(parent.width, root.mediaMaxWidth)
                 height: parent.height
-                radius: 24
 
-                color: Appearance.colors.colLayer0
-                border.width: 1
-                border.color: Qt.rgba(1, 1, 1, 0.10)
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 0.85
-                    shadowOpacity: 0.22
-                    shadowColor: Qt.rgba(
-                        Appearance.m3colors.m3primary.r,
-                        Appearance.m3colors.m3primary.g,
-                        Appearance.m3colors.m3primary.b,
-                        1.0
-                    )
-                    shadowHorizontalOffset: 0
-                    shadowVerticalOffset: 0
-                }
-
-                Rectangle {
-                    id: pulseHalo
+                // FONDO (blur carátula SOLO cuando hay reproducción visible)
+                Item {
                     anchors.fill: parent
-                    radius: parent.radius
-                    color: "transparent"
-                    border.width: 1
-                    border.color: Qt.rgba(
-                        Appearance.m3colors.m3primary.r,
-                        Appearance.m3colors.m3primary.g,
-                        Appearance.m3colors.m3primary.b,
-                        0.18
-                    )
-                    opacity: lockMediaHost.isPlaying ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 220 } }
+                    layer.enabled: true
+                    layer.effect: OpacityMask { maskSource: maskRect }
 
-                    property real glow: 0.0
-                    SequentialAnimation on glow {
-                        running: lockMediaHost.isPlaying
-                        loops: Animation.Infinite
-                        NumberAnimation { from: 0.0; to: 1.0; duration: 900; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 1.0; to: 0.0; duration: 900; easing.type: Easing.InOutSine }
+                    Rectangle {
+                        id: maskRect
+                        anchors.fill: parent
+                        radius: 28
+                        visible: false
                     }
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: parent.radius
-                        color: Qt.rgba(
-                            Appearance.m3colors.m3primary.r,
-                            Appearance.m3colors.m3primary.g,
-                            Appearance.m3colors.m3primary.b,
-                            0.04 + 0.05 * pulseHalo.glow
-                        )
-                        visible: false //lockMediaHost.isPlaying
+                        radius: 28
+                        color: Appearance.colors.colLayer1
+                        visible: bgSource.status !== Image.Ready
+                    }
+
+                    Image {
+                        id: bgSource
+                        anchors.fill: parent
+                        source: (lockMediaHost.artUrl !== "") ? lockMediaHost.artUrl : root.fallbackCover
+                        fillMode: Image.PreserveAspectCrop
+                        visible: false
+                        cache: false
+                    }
+
+                    FastBlur {
+                        anchors.fill: parent
+                        source: bgSource
+                        radius: 50
+                        transparentBorder: false
+                        visible: bgSource.status === Image.Ready
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 28
+                        color: lockMediaHost.lyricsMode ? "#85000000" : "#35000000"
+                        Behavior on color { ColorAnimation { duration: 300 } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 28
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Qt.rgba(1, 1, 1, 0.10)
                     }
                 }
 
-                Item {
-                    id: visualizerMasked
+                // CONTENIDO
+                ColumnLayout {
                     anchors.fill: parent
-                    z: 0
-                    clip: true
+                    anchors.margins: 18
+                    spacing: 0
 
-                    WaveVisualizer {
-                        id: visualizerCanvas
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        live: lockMediaHost.isPlaying
-                        points: lockMediaHost.visualizerPoints
-                        maxVisualizerValue: 1000
-                        smoothing: 2
-                        color: Appearance.m3colors.m3primary
-                    }
+                    // CABECERA
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 32
+                        spacing: 10
 
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: Rectangle {
-                            width: visualizerMasked.width
-                            height: visualizerMasked.height
-                            radius: mediaCard.radius
+                        Image {
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                            fillMode: Image.PreserveAspectFit
+                            source: "image://icon/" + lockMediaHost.iconForIdentity(lockMediaHost.activePlayer?.identity)
+                            sourceSize.width: 64
+                            sourceSize.height: 64
+                            onStatusChanged: { if (status === Image.Error) source = "" }
+                        }
+
+                        MaterialSymbol {
+                            visible: parent.children[0].status !== Image.Ready
+                            text: "music_note"
+                            iconSize: 20
+                            color: "#ffffff"
+                        }
+
+                        Text {
+                            text: lockMediaHost.activePlayer?.identity || "Reproductor"
+                            font.pixelSize: 14
+                            font.bold: true
+                            color: "#eeeeee"
+                            opacity: 0.9
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
                         }
                     }
-                }
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 10
-                    z: 2
-
+                    // ÁREA CENTRAL (swap)
                     Item {
-                        id: albumBlock
-                        Layout.alignment: Qt.AlignVCenter
-                        width: 46
-                        height: 46
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 110
+                        Layout.topMargin: 10
+                        Layout.bottomMargin: 10
+                        clip: true
 
-                        Item {
-                            id: ringFx
+                        // VISTA 1: REPRODUCTOR
+                        RowLayout {
                             anchors.fill: parent
-                            visible: lockMediaHost.activePlayer !== null
-                            opacity: lockMediaHost.isPlaying ? 1.0 : 0.90
-                            z: 10
+                            visible: !lockMediaHost.lyricsMode
+                            spacing: 16
+                            opacity: visible ? 1.0 : 0.0
+                            Behavior on opacity { NumberAnimation { duration: 200 } }
 
-                            property real phase: 0
+                            Rectangle {
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 90
+                                Layout.alignment: Qt.AlignVCenter
+                                radius: 16
+                                color: Qt.rgba(1, 1, 1, 0.08)
+                                clip: true
+                                border.width: 1
+                                border.color: Qt.rgba(1, 1, 1, 0.10)
 
-                            Timer {
-                                interval: 38
-                                running: ringFx.visible && lockMediaHost.isPlaying
-                                repeat: true
-                                onTriggered: ringFx.phase += 0.08
+                                Image {
+                                    id: coverArt
+                                    anchors.fill: parent
+                                    source: (lockMediaHost.artUrl !== "") ? lockMediaHost.artUrl : root.fallbackCover
+                                    fillMode: Image.PreserveAspectCrop
+                                    smooth: true
+                                    mipmap: true
+                                    visible: status === Image.Ready
+                                    cache: false
+                                }
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "album"
+                                    visible: coverArt.status !== Image.Ready
+                                    iconSize: 40
+                                    color: Qt.rgba(1, 1, 1, 0.4)
+                                }
                             }
 
-                            Canvas {
-                                id: ringCanvas
-                                anchors.fill: parent
-                                antialiasing: true
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                spacing: 10
 
-                                onPaint: {
-                                    var ctx = getContext("2d")
-                                    ctx.clearRect(0, 0, width, height)
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: 2
 
-                                    var c = Appearance.m3colors.m3primary
-                                    var cx = width / 2
-                                    var cy = height / 2
+                                    MarqueeText {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 28
+                                        text: StringUtils.cleanMusicTitle(lockMediaHost.trackTitle) || "Sin reproducción"
+                                        font.pixelSize: 18
+                                        font.bold: true
+                                        color: "#ffffff"
+                                    }
 
-                                    var r0 = Math.min(width, height) * 0.60
-                                    var breathe = lockMediaHost.isPlaying ? (Math.sin(ringFx.phase * 2.0) * 0.045) : 0.0
-
-                                    for (var i = 0; i < 4; i++) {
-                                        var k = i / 4.0
-                                        var r = r0 + (k * 8.2)
-                                                + (Math.sin(ringFx.phase * 1.7 + i) * (lockMediaHost.isPlaying ? 1.15 : 0.35))
-                                                + (r0 * breathe)
-
-                                        var a = lockMediaHost.isPlaying ? (0.38 - k * 0.08) : (0.20 - k * 0.05)
-                                        ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, Math.max(0, a))
-                                        ctx.lineWidth = 2.1
-
-                                        ctx.beginPath()
-                                        ctx.arc(cx, cy, r, 0, Math.PI * 2, false)
-                                        ctx.stroke()
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: lockMediaHost.trackArtist || "..."
+                                        font.pixelSize: 14
+                                        font.family: Appearance.font.name
+                                        color: "#cccccc"
+                                        elide: Text.ElideRight
                                     }
                                 }
 
-                                Connections { target: ringFx; function onPhaseChanged() { ringCanvas.requestPaint() } }
-                                Connections { target: lockMediaHost; function onIsPlayingChanged() { ringCanvas.requestPaint() } }
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    width: 54
+                                    height: 54
+                                    radius: 27
+                                    color: "#ffffff"
 
-                                onWidthChanged: requestPaint()
-                                onHeightChanged: requestPaint()
-                                Component.onCompleted: requestPaint()
-                            }
-                        }
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: lockMediaHost.isPlaying ? "pause" : "play_arrow"
+                                        iconSize: 32
+                                        color: "#000000"
+                                    }
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 16
-                            color: "transparent"
-                            border.width: 1
-                            border.color: Qt.rgba(
-                                Appearance.m3colors.m3primary.r,
-                                Appearance.m3colors.m3primary.g,
-                                Appearance.m3colors.m3primary.b,
-                                lockMediaHost.isPlaying ? 0.45 : 0.28
-                            )
-                            z: 3
-
-                            layer.enabled: true
-                            layer.effect: DropShadow {
-                                horizontalOffset: 0
-                                verticalOffset: 0
-                                radius: 12
-                                samples: 24
-                                color: Qt.rgba(
-                                    Appearance.m3colors.m3primary.r,
-                                    Appearance.m3colors.m3primary.g,
-                                    Appearance.m3colors.m3primary.b,
-                                    lockMediaHost.isPlaying ? 0.18 : 0.10
-                                )
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 16
-                            color: Qt.rgba(1, 1, 1, 0.06)
-                            border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, 0.10)
-                            z: 1
-                        }
-
-                        Image {
-                            id: albumArtImage
-                            anchors.fill: parent
-                            anchors.margins: 2
-
-                            source: (lockMediaHost.artUrl !== "")
-                                    ? lockMediaHost.artUrl
-                                    : root.fallbackCover
-
-                            fillMode: Image.PreserveAspectCrop
-                            cache: false
-                            asynchronous: true
-                            smooth: true
-                            antialiasing: true
-                            z: 2
-
-                            layer.enabled: true
-                            layer.effect: OpacityMask {
-                                maskSource: Rectangle {
-                                    width: albumBlock.width
-                                    height: albumBlock.height
-                                    radius: 14
-                                }
-                            }
-
-                            opacity: (status === Image.Ready) ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: 220 } }
-
-                            onStatusChanged: {
-                                if (status === Image.Error) {
-                                    source = ""
-                                    source = root.fallbackCover
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        enabled: !!lockMediaHost.activePlayer
+                                        onClicked: lockMediaHost.activePlayer.togglePlaying()
+                                        onPressed: parent.scale = 0.90
+                                        onReleased: parent.scale = 1.0
+                                    }
+                                    Behavior on scale { NumberAnimation { duration: 100 } }
                                 }
                             }
                         }
 
-                        Rectangle {
+                        // VISTA 2: KARAOKE
+                        ColumnLayout {
                             anchors.fill: parent
-                            radius: 14
-                            color: Appearance.colors.colLayer1
-                            visible: albumArtImage.status !== Image.Ready
-                            z: 2
+                            visible: lockMediaHost.lyricsMode
+                            opacity: visible ? 1.0 : 0.0
+                            Behavior on opacity { NumberAnimation { duration: 200 } }
+                            spacing: 4
 
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "music_note"
-                                iconSize: 22
-                                color: Appearance.colors.colSubtext
-                                opacity: 0.65
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 20
+                                Text {
+                                    anchors.centerIn: parent
+                                    width: parent.width
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: lyricsEngine.prevLineText
+                                    font.pixelSize: 14
+                                    font.family: Appearance.font.name
+                                    color: "#dddddd"
+                                    opacity: 0.5
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                Item {
+                                    anchors.centerIn: parent
+                                    width: parent.width
+                                    height: currentLyricText.implicitHeight
+
+                                    Text {
+                                        id: currentLyricText
+                                        anchors.centerIn: parent
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: lockMediaHost.hasSyncedLyrics ? lyricsEngine.displayText : "Buscando letras..."
+                                        font.pixelSize: 22
+                                        font.bold: true
+                                        font.family: Appearance.font.name
+                                        color: "#ffffff"
+                                        wrapMode: Text.Wrap
+
+                                        Behavior on text {
+                                            SequentialAnimation {
+                                                NumberAnimation { target: currentLyricText; property: "opacity"; to: 0.5; duration: 50 }
+                                                PropertyAction { target: currentLyricText; property: "text" }
+                                                NumberAnimation { target: currentLyricText; property: "opacity"; to: 1.0; duration: 150 }
+                                            }
+                                        }
+                                    }
+
+                                    Glow {
+                                        anchors.fill: currentLyricText
+                                        source: currentLyricText
+                                        radius: 12
+                                        samples: 24
+                                        color: Appearance.m3colors.m3primary
+                                        opacity: 0.6
+                                        spread: 0.3
+                                        visible: lockMediaHost.hasSyncedLyrics
+                                    }
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 20
+                                Text {
+                                    anchors.centerIn: parent
+                                    width: parent.width
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: lyricsEngine.nextLineText
+                                    font.pixelSize: 14
+                                    font.family: Appearance.font.name
+                                    color: "#dddddd"
+                                    opacity: 0.5
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
                     }
 
-                    ColumnLayout {
+                    // ZONA INFERIOR
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 4
+                        Layout.preferredHeight: 60
+                        spacing: 10
 
-                        Column {
-                            width: parent.width
-                            spacing: 1
-
-                            StyledText {
-                                width: parent.width
-                                text: lockMediaHost.activePlayer
-                                      ? lockMediaHost.trackArtist
-                                      : "Sin reproductor"
-                                color: Appearance.colors.colSubtext
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-
-                            StyledText {
-                                width: parent.width
-                                text: lockMediaHost.activePlayer
-                                      ? (lockMediaHost.trackTitle !== "" ? lockMediaHost.trackTitle : "No Title")
-                                      : "Abre tu reproductor"
-                                color: "white"
-                                font.weight: Font.Medium
-                                font.pixelSize: 14
-                                elide: Text.ElideRight
-                            }
+                        ControlButton {
+                            icon: "skip_previous"
+                            size: 42
+                            enabled: !!lockMediaHost.activePlayer && lockMediaHost.canGoPrevious
+                            opacity: enabled ? 1.0 : 0.5
+                            onClicked: lockMediaHost.activePlayer.previous()
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 10
 
-                            StyledText {
-                                Layout.alignment: Qt.AlignVCenter
+                            Text {
+                                text: lockMediaHost.activePlayer ? lockMediaHost.friendlyTime(lockMediaHost.activePlayer.position) : "0:00"
                                 font.pixelSize: 12
-                                color: Qt.rgba(1, 1, 1, 0.90)
-                                text: lockMediaHost.activePlayer
-                                      ? (lockMediaHost.friendlyTime(lockMediaHost.trackPos) + " / " + lockMediaHost.friendlyTime(lockMediaHost.trackLen))
-                                      : ""
+                                color: "#cccccc"
+                                font.bold: true
                             }
 
                             Item {
-                                Layout.alignment: Qt.AlignVCenter
-                                width: 26; height: 26
-                                MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    text: "skip_previous"
-                                    iconSize: 26
-                                    color: Appearance.colors.colOnLayer1
-                                    opacity: (lockMediaHost.activePlayer && lockMediaHost.canGoPrevious) ? 1.0 : 0.35
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: !!lockMediaHost.activePlayer && lockMediaHost.canGoPrevious
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: lockMediaHost.activePlayer.previous()
-                                }
-                            }
-
-                            Rectangle {
-                                Layout.alignment: Qt.AlignVCenter
-                                width: 32
-                                height: 26
-                                radius: 13
-                                color: Qt.rgba(1, 1, 1, 0.08)
-                                border.width: 1
-                                border.color: Qt.rgba(1, 1, 1, 0.10)
-
-                                MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    text: lockMediaHost.isPlaying ? "pause" : "play_arrow"
-                                    iconSize: 32
-                                    color: "white"
-                                    opacity: lockMediaHost.activePlayer ? 1.0 : 0.35
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: !!lockMediaHost.activePlayer
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: lockMediaHost.activePlayer.togglePlaying()
-                                }
-                            }
-
-                            Item {
-                                id: miniBar
                                 Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                implicitHeight: 14
+                                Layout.fillHeight: true
 
-                                property real phase: 0.0
-                                NumberAnimation on phase {
-                                    from: 0
-                                    to: Math.PI * 2
-                                    duration: 780
-                                    loops: Animation.Infinite
-                                    running: lockMediaHost.activePlayer !== null && lockMediaHost.isPlaying
-                                }
-
-                                function seekToRatio(r) {
-                                    if (!lockMediaHost.activePlayer || !lockMediaHost.canSeek || lockMediaHost.trackLen <= 0) return
-                                    r = lockMediaHost.clamp(r, 0, 1)
-                                    lockMediaHost.activePlayer.position = r * lockMediaHost.trackLen
-                                    lockMediaHost.displayedPos = lockMediaHost.activePlayer.position
-                                }
-
-                                Rectangle {
-                                    id: track
-                                    anchors.verticalCenter: parent.verticalCenter
+                                WavySlider {
+                                    anchors.centerIn: parent
                                     width: parent.width
-                                    height: 4
-                                    radius: 8
-                                    color: Appearance.colors.colLayer1
-                                    opacity: 0.95
-                                }
-
-                                Canvas {
-                                    id: waveCanvas
-                                    anchors.fill: parent
-                                    antialiasing: true
-
-                                    onWidthChanged: requestPaint()
-                                    onHeightChanged: requestPaint()
-                                    Component.onCompleted: requestPaint()
-
-                                    onPaint: {
-                                        const ctx = getContext("2d")
-                                        ctx.reset?.()
-                                        ctx.clearRect(0, 0, width, height)
-
-                                        if (!lockMediaHost.activePlayer || lockMediaHost.trackLen <= 0) return
-
-                                        const xPlay = Math.max(0, Math.min(track.width, track.width * lockMediaHost.ratio))
-                                        const yMid = track.y + track.height / 2
-
-                                        if (xPlay > 1) {
-                                            ctx.save()
-                                            ctx.strokeStyle = Qt.rgba(
-                                                Appearance.m3colors.m3primary.r,
-                                                Appearance.m3colors.m3primary.g,
-                                                Appearance.m3colors.m3primary.b,
-                                                0.98
-                                            )
-                                            ctx.lineWidth = 3.0
-                                            ctx.lineCap = "round"
-                                            ctx.beginPath()
-
-                                            const step = 1.0
-                                            for (let x = 0; x <= xPlay; x += step) {
-                                                const t = xPlay > 0 ? (x / xPlay) : 0
-                                                const amp = 0.4 + 4.6 * Math.pow(t, 1.7)
-                                                const ang = (x / 20.0) * (Math.PI * 2) + miniBar.phase
-                                                const y = yMid + Math.sin(ang) * amp
-                                                if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
-                                            }
-                                            ctx.stroke()
-                                            ctx.restore()
-                                        }
+                                    height: 40
+                                    progress: lockMediaHost.ratio
+                                    playing: lockMediaHost.isPlaying
+                                    accentColor: Appearance.m3colors.m3primary
+                                    onSeek: (pct) => {
+                                        if (!lockMediaHost.activePlayer || !lockMediaHost.canSeek) return
+                                        lockMediaHost.activePlayer.position = pct * lockMediaHost.trackLen
+                                        lockMediaHost.displayedPos = lockMediaHost.activePlayer.position
                                     }
-
-                                    Connections {
-                                        target: lockMediaHost.activePlayer
-                                        enabled: lockMediaHost.activePlayer !== null
-                                        function onPositionChanged() { waveCanvas.requestPaint() }
-                                        function onLengthChanged() { waveCanvas.requestPaint() }
-                                    }
-                                }
-
-                                onPhaseChanged: waveCanvas.requestPaint()
-
-                                Rectangle {
-                                    id: playhead
-                                    width: 2
-                                    height: 14
-                                    radius: 1
-                                    anchors.verticalCenter: track.verticalCenter
-                                    x: Math.round(lockMediaHost.clamp(track.width * lockMediaHost.ratio, 0, track.width) - width / 2)
-                                    color: Qt.rgba(1, 1, 1, 0.95)
-                                    visible: lockMediaHost.activePlayer !== null && lockMediaHost.trackLen > 0
-
-                                    layer.enabled: true
-                                    layer.effect: DropShadow {
-                                        horizontalOffset: 0
-                                        verticalOffset: 0
-                                        radius: 6
-                                        samples: 16
-                                        color: Qt.rgba(0, 0, 0, 0.40)
-                                    }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: lockMediaHost.canSeek
-                                    cursorShape: Qt.PointingHandCursor
-                                    function _seekAt(x) { miniBar.seekToRatio(x / miniBar.width) }
-                                    onPressed: (m) => _seekAt(m.x)
-                                    onPositionChanged: (m) => { if (pressed) _seekAt(m.x) }
                                 }
                             }
 
-                            Item {
-                                Layout.alignment: Qt.AlignVCenter
-                                width: 26; height: 26
-                                MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    text: "skip_next"
-                                    iconSize: 26
-                                    color: Appearance.colors.colOnLayer1
-                                    opacity: (lockMediaHost.activePlayer && lockMediaHost.canGoNext) ? 1.0 : 0.35
+                            Text {
+                                text: lockMediaHost.activePlayer ? lockMediaHost.friendlyTime(lockMediaHost.activePlayer.length) : "0:00"
+                                font.pixelSize: 12
+                                color: "#cccccc"
+                                font.bold: true
+                            }
+                        }
+
+                        ControlButton {
+                            icon: "skip_next"
+                            size: 42
+                            enabled: !!lockMediaHost.activePlayer && lockMediaHost.canGoNext
+                            opacity: enabled ? 1.0 : 0.5
+                            onClicked: lockMediaHost.activePlayer.next()
+                        }
+
+                        // BOTÓN LETRAS
+                        ControlButton {
+                            icon: lockMediaHost.lyricsMode ? "music_note" : "lyrics"
+                            size: 36
+                            enabled: true
+                            opacity: (lockMediaHost.hasSyncedLyrics || lockMediaHost.lyricsMode) ? 1.0 : 0.5
+
+                            color: {
+                                if (lockMediaHost.lyricsMode) return Qt.rgba(1, 1, 1, 0.18)
+                                if (lockMediaHost.hasSyncedLyrics && lockMediaHost.isPlaying) return pulseColor
+                                return "transparent"
+                            }
+
+                            property color pulseColor: Qt.rgba(1, 1, 1, 0.10)
+                            SequentialAnimation on pulseColor {
+                                running: lockMediaHost.hasSyncedLyrics && !lockMediaHost.lyricsMode && lockMediaHost.isPlaying
+                                loops: Animation.Infinite
+                                ColorAnimation {
+                                    from: Qt.rgba(1, 1, 1, 0.05)
+                                    to: Qt.rgba(Appearance.m3colors.m3primary.r, Appearance.m3colors.m3primary.g, Appearance.m3colors.m3primary.b, 0.40)
+                                    duration: 1000
+                                    easing.type: Easing.InOutQuad
                                 }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: !!lockMediaHost.activePlayer && lockMediaHost.canGoNext
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: lockMediaHost.activePlayer.next()
+                                ColorAnimation {
+                                    from: Qt.rgba(Appearance.m3colors.m3primary.r, Appearance.m3colors.m3primary.g, Appearance.m3colors.m3primary.b, 0.40)
+                                    to: Qt.rgba(1, 1, 1, 0.05)
+                                    duration: 1000
+                                    easing.type: Easing.InOutQuad
                                 }
+                            }
+
+                            onClicked: lockMediaHost.lyricsMode = !lockMediaHost.lyricsMode
+                        }
+                    }
+                }
+
+                // ===== Componentes auxiliares =====
+                component MarqueeText : Item {
+                    property alias text: txt.text
+                    property alias font: txt.font
+                    property alias color: txt.color
+                    clip: true
+
+                    Text {
+                        id: txt
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: 0
+                        SequentialAnimation on x {
+                            running: txt.implicitWidth > parent.width
+                            loops: Animation.Infinite
+                            PauseAnimation { duration: 2000 }
+                            NumberAnimation {
+                                to: -(txt.implicitWidth - parent.width)
+                                duration: (txt.implicitWidth - parent.width) * 30 + 1000
+                                easing.type: Easing.Linear
+                            }
+                            PauseAnimation { duration: 1000 }
+                            NumberAnimation { to: 0; duration: 0 }
+                        }
+                    }
+                }
+
+                component WavySlider : Item {
+                    property real progress: 0.0
+                    property bool playing: false
+                    property color accentColor: "white"
+                    signal seek(real pct)
+
+                    property real phase: 0.0
+                    NumberAnimation on phase {
+                        running: playing
+                        from: 0
+                        to: Math.PI * 2
+                        duration: 3000
+                        loops: Animation.Infinite
+                    }
+
+                    readonly property real amp: 1.5
+                    readonly property real freq: 1.5
+
+                    Slider {
+                        anchors.fill: parent
+                        from: 0
+                        to: 1
+                        value: progress
+                        background: Item {}
+                        handle: Item {}
+                        onMoved: seek(value)
+                        enabled: lockMediaHost.canSeek
+                    }
+
+                    Shape {
+                        anchors.fill: parent
+                        layer.enabled: true
+                        layer.samples: 4
+
+                        ShapePath {
+                            strokeColor: Qt.rgba(1,1,1,0.3)
+                            strokeWidth: 2
+                            fillColor: "transparent"
+                            capStyle: ShapePath.RoundCap
+                            startX: 0
+                            startY: parent.height / 2
+                            PathSvg { path: generateSvgPath(parent.width, parent.height, amp, freq, phase) }
+                        }
+                    }
+
+                    Item {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: parent.width * Math.max(0, Math.min(1, progress))
+                        clip: true
+
+                        Shape {
+                            width: parent.parent.width
+                            height: parent.height
+
+                            ShapePath {
+                                strokeColor: accentColor
+                                strokeWidth: 2
+                                fillColor: "transparent"
+                                capStyle: ShapePath.RoundCap
+                                startX: 0
+                                startY: parent.height / 2
+                                PathSvg { path: generateSvgPath(parent.width, parent.height, amp, freq, phase) }
                             }
                         }
                     }
+
+                    Item {
+                        id: tracker
+                        width: 1
+                        height: 1
+                        x: parent.width * Math.max(0, Math.min(1, progress))
+                        y: (parent.height / 2) + (Math.sin((progress * Math.PI * 2 * freq) + phase) * amp)
+                    }
+
+                    Rectangle {
+                        width: 3
+                        height: 24
+                        radius: 1.5
+                        color: accentColor
+                        anchors.centerIn: tracker
+                        layer.enabled: true
+                        layer.effect: DropShadow { radius: 4; color: "#aa000000" }
+                        visible: lockMediaHost.trackLen > 0
+                    }
+
+                    function generateSvgPath(w, h, a, f, ph) {
+                        var str = "M 0 " + (h/2 + Math.sin(ph) * a)
+                        for (var i = 1; i <= 40; i++) {
+                            var x = (w / 40) * i
+                            var angle = (i / 40) * Math.PI * 2 * f + ph
+                            var y = (h / 2) + Math.sin(angle) * a
+                            str += " L " + x + " " + y
+                        }
+                        return str
+                    }
+                }
+
+                component ControlButton : Rectangle {
+                    property string icon
+                    property int size: 40
+                    signal clicked()
+
+                    Layout.preferredWidth: size
+                    Layout.preferredHeight: size
+                    radius: size / 2
+
+                    color: mouseArea.containsMouse ? Qt.rgba(1,1,1,0.1) : "transparent"
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: icon
+                        font.pixelSize: size * 0.65
+                        color: "#ffffff"
+                    }
+
+                    MouseArea {
+                        id: mouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: parent.clicked()
+                        onPressed: parent.scale = 0.9
+                        onReleased: parent.scale = 1.0
+                    }
+                    Behavior on scale { NumberAnimation { duration: 100 } }
                 }
             }
         }
@@ -712,10 +831,10 @@ LockScreen {
                 if (shouldPush) {
                     lastWorkspaceId = HyprlandData.monitors.find(m => m.name == targetMonitorName).activeWorkspace.id
                     Quickshell.execDetached(["hyprctl", "--batch",
-                        `keyword animation workspaces,1,7,menu_decel,slidevert; dispatch workspace ${2147483647 - lastWorkspaceId}`
+                        "keyword animation workspaces,1,7,menu_decel,slidevert; dispatch workspace " + (2147483647 - lastWorkspaceId)
                     ])
                 } else {
-                    Quickshell.execDetached(["hyprctl", "--batch", `dispatch workspace ${lastWorkspaceId}; reload`])
+                    Quickshell.execDetached(["hyprctl", "--batch", "dispatch workspace " + lastWorkspaceId + "; reload"])
                 }
             }
         }

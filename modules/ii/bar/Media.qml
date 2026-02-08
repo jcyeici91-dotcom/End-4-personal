@@ -24,42 +24,54 @@ Item {
     id: root
 
     // =====================================================
-    // 1.1) CONFIG BASE (toggles + tamaños + tiempos)
-    // =====================================================
-    property bool islandEnabled: true
-    property bool expandOnHover: true
-    property int  islandCollapsedWidth: 260
+// 1.1) CONFIG BASE (toggles + tamaños + tiempos) — FIX 30..50
+// =====================================================
+property bool islandEnabled: true
+property bool expandOnHover: true
+property int  islandCollapsedWidth: 260
 
-    // Altura colapsada adaptativa (AJUSTADO a tu rango 30..50)
-    property int islandCollapsedHeight: {
-        var barSize = 0
-        if (root.parent) {
-            barSize = root.barIsVertical ? root.parent.width : root.parent.height
-        }
-        if (barSize >= 30 && barSize <= 50) return barSize
-        return 44
+// Altura colapsada: NO dependas solo del parent (a veces arranca en 0 o da valores raros).
+// Usa barHeightLimit (que ya “anti-recorta”) como fuente principal y clampa a 30..50.
+property int islandCollapsedHeight: {
+    // candidato 1: el tamaño real del parent (si existe y es válido)
+    var p = 0
+    if (root.parent) {
+        p = Math.floor(root.barIsVertical ? root.parent.width : root.parent.height)
     }
 
-    // Altura expandida capada por barHeightLimit
-    property int  islandExpandedHeight: barHeightLimit
+    // candidato 2: el límite ya calculado por tu pipeline (más estable)
+    var lim = Math.floor(root.barHeightLimit)
 
-    property int  islandRadius: 999
-    property int  islandPaddingH: 10
-    property int  islandPaddingV: 6
+    // si parent es válido, úsalo; si no, usa barHeightLimit
+    var base = (p >= 24) ? p : lim
 
-    // Layout / opacity
-    property int islandExpandAnimMs: 260
-    property int islandFadeAnimMs: 180
+    // tu rango objetivo 30..50, con fallback razonable
+    if (base <= 0) base = 44
+    return Math.max(30, Math.min(50, base))
+}
 
-    // Pulso al cambiar lyric line
-    property bool islandPulseOnLyricChange: true
-    property int  islandPulseAnimMs: 220
-    property real islandPulseScale: 1.000
+// Altura expandida: debe seguir el límite real de la barra
+property int islandExpandedHeight: root.barHeightLimit
 
-    // Bordes + límites
-    property int islandBorderWidthCollapsed: 4
-    property int islandBorderWidthExpanded: 4
-    property int islandMaxWidth: 780
+property int islandRadius: 999
+
+// Padding adaptativo real (en 30px, V=6 no cabe bien)
+property int islandPaddingH: Math.round(8 + 4 * root.barT)  // 8..12
+property int islandPaddingV: Math.round(2 + 4 * root.barT)  // 2..6
+
+// Layout / opacity (ligeramente más “snap” para no sentirse lento)
+property int islandExpandAnimMs: 240
+property int islandFadeAnimMs: 170
+
+// Pulso al cambiar lyric line
+property bool islandPulseOnLyricChange: true
+property int  islandPulseAnimMs: 220
+property real islandPulseScale: 1.000
+
+// Bordes + límites (4px en 30 se ve gordo y roba alto útil)
+property int islandBorderWidthCollapsed: Math.round(2 + 2 * root.barT) // 2..4
+property int islandBorderWidthExpanded:  Math.round(2 + 2 * root.barT) // 2..4
+property int islandMaxWidth: 780
 
     // =====================================================
     // 1.2) EFECTOS VISUALES (toggles)
@@ -500,18 +512,27 @@ Item {
         return Math.min(w, root.islandMaxWidth)
     }
 
-    readonly property int targetIslandHeight: {
-        if (!root.hasMedia) return 0
-        var minSafeH = (_bootRefresh < 6) ? 34 : 24
-        var expandedH = Math.max(minSafeH, Math.floor(barHeightLimit))
-        var collapsedH = Math.max(minSafeH, Math.floor(root.islandCollapsedHeight))
+  readonly property int targetIslandHeight: {
+    if (!root.hasMedia) return 0
 
-        var desired = (!root.islandEnabled)
-            ? expandedH
-            : (root.islandExpanded ? expandedH : collapsedH)
+    // Nunca permitas un mínimo mayor que la barra real
+    var hLimit = Math.max(24, Math.floor(root.barHeightLimit))
+    var minSafeH = Math.min(24, hLimit)   // <= 24, pero si la barra es 24 también encaja
 
-        return Math.max(minSafeH, Math.min(desired, barHeightLimit))
-    }
+    var expandedH  = Math.max(minSafeH, hLimit)
+
+    // Colapsado clamped para tu rango 30..50, pero sin pasarse del límite real
+    var collapsedH = Math.max(minSafeH, Math.floor(root.islandCollapsedHeight))
+    collapsedH = Math.min(collapsedH, hLimit)
+
+    var desired = (!root.islandEnabled)
+        ? expandedH
+        : (root.islandExpanded ? expandedH : collapsedH)
+
+    // Clamp final: JAMÁS más alto que la barra
+    return Math.max(minSafeH, Math.min(desired, hLimit))
+}
+
 
 
     // =====================================================
@@ -604,57 +625,60 @@ Item {
         }
     }
 
+// =====================================================
+// 12) Layout / Visibilidad  (FINAL: nudge adaptativo + minHeight limpio)
+// =====================================================
+property int _layoutNudgePx: 0
 
-    // =====================================================
-    // 12) Layout / Visibilidad
-    // =====================================================
-    property int _layoutNudgePx: 0
+Timer {
+    id: layoutNudgeTimer
+    interval: 200
+    repeat: true
+    running: true
+    triggeredOnStart: true
+    property int checks: 0
+    onTriggered: {
+        checks++
 
-    Timer {
-        id: layoutNudgeTimer
-        interval: 200
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        property int checks: 0
-        onTriggered: {
-            checks++
-            if (root.height < 40 && root.hasMedia) {
-                root._layoutNudgePx = (root._layoutNudgePx === 0 ? 1 : 0)
-                if (root.parent && typeof root.parent.forceLayout === "function")
-                    root.parent.forceLayout()
-            } else {
-                if (checks > 10) running = false
-            }
+        // Umbral adaptativo: si la altura real está por debajo de lo que debería,
+        // empuja relayout. Funciona bien en 30..50.
+        var needH = Math.max(1, root.targetIslandHeight)
+        if (root.height < (needH - 1) && root.hasMedia) {
+            root._layoutNudgePx = (root._layoutNudgePx === 0 ? 1 : 0)
+            if (root.parent && typeof root.parent.forceLayout === "function")
+                root.parent.forceLayout()
+        } else {
+            if (checks > 10) running = false
         }
     }
+}
 
-    Layout.alignment: Qt.AlignVCenter
-    Layout.fillHeight: false
-    Layout.fillWidth: false
+Layout.alignment: Qt.AlignVCenter
+Layout.fillHeight: false
+Layout.fillWidth: false
 
-    readonly property int _hardMinH: 42
-    Layout.minimumHeight: Math.max(_hardMinH, root.targetIslandHeight)
-    Layout.preferredHeight: Math.max(_hardMinH, root.targetIslandHeight)
-    Layout.minimumWidth: root.targetIslandWidth
-    Layout.preferredWidth: root.targetIslandWidth
+Layout.minimumHeight: root.targetIslandHeight
+Layout.preferredHeight: root.targetIslandHeight
 
-    implicitWidth: root.targetIslandWidth
-    implicitHeight: Math.max(_hardMinH, root.targetIslandHeight)
+Layout.minimumWidth: root.targetIslandWidth
+Layout.preferredWidth: root.targetIslandWidth
 
-    clip: false
-    visible: root.hasMedia && (root.targetIslandWidth > 10)
-    opacity: root.hasMedia ? 1 : 0
+implicitWidth: root.targetIslandWidth
+implicitHeight: root.targetIslandHeight
 
-    Behavior on implicitWidth {
-        enabled: root.animLayoutTransitions && root.animEnabled
-        NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
-    }
-    Behavior on implicitHeight { enabled: false }
-    Behavior on opacity {
-        enabled: root.animLayoutTransitions && root.animEnabled
-        NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
-    }
+clip: true
+visible: root.hasMedia && (root.targetIslandWidth > 10)
+opacity: root.hasMedia ? 1 : 0
+
+Behavior on implicitWidth {
+    enabled: root.animLayoutTransitions && root.animEnabled
+    NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
+}
+Behavior on implicitHeight { enabled: false }
+Behavior on opacity {
+    enabled: root.animLayoutTransitions && root.animEnabled
+    NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
+}
 
 
     // =====================================================
@@ -688,14 +712,15 @@ Item {
             border.color: Qt.rgba(1, 1, 1, root.islandExpanded ? 0.13 : 0.11)
         }
 
-        layer.enabled: root.fxDropShadows
-        layer.effect: DropShadow {
-            horizontalOffset: 0
-            verticalOffset: 1
-            radius: root.islandExpanded ? 12 : 10
-            samples: 18
-            color: Qt.rgba(0, 0, 0, root.islandExpanded ? 0.34 : 0.30)
-        }
+      layer.enabled: root.fxDropShadows
+layer.effect: DropShadow {
+    horizontalOffset: 0
+    verticalOffset: (root.barHeightLimit <= 32) ? 0 : 1
+    radius: (root.barHeightLimit <= 32) ? 6 : 10
+    samples: (root.barHeightLimit <= 32) ? 12 : 18
+    color: Qt.rgba(0, 0, 0, root.islandExpanded ? 0.34 : 0.30)
+}
+
 
         HoverHandler {
             id: islandHover
@@ -823,201 +848,212 @@ Item {
                 }
             ]
 
-            // ---------------------------------------------
-            // 15.1) Vista COLAPSADA
-            // ---------------------------------------------
-            Item {
-                id: collapsedView
+             // ---------------------------------------------
+        // 15.1) Vista COLAPSADA (FIX: Portada siempre visible)
+        // ---------------------------------------------
+        Item {
+            id: collapsedView
+            anchors.fill: parent
+            opacity: 1
+            visible: opacity > 0.01
+            clip: true
+
+            // Propiedades de tamaño adaptativo
+            readonly property int _contentH: Math.max(1, height - (root.islandPaddingV * 2))
+            readonly property int _bongoH: Math.max(16, Math.min(30, _contentH))
+            readonly property int _bongoW: Math.round(_bongoH * 1.35)
+            readonly property int _coverSlot: Math.max(18, Math.min(28, _contentH))
+            readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 24))
+            readonly property int _dotSize: Math.max(6, Math.min(8, Math.round(_contentH * 0.28)))
+
+            RowLayout {
                 anchors.fill: parent
-                opacity: 1
-                visible: opacity > 0.01
-                clip: true
+                anchors.leftMargin: root.islandPaddingH
+                anchors.rightMargin: root.islandPaddingH
+                anchors.topMargin: root.islandPaddingV
+                anchors.bottomMargin: root.islandPaddingV
+                spacing: Math.round(6 + 4 * root.barT) // Espaciado dinámico 6..10
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: root.islandPaddingH
-                    anchors.rightMargin: root.islandPaddingH
-                    anchors.topMargin: root.islandPaddingV
-                    anchors.bottomMargin: root.islandPaddingV
-                    spacing: 10
+                // 1) Bongo Cat con tamaño mínimo forzado
+                BongoCat {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: collapsedView._bongoW
+                    Layout.preferredHeight: collapsedView._bongoH
+                    Layout.minimumWidth: collapsedView._bongoW  // <--- CRÍTICO
+                    Layout.minimumHeight: collapsedView._bongoH
+                    
+                    visible: root.hasMedia
+                    animate: root.animEnabled && root.isPlaying
+                    gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
+                    isVertical: root.barIsVertical
+                }
 
-                    BongoCat {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: Math.round(30 * 1.35)
-                        visible: root.hasMedia
-                        animate: root.animEnabled && root.isPlaying
-                        gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
-                        isVertical: root.barIsVertical
+                // 2) Slot de la Portada con tamaño mínimo forzado
+                Item {
+                    id: coverSlotSmall
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: collapsedView._coverSlot
+                    Layout.preferredHeight: collapsedView._coverSlot
+                    Layout.minimumWidth: collapsedView._coverSlot   // <--- CRÍTICO
+                    Layout.minimumHeight: collapsedView._coverSlot
+
+                    Item {
+                        id: coverCircleSmall
+                        anchors.centerIn: parent
+                        width: collapsedView._coverCircle
+                        height: collapsedView._coverCircle
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            color: Qt.rgba(1, 1, 1, 0.06)
+                            border.width: 1
+                            border.color: Qt.rgba(1, 1, 1, 0.10)
+                            antialiasing: true
+                        }
+
+                        Image {
+                            id: coverImgSmall
+                            anchors.fill: parent
+                            // Forzamos string vacío si no hay art para evitar errores de carga
+                            source: (root.trackArt && root.trackArt.length > 0) ? root.trackArt : ""
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                            asynchronous: true
+                            cache: true
+                            // Si la imagen no está lista, no la mostramos (se verá el icono)
+                            visible: (status === Image.Ready)
+
+                            layer.enabled: root.fxCoverMaskCircle
+                            layer.effect: OpacityMask {
+                                maskSource: Rectangle {
+                                    width: coverCircleSmall.width
+                                    height: coverCircleSmall.height
+                                    radius: width / 2
+                                    color: "black"
+                                    antialiasing: true
+                                }
+                            }
+                        }
+
+                        // Icono de repuesto si la portada falla o carga
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: root.isPlaying ? "pause" : "play_arrow"
+                            fill: 1
+                            iconSize: Math.max(12, Math.round(coverCircleSmall.width * 0.65))
+                            color: Qt.rgba(1, 1, 1, 0.80)
+                            visible: (coverImgSmall.status !== Image.Ready)
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            color: "transparent"
+                            border.width: 1
+                            border.color: Qt.rgba(
+                                Appearance.m3colors.m3primary.r,
+                                Appearance.m3colors.m3primary.g,
+                                Appearance.m3colors.m3primary.b,
+                                root.isPlaying ? 0.65 : 0.40
+                            )
+                            antialiasing: true
+                        }
+                    }
+                }
+
+                // 3) Textos (este sí puede reducirse)
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 0
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: root.trackArtist.length ? root.trackArtist
+                             : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
+                        color: Appearance.colors.colOnLayer1
+                        font.pixelSize: Appearance.font.pixelSize.smallie + 1
+                        font.bold: true
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                        opacity: 0.98
                     }
 
                     Item {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
+                        id: collapsedLyricViewport
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.max(12, Math.min(14, Math.round(collapsedView._contentH * 0.45)))
+                        clip: true
+                        visible: root.hasMedia
+
+                        readonly property string lineText: root.hasSyncedLines
+                            ? root.currentLyricText
+                            : (root.trackTitle.length ? root.trackTitle : "")
+
+                        TextMetrics {
+                            id: collapsedLyricMetrics
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            text: collapsedLyricViewport.lineText
+                        }
+
+                        readonly property int textW: Math.round(collapsedLyricMetrics.width)
+                        readonly property int delta: Math.max(0, textW - collapsedLyricViewport.width)
+                        readonly property bool shouldScroll: root.animEnabled && root.animMarquee && delta > 2
 
                         Item {
-                            id: coverCircleSmall
-                            anchors.centerIn: parent
-                            width: 28
-                            height: 28
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: width / 2
-                                color: Qt.rgba(1, 1, 1, 0.06)
-                                border.width: 1
-                                border.color: Qt.rgba(1, 1, 1, 0.10)
-                            }
-
-                            Image {
-                                id: coverImgSmall
-                                anchors.fill: parent
-                                source: root.trackArt
-                                fillMode: Image.PreserveAspectCrop
-                                smooth: true
-                                asynchronous: true
-                                cache: true
-                                visible: (status === Image.Ready)
-
-                                layer.enabled: root.fxCoverMaskCircle
-                                layer.effect: OpacityMask {
-                                    maskSource: Rectangle {
-                                        width: coverCircleSmall.width
-                                        height: coverCircleSmall.height
-                                        radius: width / 2
-                                        color: "black"
-                                    }
-                                }
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: root.isPlaying ? "pause" : "play_arrow"
-                                fill: 1
-                                iconSize: 16
-                                color: Qt.rgba(1, 1, 1, 0.80)
-                                visible: (coverImgSmall.status !== Image.Ready)
-                            }
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: width / 2
-                                color: "transparent"
-                                border.width: 1
-                                border.color: Qt.rgba(
-                                    Appearance.m3colors.m3primary.r,
-                                    Appearance.m3colors.m3primary.g,
-                                    Appearance.m3colors.m3primary.b,
-                                    root.isPlaying ? 0.65 : 0.40
-                                )
-                            }
+                            id: collapsedStrip
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: parent.height
+                            x: 0
+                            width: Math.max(parent.width, collapsedLyricViewport.textW)
+                            function reset() { x = 0 }
                         }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 1
 
                         StyledText {
-                            Layout.fillWidth: true
-                            text: root.trackArtist.length ? root.trackArtist
-                                 : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
-                            color: Appearance.colors.colOnLayer1
-                            font.pixelSize: Appearance.font.pixelSize.smallie + 1
-                            font.bold: true
-                            elide: Text.ElideRight
-                            wrapMode: Text.NoWrap
-                            maximumLineCount: 1
-                            opacity: 0.98
+                            parent: collapsedStrip
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: collapsedLyricViewport.lineText
+                            color: Qt.rgba(1, 1, 1, 0.75)
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            elide: Text.ElideNone
                         }
 
-                        Item {
-                            id: collapsedLyricViewport
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(14, Appearance.font.pixelSize.smaller + 2)
-                            clip: true
-
-                            readonly property string lineText: root.hasSyncedLines
-                                ? root.currentLyricText
-                                : (root.trackTitle.length ? root.trackTitle : "")
-
-                            TextMetrics {
-                                id: collapsedLyricMetrics
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.bold: false
-                                text: collapsedLyricViewport.lineText
+                        SequentialAnimation {
+                            running: collapsedLyricViewport.shouldScroll && collapsedView.visible
+                            loops: Animation.Infinite
+                            onRunningChanged: collapsedStrip.reset()
+                            PauseAnimation { duration: 1000 }
+                            NumberAnimation {
+                                target: collapsedStrip; property: "x"
+                                from: 0; to: -collapsedLyricViewport.delta
+                                duration: Math.max(2000, collapsedLyricViewport.textW * 20)
+                                easing.type: Easing.Linear
                             }
-
-                            readonly property int textW: Math.round(collapsedLyricMetrics.width)
-                            readonly property int delta: Math.max(0, textW - collapsedLyricViewport.width)
-                            readonly property bool shouldScroll: root.animEnabled
-                                && root.animMarquee
-                                && collapsedLyricViewport.delta > 2
-                                && collapsedLyricViewport.visible
-
-                            Item {
-                                id: collapsedStrip
-                                anchors.verticalCenter: parent.verticalCenter
-                                height: parent.height
-                                x: 0
-                                width: Math.max(parent.width, collapsedLyricViewport.textW)
-                                function reset() { x = 0 }
-                            }
-
-                            StyledText {
-                                parent: collapsedStrip
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: collapsedLyricViewport.lineText
-                                color: Qt.rgba(1, 1, 1, 0.82)
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.bold: false
-                                elide: Text.ElideNone
-                                wrapMode: Text.NoWrap
-                            }
-
-                            SequentialAnimation {
-                                id: collapsedLyricMarquee
-                                running: collapsedLyricViewport.shouldScroll
-                                loops: Animation.Infinite
-                                onRunningChanged: collapsedStrip.reset()
-
-                                PauseAnimation { duration: 850 }
-                                NumberAnimation {
-                                    target: collapsedStrip
-                                    property: "x"
-                                    from: 0
-                                    to: -collapsedLyricViewport.delta
-                                    duration: Math.max(2000, collapsedLyricViewport.textW * 20)
-                                    easing.type: Easing.Linear
-                                }
-                                PauseAnimation { duration: 650 }
-                                PropertyAction { target: collapsedStrip; property: "x"; value: 0 }
-                            }
-
-                            Connections {
-                                target: root
-                                function onCurrentLyricTextChanged() { collapsedStrip.reset() }
-                            }
-                            onWidthChanged: collapsedStrip.reset()
+                            PauseAnimation { duration: 800 }
+                            PropertyAction { target: collapsedStrip; property: "x"; value: 0 }
                         }
-                    }
-
-                    Rectangle {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 8
-                        Layout.preferredHeight: 8
-                        radius: 4
-                        color: Qt.rgba(
-                            Appearance.m3colors.m3primary.r,
-                            Appearance.m3colors.m3primary.g,
-                            Appearance.m3colors.m3primary.b,
-                            root.isPlaying ? 0.85 : 0.25
-                        )
                     }
                 }
+
+                // 4) Indicador de estado (Dot)
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: collapsedView._dotSize
+                    Layout.preferredHeight: collapsedView._dotSize
+                    Layout.minimumWidth: collapsedView._dotSize
+                    radius: width / 2
+                    color: Qt.rgba(
+                        Appearance.m3colors.m3primary.r,
+                        Appearance.m3colors.m3primary.g,
+                        Appearance.m3colors.m3primary.b,
+                        root.isPlaying ? 0.85 : 0.25
+                    )
+                    antialiasing: true
+                }
             }
+        }
+
 
 
             // ---------------------------------------------

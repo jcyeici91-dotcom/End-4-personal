@@ -5,31 +5,61 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.modules.ii.bar.weather
-
 import qs.modules.ii.verticalBar as Vertical
 
 Item {
     id: rootItem
 
-    property int barSection // 0: left, 1: center, 2: right
-    property var list
-    required property var modelData
+    // =========================================================
+    // 1) API / Props (contrato externo)
+    // =========================================================
+    // barSection: 0 = left, 1 = center, 2 = right
+    property int barSection: 0
+    property var list: []                // lista del layout actual (puede venir undefined)
+    required property var modelData      // debe tener modelData.id
     required property int index
-    property var originalIndex: index
+    property int originalIndex: index    // estable para operar sobre Config.layouts
     property bool vertical: false
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
 
+    // Helpers de sección (legibilidad)
+    readonly property bool isLeft: barSection === 0
+    readonly property bool isCenter: barSection === 1
+    readonly property bool isRight: barSection === 2
+
+    // Lista segura (evita crashes si list es null)
+    readonly property var safeList: (Array.isArray(list) ? list : [])
+
+    // =========================================================
+    // 2) Visibilidad: toggle y persistencia en Config
+    // =========================================================
     function toggleVisible(visibility) {
-        visible = visibility
-        if (barSection == 0) Config.options.bar.layouts.left[originalIndex].visible = visibility
-        else if (barSection == 1) Config.options.bar.layouts.center[originalIndex].visible = visibility
-        else if (barSection == 2) Config.options.bar.layouts.right[originalIndex].visible = visibility
+        rootItem.visible = visibility
+
+        // Proteger contra layouts inexistentes / índices fuera de rango
+        const layouts = Config?.options?.bar?.layouts
+        if (!layouts) return
+
+        let arr = null
+        if (rootItem.isLeft) arr = layouts.left
+        else if (rootItem.isCenter) arr = layouts.center
+        else if (rootItem.isRight) arr = layouts.right
+
+        if (!arr || rootItem.originalIndex < 0 || rootItem.originalIndex >= arr.length) return
+        if (!arr[rootItem.originalIndex]) return
+
+        arr[rootItem.originalIndex].visible = visibility
     }
 
-    property var compMap: ({ // [horizontal, vertical]
-        "workspaces": [workspaceComp,workspaceComp],
+    // =========================================================
+    // 3) Mapa de componentes por id (horizontal/vertical)
+    // =========================================================
+    // Nota: se mantiene el mismo mapping que tu archivo original.
+    property var compMap: ({
+        // [horizontal, vertical]
+        "workspaces": [workspaceComp, workspaceComp],
         "music_player": [musicPlayerComp, musicPlayerCompVert],
         "system_monitor": [systemMonitorComp, systemMonitorCompVert],
         "clock": [clockComp, clockCompVert],
@@ -46,62 +76,118 @@ Item {
         "right_sidebar_button": [rightSidebarButtonComp, rightSidebarButtonCompVert]
     })
 
-    
+    // =========================================================
+    // 4) Radios: cálculo robusto (no rompe si list está vacía)
+    // =========================================================
+    function anyVisibleBefore(i) {
+        // items "visibles" si visible !== false (igual que tu lógica)
+        return rootItem.safeList.slice(0, i).some(item => item && item.visible !== false)
+    }
+
+    function anyVisibleAfter(i) {
+        return rootItem.safeList.slice(i + 1).some(item => item && item.visible !== false)
+    }
+
     property real startRadius: {
-        if (barSection === 0) {
-            if (originalIndex == 0) return Appearance.rounding.full
-            return Appearance.rounding.verysmall
-        } else if (barSection === 2) {
-            let hasVisibleLeft = list.slice(0, originalIndex).some(item => item.visible !== false)
-            return hasVisibleLeft ? Appearance.rounding.verysmall : Appearance.rounding.full
-        } else { // barSection 1 
-            if (list.length === 1) return Appearance.rounding.full
-            let hasVisibleLeft = list.slice(0, originalIndex).some(item => item.visible !== false)
-            return hasVisibleLeft ? Appearance.rounding.verysmall : Appearance.rounding.full
+        // LEFT: el primero es full, lo demás verysmall
+        if (rootItem.isLeft) {
+            return (rootItem.originalIndex === 0)
+                ? Appearance.rounding.full
+                : Appearance.rounding.verysmall
         }
+
+        // RIGHT: full si no hay visibles a la izquierda (dentro de ESTE grupo/list)
+        if (rootItem.isRight) {
+            return rootItem.anyVisibleBefore(rootItem.originalIndex)
+                ? Appearance.rounding.verysmall
+                : Appearance.rounding.full
+        }
+
+        // CENTER
+        if (rootItem.safeList.length <= 1) return Appearance.rounding.full
+        return rootItem.anyVisibleBefore(rootItem.originalIndex)
+            ? Appearance.rounding.verysmall
+            : Appearance.rounding.full
     }
 
     property real endRadius: {
-        if (barSection === 2) {
-            if (originalIndex == list.length - 1) return Appearance.rounding.full
-            return Appearance.rounding.verysmall
-        } else if (barSection === 0) {
-            let hasVisibleRight = list.slice(originalIndex + 1).some(item => item.visible !== false)
-            return hasVisibleRight ? Appearance.rounding.verysmall : Appearance.rounding.full
-        } else { // barSection 1 
-            if (list.length === 1) return Appearance.rounding.full
-            let hasVisibleRight = list.slice(originalIndex + 1).some(item => item.visible !== false)
-            return hasVisibleRight ? Appearance.rounding.verysmall : Appearance.rounding.full
+        // RIGHT: el último es full, lo demás verysmall
+        if (rootItem.isRight) {
+            return (rootItem.originalIndex === rootItem.safeList.length - 1)
+                ? Appearance.rounding.full
+                : Appearance.rounding.verysmall
         }
+
+        // LEFT: full si no hay visibles a la derecha
+        if (rootItem.isLeft) {
+            return rootItem.anyVisibleAfter(rootItem.originalIndex)
+                ? Appearance.rounding.verysmall
+                : Appearance.rounding.full
+        }
+
+        // CENTER
+        if (rootItem.safeList.length <= 1) return Appearance.rounding.full
+        return rootItem.anyVisibleAfter(rootItem.originalIndex)
+            ? Appearance.rounding.verysmall
+            : Appearance.rounding.full
     }
 
+    // =========================================================
+    // 5) UI: wrapper (BarGroup) + Loader del item real
+    // =========================================================
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
+
+        // FIX importante: antes era root.vertical (root no existe)
         anchors {
-            verticalCenter: root.vertical ? rootItem.verticalCenter : undefined
-            horizontalCenter: root.vertical ? undefined : rootItem.horizontalCenter
+            verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
+            horizontalCenter: rootItem.vertical ? undefined : rootItem.horizontalCenter
         }
-        
+
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
-        colBackground: itemLoader.item.backgroundColor ?? Appearance.colors.colLayer2
+
+        // Toma el color del item cargado si expone backgroundColor, sino fallback
+        colBackground: itemLoader.item && itemLoader.item.backgroundColor !== undefined
+            ? itemLoader.item.backgroundColor
+            : Appearance.colors.colLayer2
 
         items: Loader {
             id: itemLoader
             active: true
-            sourceComponent: compMap[modelData.id][vertical ? 1 : 0]
+
+            // Selección segura del componente:
+            // - Si modelData/id no existe o no está en compMap, usa fallback.
+            readonly property string itemId: (rootItem.modelData && rootItem.modelData.id) ? rootItem.modelData.id : ""
+            readonly property var pair: rootItem.compMap[itemId]
+            readonly property var chosen: (pair && pair.length >= 2) ? pair[rootItem.vertical ? 1 : 0] : null
+
+            sourceComponent: chosen ? chosen : unknownComp
         }
     }
 
+    // =========================================================
+    // 6) Components: definiciones (ordenadas por categorías)
+    // =========================================================
 
+    // 6.1) Fallback seguro si llega un id desconocido
+    Component {
+        id: unknownComp
+        Item {
+            // Mantener tamaño neutro para no romper layout
+            implicitWidth: 1
+            implicitHeight: 1
+        }
+    }
+
+    // 6.2) Widgets (manteniendo tus componentes exactos)
     Component { id: weatherComp; WeatherBar { vertical: rootItem.vertical } }
 
     Component { id: timerComp; TimerWidget {} }
     Component { id: timerCompVert; Vertical.VerticalTimerWidget {} }
 
     Component { id: screenshareIndicatorComp; ScreenShareIndicator {} }
-
     Component { id: recordIndicatorComp; RecordIndicator { vertical: rootItem.vertical } }
 
     Component { id: activeWindowComp; ActiveWindow { vertical: rootItem.vertical } }
@@ -109,16 +195,16 @@ Item {
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
 
-    Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
     Component { id: musicPlayerComp; Media {} }
+    Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
 
     Component { id: utilityButtonsComp; UtilButtons { vertical: rootItem.vertical } }
 
     Component { id: batteryComp; BatteryIndicator {} }
     Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
 
-    Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
     Component { id: clockComp; ClockWidget {} }
+    Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
 
     Component { id: systemTrayComp; SysTray { vertical: rootItem.vertical } }
 
@@ -127,7 +213,8 @@ Item {
     Component { id: workspaceComp; Workspaces { vertical: rootItem.vertical } }
 
     Component { id: leftSidebarButtonComp; LeftSidebarButton {} }
-    
+
     Component { id: rightSidebarButtonComp; RightSidebarButton {} }
     Component { id: rightSidebarButtonCompVert; VerticalRightSidebarButton {} }
 }
+

@@ -9,9 +9,7 @@ Item {
     id: root
     visible: false
 
-    // ---------------------------
     // Inputs
-    // ---------------------------
     property bool enabled: false
     property string title: ""
     property string artist: ""
@@ -23,40 +21,25 @@ Item {
     // If user selected an exact result id
     property int selectedId: 0
 
-    // Manual correction: positive => lyrics later, negative => earlier
     property int manualOffsetMs: 0
-
-    // ---------------------------
-    // PRO Sync options
-    // ---------------------------
+// sincronizacon
     property bool adaptiveSync: true
     property int adaptiveMaxAbsMs: 2500
     property real adaptiveAlpha: 0.12
     property int autoOffsetMs: 0
 
     property bool smoothPosition: true
-
-    // Slack added to elapsed time allowance (ms). Higher => less clamping.
     property int smoothSlackMs: 160
-
-    // Backwards-compat (older Media.qml)
-    property int smoothWindowMs: smoothSlackMs
+      property int smoothWindowMs: smoothSlackMs
     onSmoothWindowMsChanged: smoothSlackMs = smoothWindowMs
-
-    // Safety cap if elapsed time is unknown/0 (ms)
     property int smoothMaxForwardJumpMs: 2000
 
-    // ---------------------------
-    // Matching strictness (base; attempts relax these)
-    // ---------------------------
     property real minTitleSim: 0.45
     property real minArtistSim: 0.50
     property int maxDurationDiffSec: 3
     property int minAcceptScore: 240
 
-    // ---------------------------
     // State
-    // ---------------------------
     property bool loading: false
     property string error: ""
     property bool instrumental: false
@@ -64,13 +47,8 @@ Item {
     // [{ timeMs: int, text: string }]
     property var lines: []
 
-    // Persistent cache:
-    // key = `${track}||${artist}||${durationSecRounded}`
     // value = { bestId, instrumental, lines, meta: { trackName, artistName, duration } }
     property var _cache: ({})
-
-    // Negative in-memory cache (avoid refetch loops)
-    // key -> { ts: msEpoch, reason: string }
     property var _negCache: ({})
     property int negativeCacheTtlMs: 5 * 60 * 1000
 
@@ -87,9 +65,7 @@ Item {
 
     property int _preferredId: 0
 
-    // ---------------------------
     // Normalized query
-    // ---------------------------
     readonly property string queryTitle: normalizeTitle(title)
     readonly property string queryArtist: normalizeArtist(artist)
     readonly property int queryDuration: Math.round(durationSeconds())
@@ -97,9 +73,7 @@ Item {
     readonly property string queryKey: `${queryTitle}||${queryArtist}||${queryDuration}`
     readonly property string fetchKey: `${queryKey}||${selectedId}`
 
-    // ---------------------------
     // Sync outputs
-    // ---------------------------
     readonly property int currentIndex: syncedLyricIndexForPositionMs(effectivePositionMs())
     readonly property string currentLineText: currentIndex >= 0 ? (root.lines[currentIndex]?.text ?? "") : ""
     readonly property int prevIndex: prevNonEmptyIndex(currentIndex)
@@ -115,9 +89,7 @@ Item {
         return (root.currentLineText && root.currentLineText.length > 0) ? root.currentLineText : "♪"
     }
 
-    // =========================================================
-    // Time normalization (sec/ms/us)
-    // =========================================================
+     // Time normalization (sec/ms/us)
     function looksLikeUs(x) { return x >= 100000000 } // >= 100s in µs
     function looksLikeMs(x) { return x >= 20000 }     // >= 20s in ms
 
@@ -174,9 +146,7 @@ Item {
         return ms
     }
 
-    // =========================================================
     // Normalizers (strong)
-    // =========================================================
     function normalizeTitle(rawTitle) {
         if (!rawTitle) return ""
 
@@ -268,9 +238,7 @@ Item {
         return uni > 0 ? (inter / uni) : 0
     }
 
-    // =========================================================
     // Attempt-based strictness (relax on later attempts)
-    // =========================================================
     function minTitleSimForAttempt(att) {
         if (att <= 1) return root.minTitleSim
         if (att === 2) return Math.max(0.30, root.minTitleSim - 0.10)
@@ -295,9 +263,7 @@ Item {
         return Math.max(120, root.minAcceptScore - 90)
     }
 
-    // =========================================================
     // LRC parsing (ms) + [offset:]
-    // =========================================================
     function parseSyncedLyrics(lrcText) {
         if (!lrcText)
             return { offsetMs: 0, lines: [] }
@@ -364,9 +330,7 @@ Item {
         return { offsetMs: offsetMs, lines: compact }
     }
 
-    // =========================================================
     // Indexing
-    // =========================================================
     function syncedLyricIndexForPositionMs(posMs) {
         if (!root.lines || root.lines.length === 0) return -1
         if (isNaN(posMs) || posMs < 0) posMs = 0
@@ -413,9 +377,7 @@ Item {
         return -1
     }
 
-    // =========================================================
-    // Adaptive sync (learn offset on line transitions)
-    // =========================================================
+      // Adaptive sync (learn offset on line transitions)
     function applyAdaptiveOffsetIfNeeded() {
         if (!root.adaptiveSync) return
         if (!root.lines || root.lines.length === 0) return
@@ -437,10 +399,8 @@ Item {
 
     onCurrentIndexChanged: applyAdaptiveOffsetIfNeeded()
 
-    // =========================================================
-    // Fetch strategy + cache bestId
-    // =========================================================
-    function buildLyricsSearchUrl(attempt) {
+       // Fetch strategy + cache bestId
+     function buildLyricsSearchUrl(attempt) {
         const baseSearch = "https://lrclib.net/api/search"
         const baseGet = "https://lrclib.net/api/get"
 
@@ -583,9 +543,7 @@ Item {
         return s.ok ? obj : null
     }
 
-    // =========================================================
     // Negative cache
-    // =========================================================
     function negCacheKey() {
         return `${root.queryTitle}||${root.queryArtist}||${root.queryDuration}||${root.selectedId}`
     }
@@ -605,9 +563,7 @@ Item {
         root._negCache[k] = { ts: nowEpochMs(), reason: reason || "fail" }
     }
 
-    // =========================================================
     // Lifecycle
-    // =========================================================
     function resetState() {
         root.loading = false
         root.error = ""
@@ -700,9 +656,7 @@ Item {
         onTriggered: root.ensureFetched()
     }
 
-    // =========================================================
     // Cache
-    // =========================================================
     function cacheKey(track, artist, durationSec) {
         return `${track}||${artist}||${durationSec}`
     }
@@ -740,9 +694,7 @@ Item {
         }
     }
 
-    // =========================================================
     // Reactivity
-    // =========================================================
     onFetchKeyChanged: {
         root.resetState()
 
@@ -778,9 +730,7 @@ Item {
         }
     }
 
-    // =========================================================
     // Fetcher
-    // =========================================================
     Process {
         id: fetcher
         property int requestId: 0
