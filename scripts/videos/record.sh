@@ -99,19 +99,15 @@ if pgrep wf-recorder > /dev/null; then
     updatestate false
     pkill wf-recorder &
 else
-    # --- MODO PANTALLA COMPLETA ---
     if [[ $FULLSCREEN_FLAG -eq 1 ]]; then
         notify-send "Starting recording" 'recording_'"$(getdate)"'.mp4' -a 'Recorder' & disown
         updatestate true
         if [[ $SOUND_FLAG -eq 1 ]]; then
-            # Fullscreen + Audio (Alta Calidad)
-            wf-recorder -c libx264 -p crf=18 -p preset=ultrafast -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' --audio="$(getaudiooutput)"
+            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' --audio="$(getaudiooutput)"
         else
-            # Fullscreen Sin Audio (Alta Calidad)
-            wf-recorder -c libx264 -p crf=18 -p preset=ultrafast -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' 
+            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' 
         fi
     else
-        # --- MODO REGIÓN ---
         # If a manual region was provided via --region, use it; otherwise run slurp as before.
         if [[ -n "$MANUAL_REGION" ]]; then
             region="$MANUAL_REGION"
@@ -132,12 +128,10 @@ else
         notify-send "Starting recording" 'recording_'"$(getdate)"'.mp4' -a 'Recorder' & disown
         updatestate true
         if [[ $SOUND_FLAG -eq 1 ]]; then
-            # Region + Audio (Alta Calidad)
-            wf-recorder -c libx264 -p crf=18 -p preset=ultrafast -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4'  --geometry "$geometry" --audio="$(getaudiooutput)"
+            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4'  --geometry "$geometry" --audio="$(getaudiooutput)"
         else
-            # Region Sin Audio (Alta Calidad)
-            # echo "SCRIPT DEBUG: wf-recorder ..." >> /tmp/region-record.log
-            wf-recorder -c libx264 -p crf=18 -p preset=ultrafast -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4'  --geometry "$geometry"
+            # echo "SCRIPT DEBUG: wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4'  --geometry "$geometry"" >> /tmp/region-record.log
+            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4'  --geometry "$geometry"
         fi
     fi
 fi

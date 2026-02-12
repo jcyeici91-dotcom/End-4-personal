@@ -72,6 +72,7 @@ ApiStrategy {
             },
             "generationConfig": {
                 "temperature": temperature,
+                "maxOutputTokens": 2048
             },
         };
         // print("Gemini API call payload:", JSON.stringify(baseData, null, 2));

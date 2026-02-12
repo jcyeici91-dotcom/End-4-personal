@@ -59,7 +59,8 @@ Singleton {
             property string hyprlandInstanceSignature: ""
 
             property JsonObject ai: JsonObject {
-                property string model: "gemini-2.5-flash"
+                property string provider: "google" // AI providers such as google, open router, mistral
+                property string model: "gemini-2.5-flash" // The model of the ai such as 2.5-flash
                 property real temperature: 0.5
             }
 
@@ -171,6 +172,9 @@ Singleton {
                     property int start: 0
                     property list<var> laps: []
                 }
+            }
+            property JsonObject media: JsonObject {
+                property rect popupRect: Qt.rect(0, 0, 0, 0)
             }
         }
     }

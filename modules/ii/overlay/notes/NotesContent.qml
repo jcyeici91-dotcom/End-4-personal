@@ -232,6 +232,8 @@ OverlayBackground {
         }
         spacing: 14
 
+        
+
         Loader {
             Layout.fillWidth: true
             active: Config.options.overlay.notes.showTabs
@@ -253,6 +255,24 @@ OverlayBackground {
                     }
 
                     options: root.tabOptions
+                }
+
+                MaterialSymbol {
+                    text: "info"
+                    iconSize: Appearance.font.pixelSize.large
+                    
+                    color: Appearance.colors.colSubtext
+                    MouseArea {
+                        id: infoMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.WhatsThisCursor
+                        StyledToolTip {
+                            extraVisibleCondition: false
+                            alternativeVisibleCondition: infoMouseArea.containsMouse
+                            text: Translation.tr("You can delete a tab with SHIFT+DELETE")
+                        }
+                    }
                 }
 
                 ConfigSelectionArray {

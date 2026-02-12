@@ -27,19 +27,13 @@ def image_colorfulness(image):
     colorfulness = np.sqrt(std_rg ** 2 + std_yb ** 2) + (0.3 * np.sqrt(mean_rg ** 2 + mean_yb ** 2))
     return colorfulness
 
-# --- MEJORA: LÓGICA VIBRANTE ---
+# scheme-content respects the image's colors very well, but it might
+# look too saturated, so we only use it for not very colorful images to be safe
 def pick_scheme(colorfulness):
-    # El script original usaba 'neutral' (gris) y 'tonal-spot' (pastel).
-    # Nosotros queremos VIVEZA.
-    
-    if colorfulness < 25:
-        # Si la imagen es muy oscura o gris, 'expressive' fuerza colores 
-        # acentuados vibrantes que contrastan bien.
-        return "scheme-expressive"
+    if colorfulness < 40:
+        return "scheme-neutral"
     else:
-        # Si la imagen ya tiene color (> 25), 'fruit-salad' es el esquema 
-        # más saturado y divertido de Material You.
-        return "scheme-fruit-salad"
+        return "scheme-tonal-spot"
 
 def load_and_resize_image(img_path, max_dim=128):
     img = cv2.imread(img_path)
@@ -57,22 +51,15 @@ def main():
     if '--colorfulness' in args:
         colorfulness_mode = True
         args.remove('--colorfulness')
-    
-    # Fallback por defecto si no hay argumentos
     if len(args) < 1:
-        print("scheme-expressive") # Cambiado de tonal-spot a expressive
+        print("scheme-tonal-spot")
         sys.exit(1)
-        
     img_path = args[0]
     img = load_and_resize_image(img_path)
-    
-    # Fallback si no carga la imagen
     if img is None:
-        print("scheme-expressive") # Cambiado de tonal-spot a expressive
+        print("scheme-tonal-spot")
         sys.exit(1)
-        
     colorfulness = image_colorfulness(img)
-    
     if colorfulness_mode:
         print(f"{colorfulness}")
     else:

@@ -286,18 +286,36 @@ ContentPage {
             }
         }
 
-        ConfigSpinBox {
-            enabled: !Config.options.bar.vertical
-            icon: "width_full"
-            text: Translation.tr("Custom size")
-            value: Config.options.bar.mediaPlayer.customSize
-            from: 100
-            to: 500
-            stepSize: 25
-            onValueChanged: {
-                Config.options.bar.mediaPlayer.customSize = value;
+        ConfigRow {
+            uniform: true
+
+            ConfigSpinBox {
+                enabled: !Config.options.bar.vertical && Config.options.bar.mediaPlayer.useCustomSize
+                icon: "width_full"
+                text: Translation.tr("Custom size")
+                value: Config.options.bar.mediaPlayer.customSize
+                from: 100
+                to: 500
+                stepSize: 25
+                onValueChanged: {
+                    Config.options.bar.mediaPlayer.customSize = value;
+                }
+            }
+
+            ConfigSpinBox {
+                enabled: !Config.options.bar.vertical && Config.options.bar.mediaPlayer.useCustomSize
+                icon: "width_full"
+                text: Translation.tr("Lyrics custom size")
+                value: Config.options.bar.mediaPlayer.lyrics.customSize
+                from: 100
+                to: 750
+                stepSize: 25
+                onValueChanged: {
+                    Config.options.bar.mediaPlayer.lyrics.customSize = value;
+                }
             }
         }
+        
 
         ContentSubsection {
             title: Translation.tr("Lyrics")

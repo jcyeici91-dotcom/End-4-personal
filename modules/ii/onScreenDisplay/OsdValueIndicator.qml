@@ -50,6 +50,7 @@ Item {
                 Layout.bottomMargin: valueIndicatorVerticalPadding
 
                 MaterialShapeWrappedMaterialSymbol {
+                    rotation: root.value * 360
                     anchors {
                         centerIn: parent
                         alignWhenCentered: !root.rotateIcon
@@ -79,9 +80,12 @@ Item {
                         color: Appearance.colors.colOnLayer0
                         font.pixelSize: Appearance.font.pixelSize.small
                         Layout.fillWidth: false
+                        Layout.preferredWidth: 30
+                        horizontalAlignment: Text.AlignRight
                         text: Math.round(root.value * 100)
                         animateChange: true
                         animationDistanceY: 2 // for faster animation than default
+                        
                     }
                 }
                 

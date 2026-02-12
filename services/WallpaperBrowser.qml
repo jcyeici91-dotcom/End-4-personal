@@ -11,7 +11,7 @@ import QtQuick;
  */  
 Singleton {  
     id: root  
-    property Component unsplashResponseDataComponent: BooruResponseData {}  
+    property Component unsplashResponseDataComponent: WallpaperResponseData {}  
   
     signal tagSuggestion(string query, var suggestions)  
     signal responseFinished()  
@@ -158,6 +158,17 @@ Singleton {
             "message": message  
         })]  
     }  
+
+    function addSimilarImageMessage(message, fileUrl) {  
+        responses = [...responses, root.unsplashResponseDataComponent.createObject(null, {  
+            "provider": "system",  
+            "tags": [],  
+            "page": -1,  
+            "images": [],  
+            "message": message,
+            "filePath": fileUrl
+        })]  
+    }  
   
     function constructRequestUrl(tags, limit=20, page=1, imageId="") {
         var provider = providers[currentProvider]  
@@ -223,7 +234,7 @@ Singleton {
             root.addSystemMessage(Translation.tr("'More like this picture' feature only works with wallhaven service"))
             return;
         }
-        root.addSystemMessage(Translation.tr("Searching for more images like: %1").arg(imageId))
+        // root.addSystemMessage(Translation.tr("Searching for more images like: %1").arg(imageId))
         makeRequest([], 20, page, imageId)       
     }
 
@@ -289,7 +300,7 @@ Singleton {
             "tags": tags,  
             "page": page,  
             "images": [],  
-            "message": ""  
+            "message": ""
         })  
   
         var xhr = new XMLHttpRequest()  

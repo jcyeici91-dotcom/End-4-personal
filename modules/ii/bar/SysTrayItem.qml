@@ -18,6 +18,7 @@ MouseArea {
 
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
+    cursorShape: Qt.PointingHandCursor
     implicitWidth: 20
     implicitHeight: 20
     onPressed: (event) => {

@@ -1,18 +1,9 @@
 #!/usr/bin/env bash
 
-# Validación de argumentos
 if [[ -z "$1" ]]; then
     echo "Usage: $0 <target_locale> [model]"
     exit 1
 fi
-
-# Verificación de dependencias necesarias
-for dep in jq curl secret-tool notify-send; do
-    if ! command -v "$dep" &> /dev/null; then
-        echo "Error: Falta la dependencia '$dep'. Instálala para continuar."
-        exit 1
-    fi
-done
 
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,89 +15,51 @@ TRANSLATIONS_TARGET_DIR="${SHELL_CONFIG_DIR}/translations"
 SOURCE_LOCALE="en_US"
 NOTIFICATION_APP_NAME="Shell"
 TARGET_LOCALE="$1"
-MODEL="${2:-${GEMINI_MODEL:-gemini-2.0-flash}}" # Actualizado a un modelo más reciente/rápido por defecto si quieres
+MODEL="${2:-${GEMINI_MODEL:-gemini-2.5-flash}}"
 
 # Update the source keys for translation
-if [ -f "${TRANSLATIONS_DIR}/tools/manage-translations.sh" ]; then
-    "${TRANSLATIONS_DIR}/tools/manage-translations.sh" update -l "$SOURCE_LOCALE" --yes
-else
-    echo "Warning: script manage-translations.sh not found, skipping update."
-fi
+"${TRANSLATIONS_DIR}/tools/manage-translations.sh" update -l "$SOURCE_LOCALE" --yes
 mkdir -p "$TRANSLATIONS_TARGET_DIR"
 
-# Obtener API Key de forma segura
-API_KEY=$(secret-tool lookup 'application' 'illogical-impulse' | jq -r '.apiKeys.gemini // empty')
-
-if [[ -z "$API_KEY" ]]; then
-    notify-send "Translation Failed" "No Gemini API key found in secret-tool." -u critical -a "$NOTIFICATION_APP_NAME"
-    echo "Error: API Key not found."
-    exit 1
-fi
-
-# Notify start
-notify-send "Translation started" "Translating to $TARGET_LOCALE using $MODEL..." -a "$NOTIFICATION_APP_NAME"
-
 # Construct the prompt string
-# Mejoramos el prompt para forzar JSON puro sin Markdown
-instruction='You are a UI translator for a Linux desktop shell. 
-Task: Translate the values of the provided JSON to '"$TARGET_LOCALE"'. 
-Rules:
-1. Keep the same JSON structure and keys.
-2. Be concise (save screen space).
-3. Use relevant terminology (e.g. "discharging" -> battery status).
-4. OUTPUT ONLY RAW JSON. Do NOT use markdown code blocks (```json).'
-
+instruction='You are to translate the user interface of a **desktop shell**. Given a JSON object of key-value pairs, return a JSON with the same structure, with keys unchanged and values translated to '"$TARGET_LOCALE"'. Be as **concise** as possible to save screen space, and make sure terminology is relevant (e.g. "discharging" refers to the battery status).'
 content=$(cat "${TRANSLATIONS_DIR}/en_US.json")
-# Construcción segura del JSON del prompt
-prompt_json=$(jq -n --arg inst "$instruction" --arg cont "$content" '$inst + "\n\n" + $cont')
+prompt_json=$(jq -n --arg prompt_text "$instruction" --arg content "$content" '$prompt_text + "\n```\n" + $content + "\n```\n"')
 
-# Payload
+# Prepare request data using jq
 payload=$(jq -n \
     --arg prompt "$prompt_json" \
+    --arg temperature "0" \
     --arg model "$MODEL" \
     '{
-        contents: [{ parts: [{ text: $prompt }] }],
+        contents: [{
+            parts: [
+                {text: $prompt}
+            ]
+        }],
         generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json"
+            temperature: ($temperature | tonumber),
+            "responseMimeType": "application/json",
         }
     }'
 )
+# echo "$payload" | jq
 
-# Realizar la petición (Capturando código HTTP)
-response=$(curl -s -w "\n%{http_code}" "[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){MODEL}:generateContent?key=${API_KEY}" \
-    -H 'Content-Type: application/json' \
-    -X POST \
-    -d "$payload")
+# Get API key
+API_KEY=$(secret-tool lookup 'application' 'illogical-impulse' | jq -r '.apiKeys.gemini')
 
-# Separar cuerpo y código de estado
-http_body=$(echo "$response" | sed '$d')
-http_status=$(echo "$response" | tail -n1)
+# Notify start
+notify-send "Translation started" "Will take 2 minutes, and you'll be notified when it's done, so feel free to do something else in the meantime." -a "$NOTIFICATION_APP_NAME"
 
-if [[ "$http_status" != "200" ]]; then
-    error_msg=$(echo "$http_body" | jq -r '.error.message // "Unknown error"')
-    notify-send "Translation Error ($http_status)" "$error_msg" -u critical -a "$NOTIFICATION_APP_NAME"
-    echo "API Error: $http_body"
-    exit 1
-fi
+# Make the request
+response=$(curl "https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent" \
+-H "x-goog-api-key: $API_KEY" \
+-H 'Content-Type: application/json' \
+-X POST \
+-d "$payload" 2> /dev/null)
+# echo "$response" | jq
 
-# Extraer y Limpiar el texto
-generated_text=$(echo "$http_body" | jq -r '.candidates[0].content.parts[0].text')
-
-# Limpieza extra: A veces la API ignora la instrucción y manda Markdown ```json
-cleaned_json=$(echo "$generated_text" | sed 's/^```json//g; s/^```//g; s/```$//g')
-
-# Validar que sea JSON válido antes de guardar
-if echo "$cleaned_json" | jq empty > /dev/null 2>&1; then
-    echo "$cleaned_json" > "${TRANSLATIONS_TARGET_DIR}/${TARGET_LOCALE}.json"
-    
-    # Actualizar config solo si todo salió bien
-    jq --arg locale "$TARGET_LOCALE" '.language.ui = $locale' "$SHELL_CONFIG_FILE" > "${SHELL_CONFIG_FILE}.tmp" && mv "${SHELL_CONFIG_FILE}.tmp" "$SHELL_CONFIG_FILE"
-    
-    notify-send "Translation complete" "Saved to ${TRANSLATIONS_TARGET_DIR}/${TARGET_LOCALE}.json" -a "$NOTIFICATION_APP_NAME"
-else
-    notify-send "Translation Failed" "Received invalid JSON from API." -u critical -a "$NOTIFICATION_APP_NAME"
-    echo "Error: Invalid JSON received:"
-    echo "$cleaned_json"
-    exit 1
-fi
+# Write the result
+echo "$response" | jq -r '.candidates[0].content.parts[0].text' > "${TRANSLATIONS_TARGET_DIR}/${TARGET_LOCALE}.json"
+jq --arg locale "$TARGET_LOCALE" '.language.ui = $locale' "$SHELL_CONFIG_FILE" > "${SHELL_CONFIG_FILE}.tmp" && mv "${SHELL_CONFIG_FILE}.tmp" "$SHELL_CONFIG_FILE"
+notify-send "Translation complete" "Enjoy! In case you wanna refine it, the file is in ${TRANSLATIONS_TARGET_DIR}/${TARGET_LOCALE}.json" -a "$NOTIFICATION_APP_NAME"

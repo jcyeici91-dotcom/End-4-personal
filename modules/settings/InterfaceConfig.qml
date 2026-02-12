@@ -30,6 +30,19 @@ ContentPage {
         } 
     }
 
+    ContentSection {
+        icon: "keyboard"
+        title: Translation.tr("AI")
+
+        ConfigSwitch {
+            buttonIcon: "buttons_alt"
+            text: Translation.tr("Show provider and model buttons")
+            checked: Config.options.sidebar.ai.showProviderAndModelButtons
+            onCheckedChanged: {
+                Config.options.sidebar.ai.showProviderAndModelButtons = checked;
+            }
+        }
+    }
 
     ContentSection {
         icon: "keyboard"
@@ -564,6 +577,41 @@ ContentPage {
             }
             StyledToolTip {
                 text: Translation.tr("When enabled keeps the content of the right sidebar loaded to reduce the delay when opening,\nat the cost of around 15MB of consistent RAM usage. Delay significance depends on your system's performance.\nUsing a custom kernel like linux-cachyos might help")
+            }
+        }
+
+        ConfigRow {
+            ContentSubsection {
+                title: Translation.tr("Sidebars position")
+
+                ConfigSelectionArray {
+                    currentValue: Config.options.sidebar.position
+                    onSelected: newValue => {
+                        Config.options.sidebar.position = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Default"),
+                            icon: "side_navigation",
+                            value: "default"
+                        },
+                        {
+                            displayName: Translation.tr("Inverted"),
+                            icon: "swap_horiz",
+                            value: "inverted"
+                        },
+                        {
+                            displayName: Translation.tr("Left"),
+                            icon: "align_horizontal_left",
+                            value: "left"
+                        },
+                        {
+                            displayName: Translation.tr("Right"),
+                            icon: "align_horizontal_right",
+                            value: "right"
+                        }
+                    ]
+                }
             }
         }
 

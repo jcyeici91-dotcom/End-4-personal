@@ -92,18 +92,15 @@ Singleton {
                 property string systemPrompt: "## Style\n- Use casual tone, don't be formal! Make sure you answer precisely without hallucination and prefer bullet points over walls of text. You can have a friendly greeting at the beginning of the conversation, but don't repeat the user's question\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with h2 headers and a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for the user's use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n"
                 property string tool: "functions" // search, functions, or none
                 property list<var> extraModels: [
-                    {
-                        "api_format": "openai", // Most of the time you want "openai". Use "gemini" for Google's models
-                        "description": "This is a custom model. Edit the config to add more! | Anyway, this is DeepSeek R1 Distill LLaMA 70B",
-                        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-                        "homepage": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b:free", // Not mandatory
-                        "icon": "spark-symbolic", // Not mandatory
-                        "key_get_link": "https://openrouter.ai/settings/keys", // Not mandatory
-                        "key_id": "openrouter",
-                        "model": "deepseek/deepseek-r1-distill-llama-70b:free",
-                        "name": "Custom: DS R1 Dstl. LLaMA 70B",
-                        "requires_key": true
-                    }
+                    //Needed entries in the object: title, value, modelProvider (only for openrouter)
+                    {"openrouter": [
+                        {title: "Gemini 2.5 Flash", value: "gemini-2.5-flash", modelProvider: "google"},
+                    ]},
+                    {"google": [
+                    ]},
+                    {"mistral": [
+                        
+                    ]},
                 ]
             }
 
@@ -178,6 +175,7 @@ Singleton {
                         property string styleLocked: "cookie"  // Options: "cookie", "digital"
                         property JsonObject cookie: JsonObject {
                             property bool aiStyling: false
+                            property string aiStylingModel: "gemini" // Options "gemini", "openrouter"
                             property int sides: 14
                             property string backgroundStyle: "cookie"     // Options: "cookie", "sine", "shape" 
                             property string backgroundShape: "Arch"  // Options: MaterialShape.Shape enum values as string
@@ -274,9 +272,10 @@ Singleton {
                 
                 property JsonObject mediaPlayer: JsonObject {
                     property bool useCustomSize: false
-                    property int customSize: 300
+                    property int customSize: 250
                     property JsonObject lyrics: JsonObject {
                         property bool enable: true
+                        property int customSize: 400
                         property string style: "scrolling" // Options: "static", "scrolling"
                         property bool showLoadingIndicator: true
                         property bool useGradientMask: true
@@ -318,6 +317,7 @@ Singleton {
                     property list<var> workspaceMap: [0, 10] 
                     property int maxWindowCount: 5 // Maximum windows to show in one workspace
                     property bool useNerdFont: false
+                    property int activeIndicatorOpacity: 100 // 0-100
                 }
                 property JsonObject weather: JsonObject {
                     property bool enable: false
@@ -345,7 +345,7 @@ Singleton {
                         { id: "utility_buttons", icon: "build", title: "Utility buttons" }
                     ]
                     property list<var> left: [
-                        { id: "left_sidebar_button", icon: "star", title: "Left sidebar button" },
+                        { id: "policies_panel_button", icon: "star", title: "Policies panel button" },
                         { id: "active_window", icon: "label", title: "Active window" }
                     ]
                     property list<var> center: [
@@ -356,7 +356,7 @@ Singleton {
                     property list<var> right: [
                         { id: "clock", icon: "nest_clock_farsight_analog", title: "Clock" }, 
                         { id: "system_tray", icon: "system_update_alt", title: "System tray" },
-                        { id: "right_sidebar_button", icon: "notifications", title: "Right sidebar button" }
+                        { id: "dashboard_panel_button", icon: "notifications", title: "Dashboard panel button" }
                     ]
 
                 }
@@ -585,6 +585,11 @@ Singleton {
                 property bool filterPassive: true
             }
 
+            property JsonObject update: JsonObject {
+                property string scriptPath: ""
+                property string scriptFlags: "--no-backup --no-confirm"
+            }
+
             property JsonObject musicRecognition: JsonObject {
                 property int timeout: 16
                 property int interval: 4
@@ -615,6 +620,7 @@ Singleton {
             }
 
             property JsonObject sidebar: JsonObject {
+                property string position: "default"
                 property bool keepRightSidebarLoaded: true
                 property JsonObject translator: JsonObject {
                     property bool enable: false
@@ -622,6 +628,8 @@ Singleton {
                 }
                 property JsonObject ai: JsonObject {
                     property bool textFadeIn: false
+                    property bool showProviderAndModelButtons: true
+                    property list<string> showProviders: ["google", "openrouter", "mistral"]
                 }
                 property JsonObject booru: JsonObject {
                     property bool allowNsfw: false

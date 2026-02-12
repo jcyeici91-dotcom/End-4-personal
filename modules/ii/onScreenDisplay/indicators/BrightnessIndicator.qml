@@ -15,5 +15,5 @@ OsdValueIndicator {
     scaleIcon: true
     name: Translation.tr("Brightness")
     value: root.brightnessMonitor?.brightness ?? 50
-    shape: MaterialShape.Shape.Ghostish
+    shape: MaterialShape.Shape.Burst
 }

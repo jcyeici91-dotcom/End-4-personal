@@ -9,52 +9,44 @@ CACHE_DIR="$XDG_CACHE_HOME/quickshell"
 STATE_DIR="$XDG_STATE_HOME/quickshell"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# --- MEJORA 1: TRANSPARENCIA ---
-# 100 = Sólido (Aburrido)
-# 80-90 = Transparente (Moderno/Bonito)
-term_alpha=85 
-
+term_alpha=100 #Set this to < 100 make all your terminals transparent
+# sleep 0 # idk i wanted some delay or colors dont get applied properly
 if [ ! -d "$STATE_DIR"/user/generated ]; then
   mkdir -p "$STATE_DIR"/user/generated
 fi
 cd "$CONFIG_DIR" || exit
 
-# --- MEJORA 2: Lectura de colores más segura ---
-# Leemos el archivo SCSS y creamos arrays limpios
-mapfile -t colornames < <(grep -o "^[a-zA-Z0-9_]*" "$STATE_DIR/user/generated/material_colors.scss")
-mapfile -t colorstrings < <(grep -o "#[a-fA-F0-9]\{6\}" "$STATE_DIR/user/generated/material_colors.scss")
+colornames=''
+colorstrings=''
+colorlist=()
+colorvalues=()
+
+colornames=$(cat $STATE_DIR/user/generated/material_colors.scss | cut -d: -f1)
+colorstrings=$(cat $STATE_DIR/user/generated/material_colors.scss | cut -d: -f2 | cut -d ' ' -f2 | cut -d ";" -f1)
+IFS=$'\n'
+colorlist=($colornames)     # Array of color names
+colorvalues=($colorstrings) # Array of color values
 
 apply_term() {
-  # Verificar plantilla
+  # Check if terminal escape sequence template exists
   if [ ! -f "$SCRIPT_DIR/terminal/sequences.txt" ]; then
-    echo "Template file not found for Terminal. Skipping."
+    echo "Template file not found for Terminal. Skipping that."
     return
   fi
-
-  # Preparar archivo de destino
+  # Copy template
   mkdir -p "$STATE_DIR"/user/generated/terminal
   cp "$SCRIPT_DIR/terminal/sequences.txt" "$STATE_DIR"/user/generated/terminal/sequences.txt
-  
-  TARGET_FILE="$STATE_DIR/user/generated/terminal/sequences.txt"
-
-  # Aplicar colores (Optimizado)
-  # Usamos un bucle para reemplazar cada etiqueta de color con su valor hex (quitando el #)
-  for i in "${!colornames[@]}"; do
-    color_val=${colorstrings[$i]#\#} # Quitar el # del hex
-    sed -i "s/${colornames[$i]} #/$color_val/g" "$TARGET_FILE"
+  # Apply colors
+  for i in "${!colorlist[@]}"; do
+    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/sequences.txt
   done
 
-  # Aplicar transparencia
-  sed -i "s/\$alpha/$term_alpha/g" "$TARGET_FILE"
+  sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
 
-  # --- MEJORA 3: Inyección silenciosa ---
-  # Envia la secuencia a todas las terminales abiertas (kitty, alacritty, etc que usen pts)
   for file in /dev/pts/*; do
     if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
       {
-        if [ -w "$file" ]; then
-            cat "$TARGET_FILE" >"$file"
-        fi
+      cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file"
       } & disown || true
     fi
   done
@@ -65,7 +57,7 @@ apply_qt() {
   python "$CONFIG_DIR/scripts/kvantum/changeAdwColors.py" # apply config colors
 }
 
-# Check config logic
+# Check if terminal theming is enabled in config
 CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 if [ -f "$CONFIG_FILE" ]; then
   enable_terminal=$(jq -r '.appearance.wallpaperTheming.enableTerminal' "$CONFIG_FILE")
@@ -73,8 +65,8 @@ if [ -f "$CONFIG_FILE" ]; then
     apply_term &
   fi
 else
-  # Si no hay config, aplicamos por defecto (mejor que no hacer nada)
+  echo "Config file not found at $CONFIG_FILE. Applying terminal theming by default."
   apply_term &
 fi
 
-# apply_qt & # Dejar comentado a menos que uses Kvantum específicamente
+# apply_qt & # Qt theming is already handled by kde-material-colors

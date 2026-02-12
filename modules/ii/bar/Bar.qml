@@ -9,18 +9,16 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common.functions as CF // NUEVO: para transparentize en corners (no rompe)
+import qs.modules.common.functions as CF
 
 Scope {
     id: bar
 
-    // =========================================================
-    // 1) Variants: una instancia de Bar por monitor (filtrable)
-    // =========================================================
     Variants {
+        // One bar per monitor
         id: barVariant
 
-        // 1.1) Modelo de pantallas: usa screenList si está configurado
+        // Screen model (filtered by screenList if configured)
         readonly property var variantModel: {
             const screens = Quickshell.screens;
             const list = Config?.options?.bar?.screenList;
@@ -30,28 +28,21 @@ Scope {
 
         model: variantModel
 
-        // =========================================================
-        // 2) LazyLoader: solo crea la ventana si la barra está abierta
-        // =========================================================
         LazyLoader {
             id: barLoader
-
             active: GlobalStates.barOpen && !GlobalStates.screenLocked
             required property ShellScreen modelData
 
-            // Nota: esto NO es el id de Hyprland; es el índice del modelo de screens.
+            // Index in variantModel (NOT Hyprland monitor id)
             property int monitorIndex: barVariant.variantModel.indexOf(modelData)
 
-            // =========================================================
-            // 3) PanelWindow: ventana real de la barra por monitor
-            // =========================================================
             component: PanelWindow {
                 id: barRoot
                 screen: barLoader.modelData
 
-                // ---------------------------------------------------------
-                // 3.1) Flags/Helpers
-                // ---------------------------------------------------------
+                // --------------------------
+                // Helpers / config
+                // --------------------------
                 property int monitorIndex: barLoader.monitorIndex
 
                 readonly property bool isBottom: !!Config?.options?.bar?.bottom
@@ -59,68 +50,54 @@ Scope {
                 readonly property bool pushWindows: !!Config?.options?.bar?.autoHide?.pushWindows
                 readonly property bool deadPixelFix: !!Config?.options?.interactions?.deadPixelWorkaround?.enable
 
-                // ---------------------------------------------------------
-                // 3.2) Background style (Visible / Adaptive / Transparent)
-                // ---------------------------------------------------------
-                // Convención:
-                // 0 = Transparent (glass)
-                // 1 = Visible (siempre)
-                // 2 = Adaptive (solo con ventanas)
+                // 0 = glass(transparent), 1 = always visible, 2 = adaptive
                 readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
+                // --------------------------
+                // Background style / adaptive
+                // --------------------------
                 property bool hasActiveWindows: false
 
-                // showBarBackground gobierna:
-                // - decorators (cornerStyle hug)
-                // - y sirve de estado general
                 readonly property bool showBarBackground: (
                     (barBackgroundStyle === 1) ||
                     (barBackgroundStyle === 0) ||
                     (barBackgroundStyle === 2 && barRoot.hasActiveWindows)
                 )
 
-                // Color para corners (debe “parecer” el mismo fondo que pinta BarContent)
-                readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35) // NUEVO
+                readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
                 readonly property color barBackgroundColorForCorners: (barBackgroundStyle === 0)
                     ? _glassTint
                     : Appearance.colors.colLayer0
 
-                // ---------------------------------------------------------
-                // 3.3) Hyprland: detectar ventanas en el workspace activo
-                //      (NUEVO: mapping robusto por screen.name -> monitor.name)
-                // ---------------------------------------------------------
                 function recomputeHasActiveWindows() {
                     const screenName = barRoot.screen?.name;
 
+                    // Prefer mapping by name
                     let monitor = null;
                     if (screenName) {
                         monitor = HyprlandData.monitors.find(m => m && m.name === screenName) ?? null;
                     }
-                    // Fallback: compatibilidad (tu lógica previa)
+                    // Fallback mapping by index/id
                     if (!monitor) {
                         monitor = HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) ?? null;
                     }
 
                     const wsId = monitor?.activeWorkspace?.id;
-                    const hasWindow = wsId
+                    barRoot.hasActiveWindows = wsId
                         ? HyprlandData.windowList.some(w => w.workspace?.id === wsId && !w.floating)
                         : false;
-
-                    barRoot.hasActiveWindows = hasWindow;
                 }
 
                 Connections {
-                    // Solo necesario cuando el estilo depende de ventanas (Adaptive)
                     enabled: barRoot.barBackgroundStyle === 2
                     target: HyprlandData
-
                     function onWindowListChanged() { barRoot.recomputeHasActiveWindows(); }
                     function onMonitorsChanged() { barRoot.recomputeHasActiveWindows(); }
                 }
 
-                // ---------------------------------------------------------
-                // 3.4) Auto-hide: mostrar por hover o por tecla Super
-                // ---------------------------------------------------------
+                // --------------------------
+                // Super show / hover show
+                // --------------------------
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
 
@@ -145,15 +122,15 @@ Scope {
                     }
                 }
 
-                // ---------------------------------------------------------
-                // 3.5) Layershell / tamaño / exclusión / máscara
-                // ---------------------------------------------------------
+                // --------------------------
+                // Layershell / size / mask
+                // --------------------------
                 exclusionMode: ExclusionMode.Ignore
 
                 exclusiveZone: (barRoot.autoHideEnabled && (!barRoot.mustShow || !barRoot.pushWindows))
                     ? 0
                     : (Appearance.sizes.baseBarHeight
-                       + (Config?.options?.bar?.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0))
+                       + ((Config?.options?.bar?.cornerStyle === 1) ? Appearance.sizes.hyprlandGapsOut : 0))
 
                 WlrLayershell.namespace: "quickshell:bar"
                 implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
@@ -161,20 +138,31 @@ Scope {
 
                 mask: Region { item: hoverMaskRegion }
 
-                // ---------------------------------------------------------
-                // 3.6) Posición (top/bottom) y workaround dead-pixel
-                // ---------------------------------------------------------
-                anchors { top: !barRoot.isBottom; bottom: barRoot.isBottom; left: true; right: true }
+                // --------------------------
+                // Positioning (TOP/BOTTOM)
+                // PanelWindow has NO `states`, so do it imperatively.
+                // --------------------------
+                function applyWindowAnchors() {
+                    barRoot.anchors.top = !barRoot.isBottom;
+                    barRoot.anchors.bottom = barRoot.isBottom;
+                    barRoot.anchors.left = true;
+                    barRoot.anchors.right = true;
+                }
+
+                anchors { top: true; bottom: false; left: true; right: true }
+
+                onIsBottomChanged: applyWindowAnchors()
 
                 margins {
                     right: (barRoot.deadPixelFix && barRoot.anchors.right) * -1
                     bottom: (barRoot.deadPixelFix && barRoot.anchors.bottom) * -1
                 }
 
-                // ---------------------------------------------------------
-                // 3.7) Lifecycle
-                // ---------------------------------------------------------
+                // --------------------------
+                // Lifecycle
+                // --------------------------
                 Component.onCompleted: {
+                    applyWindowAnchors();
                     barRoot.recomputeHasActiveWindows();
                     GlobalFocusGrab.addPersistent(barRoot);
                 }
@@ -182,7 +170,7 @@ Scope {
                 Component.onDestruction: GlobalFocusGrab.removePersistent(barRoot)
 
                 // =========================================================
-                // 4) Hover region + BarContent (animación de ocultar/mostrar)
+                // Hover region + content
                 // =========================================================
                 MouseArea {
                     id: hoverRegion
@@ -194,7 +182,6 @@ Scope {
                         bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) * 1
                     }
 
-                    // 4.1) Región usada por la máscara (hover/hide)
                     Item {
                         id: hoverMaskRegion
                         anchors {
@@ -204,31 +191,25 @@ Scope {
                         }
                     }
 
-                    // 4.2) Contenido real de la barra
                     BarContent {
                         id: barContent
                         implicitHeight: Appearance.sizes.barHeight
 
-                        // CORRECCIÓN: BarContent tiene `monitorIndex` pero aquí no se lo estabas pasando.
-                        // Esto afecta el cálculo de hasActiveWindows en BarContent.
+                        // Give BarContent correct context
                         monitorIndex: barRoot.monitorIndex
                         screen: barRoot.screen
 
                         anchors {
                             left: parent.left
                             right: parent.right
+                            top: parent.top
+                            bottom: undefined
 
-                            top: barRoot.isBottom ? undefined : parent.top
-                            bottom: barRoot.isBottom ? parent.bottom : undefined
-
-                            topMargin: (!barRoot.isBottom && barRoot.autoHideEnabled && !barRoot.mustShow)
+                            topMargin: (barRoot.autoHideEnabled && !barRoot.mustShow)
                                 ? -Appearance.sizes.barHeight
                                 : 0
 
-                            bottomMargin: (barRoot.isBottom && barRoot.autoHideEnabled && !barRoot.mustShow)
-                                ? -Appearance.sizes.barHeight
-                                : ((barRoot.deadPixelFix && barRoot.anchors.bottom) * -1)
-
+                            bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) * -1
                             rightMargin: (barRoot.deadPixelFix && barRoot.anchors.right) * -1
                         }
 
@@ -238,10 +219,28 @@ Scope {
                         Behavior on anchors.bottomMargin {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
+
+                        // Anchor-safe bottom mode (prevents "growing")
+                        states: State {
+                            name: "bottom"
+                            when: barRoot.isBottom
+
+                            AnchorChanges {
+                                target: barContent
+                                anchors { top: undefined; bottom: parent.bottom }
+                            }
+                            PropertyChanges {
+                                target: barContent
+                                anchors.topMargin: 0
+                                anchors.bottomMargin: (barRoot.autoHideEnabled && !barRoot.mustShow)
+                                    ? -Appearance.sizes.barHeight
+                                    : ((barRoot.deadPixelFix && barRoot.anchors.bottom) * -1)
+                            }
+                        }
                     }
 
                     // =========================================================
-                    // 5) Decoradores redondeados (cornerStyle Hug)
+                    // Rounded decorators (cornerStyle Hug)
                     // =========================================================
                     Loader {
                         id: roundDecorators
@@ -251,8 +250,17 @@ Scope {
                         anchors {
                             left: parent.left
                             right: parent.right
-                            top: barRoot.isBottom ? undefined : barContent.bottom
-                            bottom: barRoot.isBottom ? barContent.top : undefined
+                            top: barContent.bottom
+                            bottom: undefined
+                        }
+
+                        states: State {
+                            name: "bottom"
+                            when: barRoot.isBottom
+                            AnchorChanges {
+                                target: roundDecorators
+                                anchors { top: undefined; bottom: barContent.top }
+                            }
                         }
 
                         sourceComponent: Item {
@@ -283,7 +291,7 @@ Scope {
     }
 
     // =========================================================
-    // 6) IPC: control externo de la barra
+    // IPC: external control
     // =========================================================
     IpcHandler {
         target: "bar"
@@ -293,10 +301,22 @@ Scope {
     }
 
     // =========================================================
-    // 7) Global shortcuts
+    // Global shortcuts
     // =========================================================
-    GlobalShortcut { name: "barToggle"; description: "Toggles bar on press"; onPressed: GlobalStates.barOpen = !GlobalStates.barOpen }
-    GlobalShortcut { name: "barOpen"; description: "Opens bar on press"; onPressed: GlobalStates.barOpen = true }
-    GlobalShortcut { name: "barClose"; description: "Closes bar on press"; onPressed: GlobalStates.barOpen = false }
+    GlobalShortcut {
+        name: "barToggle"
+        description: "Toggles bar on press"
+        onPressed: GlobalStates.barOpen = !GlobalStates.barOpen
+    }
+    GlobalShortcut {
+        name: "barOpen"
+        description: "Opens bar on press"
+        onPressed: GlobalStates.barOpen = true
+    }
+    GlobalShortcut {
+        name: "barClose"
+        description: "Closes bar on press"
+        onPressed: GlobalStates.barOpen = false
+    }
 }
 

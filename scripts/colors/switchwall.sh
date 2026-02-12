@@ -28,7 +28,7 @@ handle_kde_material_you_colors() {
             kde_scheme_variant="$type_flag"
             ;;
         *)
-            kde_scheme_variant="scheme-expressive" # MODIFICADO: Default a colores vivos
+            kde_scheme_variant="scheme-tonal-spot" # default
             ;;
     esac
     "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
@@ -163,9 +163,15 @@ switch() {
     color="$5"
 
     # Start Gemini auto-categorization if enabled
-    aiStylingEnabled=$(jq -r '.background.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
+    aiStylingEnabled=$(jq -r '.background.widgets.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
+    aiStylingModel=$(jq -r '.background.widgets.clock.cookie.aiStylingModel' "$SHELL_CONFIG_FILE")
     if [[ "$aiStylingEnabled" == "true" ]]; then
-        "$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$imgpath" > "$STATE_DIR/user/generated/wallpaper/category.txt" &
+        if [[ "$aiStylingModel" == "gemini" ]]; then  
+            "$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$imgpath" > "$STATE_DIR/user/generated/wallpaper/category.txt" &
+        fi
+        if [[ "$aiStylingModel" == "openrouter" ]]; then  
+            "$SCRIPT_DIR/../ai/openrouter-categorize-wallpaper.sh" "$imgpath" > "$STATE_DIR/user/generated/wallpaper/category.txt" &
+        fi
     fi
 
     read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
@@ -396,9 +402,8 @@ main() {
         fi
     done
     if [[ $valid_type -eq 0 ]]; then
-        # MODIFICADO: Si el tipo es inválido, usar expressive (vivo)
-        echo "[switchwall.sh] Warning: Invalid type '$type_flag', defaulting to vivid 'scheme-expressive'" >&2
-        type_flag="scheme-expressive"
+        echo "[switchwall.sh] Warning: Invalid type '$type_flag', defaulting to 'auto'" >&2
+        type_flag="auto"
     fi
 
     # Only prompt for wallpaper if not using --color and not using --noswitch and no imgpath set
@@ -428,14 +433,12 @@ main() {
             if [[ $valid_detected -eq 1 ]]; then
                 type_flag="$detected_type"
             else
-                # MODIFICADO: Si falla la detección, usar expressive (vivo)
-                echo "[switchwall] Warning: Could not auto-detect a valid scheme, defaulting to vivid 'scheme-expressive'" >&2
-                type_flag="scheme-expressive"
+                echo "[switchwall] Warning: Could not auto-detect a valid scheme, defaulting to 'scheme-tonal-spot'" >&2
+                type_flag="scheme-tonal-spot"
             fi
         else
-            # MODIFICADO: Si no hay imagen, usar expressive (vivo)
-            echo "[switchwall] Warning: No image to auto-detect scheme from, defaulting to vivid 'scheme-expressive'" >&2
-            type_flag="scheme-expressive"
+            echo "[switchwall] Warning: No image to auto-detect scheme from, defaulting to 'scheme-tonal-spot'" >&2
+            type_flag="scheme-tonal-spot"
         fi
     fi
 

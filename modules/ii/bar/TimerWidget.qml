@@ -12,8 +12,6 @@ Item {
     readonly property bool hasStop: TimerService.stopwatchTime > 0
     readonly property bool hasPomo: TimerService.pomodoroSecondsLeft > 0 && (TimerService.pomodoroSecondsLeft < TimerService.pomodoroLapDuration || pRunning)
 
-    property color backgroundColor: Appearance.colors.colPrimary // to be used from BarComponent
-
     property bool showPomodoro: Config.options.bar.timers.showPomodoro
     property bool showStopwatch: Config.options.bar.timers.showStopwatch
 

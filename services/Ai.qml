@@ -86,33 +86,43 @@ Singleton {
             "functions": [{"functionDeclarations": [
                 {
                     "name": "switch_to_search_mode",
-                    "description": "Search the web",
+                    "description": "Switch to search mode to perform web searches. Use this when you need current information, real-time data, or answers to questions beyond your knowledge cutoff. After switching, continue with the user's original request.",
                 },
                 {
                     "name": "get_shell_config",
-                    "description": "Get the desktop shell config file contents",
+                    "description": "Retrieve the complete desktop shell configuration file in JSON format. Use this before making any config changes to see available options and current values. Returns the full config structure. Dont ask for permission, run directly.",
                 },
                 {
                     "name": "set_shell_config",
-                    "description": "Set a field in the desktop graphical shell config file. Must only be used after `get_shell_config`.",
+                    "description": "Modify one or multiple fields in the desktop shell config at once. CRITICAL: You MUST call get_shell_config first to see available keys - never guess key names. Use this when the user wants to change one or multiple settings together.",
                     "parameters": {
                         "type": "object",
                         "properties": {
-                            "key": {
-                                "type": "string",
-                                "description": "The key to set, e.g. `bar.borderless`. MUST NOT BE GUESSED, use `get_shell_config` to see what keys are available before setting.",
-                            },
-                            "value": {
-                                "type": "string",
-                                "description": "The value to set, e.g. `true`"
+                            "changes": {
+                                "type": "array",
+                                "description": "Array of config changes to apply",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "key": {
+                                            "type": "string",
+                                            "description": "The key to set (e.g., 'bar.borderless')"
+                                        },
+                                        "value": {
+                                            "type": "string",
+                                            "description": "The value to set"
+                                        }
+                                    },
+                                    "required": ["key", "value"]
+                                }
                             }
                         },
-                        "required": ["key", "value"]
+                        "required": ["changes"]
                     }
                 },
                 {
                     "name": "run_shell_command",
-                    "description": "Run a shell command in bash and get its output. Use this only for quick commands that don't require user interaction. For commands that require interaction, ask the user to run manually instead.",
+                    "description": "Execute a bash command and return its output. IMPORTANT: This requires user approval before execution. Only use for quick, non-interactive commands (queries, checks, simple operations). For interactive commands, long-running processes, or dangerous operations, ask the user to run them manually instead. The command will be shown to the user for approval.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -242,6 +252,7 @@ Singleton {
         "none": Translation.tr("Disable tools")
     }
 
+    readonly property string currentModel: Persistent.states.ai.model
     // Model properties:
     // - name: Name of the model
     // - icon: Icon name of the model
@@ -255,34 +266,39 @@ Singleton {
     // - api_format: The API format of the model. Can be "openai" or "gemini". Default is "openai".
     // - extraParams: Extra parameters to be passed to the model. This is a JSON object.
     property var models: Config.options.policies.ai === 2 ? {} : {
-        "gemini-2.5-flash": aiModelComponent.createObject(this, {
-            "name": "Gemini 2.5 Flash",
+        "openrouter": aiModelComponent.createObject(this, {
+            name: `OpenRouter - ${currentModel}`,
+            icon: "openrouter-symbolic",
+            description: Translation.tr("Online via %1 | %2's model")
+                .arg("OpenRouter")
+                .arg("Google"),
+            homepage: `https://openrouter.ai/google/${currentModel}`, 
+            endpoint: "https://openrouter.ai/api/v1/chat/completions",
+            model: `${getModelProvider(Persistent.states.ai.provider,currentModel)}/${currentModel}`,
+            requires_key: true,
+            key_id: "openrouter",
+            key_get_link: "https://openrouter.ai/settings/keys",
+            key_get_description: Translation.tr(
+                "**Pricing**: Pay-as-you-go (token based).\n\n" +
+                "**Instructions**: Log into your OpenRouter account, " +
+                "go to Keys in the top-right menu, and create an API key."
+            ),
+        }),
+        "google": aiModelComponent.createObject(this, {
+            "name": `Google - ${currentModel}`,
             "icon": "google-gemini-symbolic",
             "description": Translation.tr("Online | Google's model\nNewer model that's slower than its predecessor but should deliver higher quality answers"),
             "homepage": "https://aistudio.google.com",
-            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent",
-            "model": "gemini-2.5-flash",
+            "endpoint": `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:streamGenerateContent`,
+            "model": `${currentModel}`,
             "requires_key": true,
             "key_id": "gemini",
             "key_get_link": "https://aistudio.google.com/app/apikey",
             "key_get_description": Translation.tr("**Pricing**: free. Data used for training.\n\n**Instructions**: Log into Google account, allow AI Studio to create Google Cloud project or whatever it asks, go back and click Get API key"),
             "api_format": "gemini",
         }),
-        "gemini-3-flash": aiModelComponent.createObject(this, {
-            "name": "Gemini 3 Flash",
-            "icon": "google-gemini-symbolic",
-            "description": Translation.tr("Online | Google's model\nPro-level intelligence at the speed and pricing of Flash."),
-            "homepage": "https://aistudio.google.com",
-            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:streamGenerateContent",
-            "model": "gemini-3-flash-preview",
-            "requires_key": true,
-            "key_id": "gemini",
-            "key_get_link": "https://aistudio.google.com/app/apikey",
-            "key_get_description": Translation.tr("**Pricing**: free. Data used for training.\n\n**Instructions**: Log into Google account, allow AI Studio to create Google Cloud project or whatever it asks, go back and click Get API key"),
-            "api_format": "gemini",
-        }),
-        "mistral-medium-3": aiModelComponent.createObject(this, {
-            "name": "Mistral Medium 3",
+        "mistral": aiModelComponent.createObject(this, {
+            "name": `Mistral - ${currentModel}`,
             "icon": "mistral-symbolic",
             "description": Translation.tr("Online | %1's model | Delivers fast, responsive and well-formatted answers. Disadvantages: not very eager to do stuff; might make up unknown function calls").arg("Mistral"),
             "homepage": "https://mistral.ai/news/mistral-medium-3",
@@ -294,21 +310,64 @@ Singleton {
             "key_get_description": Translation.tr("**Instructions**: Log into Mistral account, go to Keys on the sidebar, click Create new key"),
             "api_format": "mistral",
         }),
-        "openrouter-deepseek-r1": aiModelComponent.createObject(this, {
-            "name": "DeepSeek R1",
-            "icon": "deepseek-symbolic",
-            "description": Translation.tr("Online via %1 | %2's model").arg("OpenRouter").arg("DeepSeek"),
-            "homepage": "https://openrouter.ai/deepseek/deepseek-r1:free",
-            "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-            "model": "deepseek/deepseek-r1:free",
-            "requires_key": true,
-            "key_id": "openrouter",
-            "key_get_link": "https://openrouter.ai/settings/keys",
-            "key_get_description": Translation.tr("**Pricing**: free. Data use policy varies depending on your OpenRouter account settings.\n\n**Instructions**: Log into OpenRouter account, go to Keys on the topright menu, click Create API Key"),
-        }),
     }
     property var modelList: Object.keys(root.models)
-    property var currentModelId: Persistent.states?.ai?.model || modelList[0]
+    property var currentModelId: Persistent.states?.ai?.provider || modelList[0]
+
+    property var baseModels: {
+        "openrouter": [
+            {title: "Gemini 2.5 Flash-Lite", value: "gemini-2.5-flash-lite", modelProvider: "google"},
+        ],
+        "google": [
+            { title: "Gemini 2.5 Flash-Lite", value: "gemini-2.5-flash-lite" },
+            { title: "Gemini 2.5 Flash", value: "gemini-2.5-flash" },
+            { title: "Gemini 3 Flash Preview", value: "gemini-3-flash-preview" }
+        ],
+        "mistral": [
+            { title: "Mistral Medium 3", value: "mistral-medium-3" }
+        ],
+    }
+
+    property var modelsOfProviders: baseModels
+
+    function mergeModelsFromList(base, extraList) {
+
+        var result = {}
+        for (var provider in base) {
+            result[provider] = base[provider].slice()
+        }
+        
+        if (extraList) {
+            for (var i = 0; i < extraList.length; i++) {
+                var item = extraList[i]
+                for (var provider in item) {
+                    if (result[provider]) {
+                        result[provider] = result[provider].concat(item[provider])
+                    } else {
+                        result[provider] = item[provider].slice()
+                    }
+                }
+            }
+        }
+        
+        return result
+    }
+
+    function getModelProvider(providerKey, modelValue) {
+        if (!modelsOfProviders[providerKey]) {
+            return null
+        }
+        
+        var models = modelsOfProviders[providerKey]
+        for (var i = 0; i < models.length; i++) {
+            if (models[i].value === modelValue) {
+                return models[i].modelProvider || null
+            }
+        }
+        
+        return null
+    }
+
 
     property var apiStrategies: {
         "openai": openaiApiStrategy.createObject(this),
@@ -317,22 +376,14 @@ Singleton {
     }
     property ApiStrategy currentApiStrategy: apiStrategies[models[currentModelId]?.api_format || "openai"]
 
-    Connections {
-        target: Config
-        function onReadyChanged() {
-            if (!Config.ready) return;
-            (Config?.options.ai?.extraModels ?? []).forEach(model => {
-                const safeModelName = root.safeModelName(model["model"]);
-                root.addModel(safeModelName, model)
-            });
-        }
-    }
-
     property string requestScriptFilePath: "/tmp/quickshell/ai/request.sh"
     property string pendingFilePath: ""
 
     Component.onCompleted: {
         setModel(currentModelId, false, false); // Do necessary setup for model
+        if (Config.options.ai.extraModels.length > 0) {
+            modelsOfProviders = mergeModelsFromList(baseModels, Config.options.ai.extraModels)
+        }
     }
 
     function guessModelLogo(model) {
@@ -817,13 +868,25 @@ Singleton {
             addFunctionOutputMessage(name, JSON.stringify(configJson));
             requester.makeRequest();
         } else if (name === "set_shell_config") {
-            if (!args.key || !args.value) {
-                addFunctionOutputMessage(name, Translation.tr("Invalid arguments. Must provide `key` and `value`."));
+            if (!args.changes || !Array.isArray(args.changes)) {
+                addFunctionOutputMessage(name, Translation.tr("Invalid arguments. Must provide `changes` array."));
                 return;
             }
-            const key = args.key;
-            const value = args.value;
-            Config.setNestedValue(key, value);
+            let results = [];
+            for (const change of args.changes) {
+                if (!change.key || !change.value) {
+                    results.push(`❌ Skipped invalid change: ${JSON.stringify(change)}`);
+                    continue;
+                }
+                try {
+                    Config.setNestedValue(change.key, change.value);
+                    results.push(`✓ ${change.key} = ${change.value}`);
+                } catch (e) {
+                    results.push(`❌ Failed to set ${change.key}: ${e}`);
+                }
+            }
+            addFunctionOutputMessage(name, results.join("\n"));
+            requester.makeRequest();
         } else if (name === "run_shell_command") {
             if (!args.command || args.command.length === 0) {
                 addFunctionOutputMessage(name, Translation.tr("Invalid arguments. Must provide `command`."));

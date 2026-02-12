@@ -287,17 +287,8 @@ ContentPage {
             visible: settingsClock.cookiePresent
             title: Translation.tr("Cookie clock settings")
 
-            ConfigSwitch {
-                buttonIcon: "wand_stars"
-                text: Translation.tr("Auto styling with Gemini")
-                checked: Config.options.background.widgets.clock.cookie.aiStyling
-                onCheckedChanged: {
-                    Config.options.background.widgets.clock.cookie.aiStyling = checked;
-                }
-                StyledToolTip {
-                    text: Translation.tr("Uses Gemini to categorize the wallpaper then picks a preset based on it.\nYou'll need to set Gemini API key on the left sidebar first.\nImages are downscaled for performance, but just to be safe,\ndo not select wallpapers with sensitive information.")
-                }
-            }
+            
+            
 
             ConfigSpinBox {
                 enabled: Config.options.background.widgets.clock.cookie.backgroundStyle !== "shape"
@@ -358,7 +349,51 @@ ContentPage {
                     }
                 }
             }
+
+            ConfigRow {
+                Layout.fillWidth: false
+                
+                ConfigSwitch {
+                    buttonIcon: "wand_stars"
+                    text: Translation.tr("Auto style the cookie clock preset")
+                    checked: Config.options.background.widgets.clock.cookie.aiStyling
+                    onCheckedChanged: {
+                        Config.options.background.widgets.clock.cookie.aiStyling = checked;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr("Uses the preferred AI to categorize the wallpaper then picks a preset based on it.\nYou'll need to set API key on the left sidebar first.\nImages are downscaled for performance, but just to be safe,\ndo not select wallpapers with sensitive information.\nBoth AI models does the same thing, but Gemini has strict quotas.")
+                    }
+                }
+
+                StyledText {
+                    Layout.rightMargin: 6
+                    text: Translation.tr("with")
+                    opacity: Config.options.background.widgets.clock.cookie.aiStyling ? 1 : 0.4
+                }
+
+                ConfigSelectionArray {
+                    enabled: Config.options.background.widgets.clock.cookie.aiStyling
+                    currentValue: Config.options.background.widgets.clock.cookie.aiStylingModel
+                    onSelected: newValue => {
+                        Config.options.background.widgets.clock.cookie.aiStylingModel = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: "Gemini",
+                            symbol: "google-gemini-symbolic",
+                            value: "gemini"
+                        },
+                        {
+                            displayName: "OpenRouter",
+                            symbol: "openrouter-symbolic",
+                            value: "openrouter"
+                        }
+                    ]
+                }
+            }
         }
+
+        
 
         ContentSubsection {
             visible: settingsClock.cookiePresent
