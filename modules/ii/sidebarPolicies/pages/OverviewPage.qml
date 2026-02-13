@@ -7,6 +7,7 @@ import qs.modules.common.widgets
 import ".." as SidebarLeft
 import "../models" as Models
 import "../ui" as UI
+
 Item {
     id: page
 
@@ -17,13 +18,28 @@ Item {
     readonly property int colGap: 12
     readonly property int rowGap: 12
 
+    // --- COLORES DE FONDO ORIGINALES ---
     readonly property color surface0: Appearance.colors.colLayer0
     readonly property color surface1: Appearance.colors.colLayer1
     readonly property color border0: Appearance.colors.colLayer0Border
-    readonly property color onSurface: Appearance.colors.colOnLayer0
-    readonly property color onSurfaceMuted: Qt.rgba(onSurface.r, onSurface.g, onSurface.b, 0.75)
-  
-    readonly property color accent: page.theme.colAccent
+    
+    // --- LÓGICA DE COLOR AUTOMÁTICA ---
+    // 1. Calculamos si el fondo 'surface1' es oscuro o claro
+    function getLuminance(c) { return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b }
+    readonly property bool isDark: getLuminance(surface1) < 0.5
+
+    // 2. Definimos el "Celeste/Azul" ideal según el fondo
+    // Si es oscuro -> Celeste Neón (#40c4ff) para que brille.
+    // Si es claro  -> Azul Oscuro (#0091ea) para que se lea.
+    readonly property color smartAccent: isDark ? "#40c4ff" : "#0091ea"
+
+    // 3. Color de texto base (Blanco o Negro según fondo)
+    readonly property color smartText: isDark ? "#ffffff" : "#1d1d1d"
+    readonly property color smartTextMuted: isDark ? "#b0bec5" : "#546e7a"
+
+    // (Opcional) Mantenemos el accent del tema para bordes u otros detalles menores
+    readonly property color themeAccent: page.theme.colAccent
+
     Flickable {
         id: flick
         anchors.fill: parent
@@ -31,6 +47,7 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         contentWidth: width
         contentHeight: mainCol.implicitHeight + page.pad * 2
+
         ColumnLayout {
             id: mainCol
             x: page.pad
@@ -39,7 +56,7 @@ Item {
             spacing: page.rowGap
 
             // 1. CABECERA (RELOJ Y CLIMA)
-                     Flickable {
+            Flickable {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 160
                 contentWidth: headerRow.implicitWidth
@@ -47,6 +64,7 @@ Item {
                 clip: false
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
+
                 RowLayout {
                     id: headerRow
                     height: 160
@@ -61,85 +79,94 @@ Item {
                         border.width: 1
                         border.color: page.border0
                         clip: true
+                        
+                        // Borde animado sutil usando el Celeste Inteligente
                         SequentialAnimation on border.color {
                             loops: Animation.Infinite
                             ColorAnimation {
-                                to: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.55)
-                                duration: 2000
+                                to: Qt.rgba(page.smartAccent.r, page.smartAccent.g, page.smartAccent.b, 0.5)
+                                duration: 3000
                                 easing.type: Easing.InOutSine
                             }
                             ColorAnimation {
                                 to: page.border0
-                                duration: 2000
+                                duration: 3000
                                 easing.type: Easing.InOutSine
                             }
                         }
+
                         ColumnLayout {
                             anchors.centerIn: parent
                             width: parent.width - 24
                             spacing: 0
+                            
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 4
+                                
+                                // HORA (Blanco/Negro según fondo)
                                 Text {
                                     id: hourText
                                     text: dashboard.timeHour
                                     font.pixelSize: 68
                                     font.family: page.theme.fontMain
                                     font.weight: Font.Black
-                                    color: page.onSurface
-                                    // Reemplazo de DropShadow -> MultiEffect
+                                    color: page.smartText 
+                                    
                                     layer.enabled: true
                                     layer.effect: MultiEffect {
                                         shadowEnabled: true
-                                        shadowColor: Qt.rgba(0, 0, 0, 0.30)
+                                        shadowColor: Qt.rgba(0, 0, 0, 0.4)
                                         shadowBlur: 0.8
                                         shadowVerticalOffset: 2
-                                        shadowHorizontalOffset: 0
                                     }
                                 }
+
+                                // SEPARADOR
                                 Text {
                                     text: ":"
                                     font.pixelSize: 64
                                     font.family: page.theme.fontMain
-                                    color: page.onSurfaceMuted
+                                    color: page.smartTextMuted
                                     Layout.bottomMargin: 6
                                     OpacityAnimator on opacity {
-                                        from: 1.0
-                                        to: 0.4
-                                        duration: 1000
-                                        loops: Animation.Infinite
-                                        easing.type: Easing.InOutQuad
+                                        from: 1.0; to: 0.5; duration: 1000; loops: Animation.Infinite; easing.type: Easing.InOutQuad
                                     }
                                 }
+
+                                // MINUTOS (Ahora en CELESTE/AZUL)
                                 Text {
                                     id: minText
                                     text: dashboard.timeMin
                                     font.pixelSize: 68
                                     font.family: page.theme.fontMain
                                     font.weight: Font.Black
-                                    color: page.accent
-                                    // Reemplazo de DropShadow -> MultiEffect
+                                    
+                                    // AQUÍ ESTÁ EL CAMBIO IMPORTANTE: Color Celeste Neón
+                                    color: page.smartAccent 
+                                    
                                     layer.enabled: true
                                     layer.effect: MultiEffect {
                                         shadowEnabled: true
-                                        shadowColor: Qt.rgba(0, 0, 0, 0.30)
+                                        shadowColor: Qt.rgba(0, 0, 0, 0.4)
                                         shadowBlur: 0.8
                                         shadowVerticalOffset: 2
-                                        shadowHorizontalOffset: 0
                                     }
                                 }
+
+                                // SEGUNDOS
                                 Text {
                                     text: dashboard.timeSec
                                     font.pixelSize: 32
                                     font.family: page.theme.fontMain
                                     font.weight: Font.Bold
-                                    color: page.onSurface
-                                    opacity: 0.7
+                                    color: page.smartTextMuted
                                     Layout.alignment: Qt.AlignBaseline
                                     Layout.bottomMargin: 9
                                 }
                             }
+
+                            // FECHA
                             MarqueeText {
                                 Layout.topMargin: 4
                                 Layout.fillWidth: true
@@ -148,11 +175,12 @@ Item {
                                 font.pixelSize: 14
                                 font.bold: true
                                 font.capitalization: Font.AllUppercase
-                                color: page.onSurfaceMuted
+                                color: page.smartText
                                 centered: true
                             }
                         }
                     }
+
                     // ───  CLIMA ───
                     Rectangle {
                         Layout.preferredWidth: 160
@@ -162,29 +190,42 @@ Item {
                         border.width: 1
                         border.color: page.border0
                         clip: true
+
                         ColumnLayout {
                             anchors.centerIn: parent
                             width: parent.width - 24
                             spacing: 4
+
+                            // ICONO (Ahora en CELESTE para que se vea bien)
                             MaterialSymbol {
                                 Layout.alignment: Qt.AlignHCenter
                                 text: dashboard.weatherIconFromCode(dashboard.weatherCode)
                                 font.pixelSize: 42
-                                color: page.accent
+                                color: page.smartAccent // Usamos el celeste brillante
+                                
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true
+                                    shadowColor: Qt.rgba(0,0,0,0.3)
+                                    shadowBlur: 0.5
+                                }
+
                                 SequentialAnimation on anchors.verticalCenterOffset {
                                     loops: Animation.Infinite
                                     NumberAnimation { from: 0; to: -3; duration: 2500; easing.type: Easing.InOutSine }
                                     NumberAnimation { from: -3; to: 0; duration: 2500; easing.type: Easing.InOutSine }
                                 }
                             }
+
                             Text {
                                 text: dashboard.weatherTemp
                                 font.pixelSize: 28
                                 font.weight: Font.Bold
                                 font.family: page.theme.fontMain
-                                color: page.onSurface
+                                color: page.smartText
                                 Layout.alignment: Qt.AlignHCenter
                             }
+
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 0
@@ -194,29 +235,30 @@ Item {
                                     text: dashboard.weatherCity
                                     font.bold: true
                                     font.pixelSize: 13
-                                    color: page.onSurface
+                                    color: page.smartText
                                     centered: true
                                 }
                                 MarqueeText {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 18
                                     text: dashboard.weatherCondition
-                                    font.pixelSize: 11
-                                    color: page.onSurfaceMuted
+                                    font.pixelSize: 12
+                                    color: page.smartTextMuted
                                     centered: true
-                                    opacity: 0.85
                                 }
                             }
                         }
                     }
                 }
             }
+
             // 2. GRID PRINCIPAL
-                  GridLayout {
+            GridLayout {
                 Layout.fillWidth: true
                 columns: 2
                 columnSpacing: page.colGap
                 rowSpacing: page.rowGap
+
                 UI.MusicPlayerCard {
                     Layout.columnSpan: 2
                     Layout.fillWidth: true
@@ -224,6 +266,7 @@ Item {
                     theme: page.theme
                     musicModel: music
                 }
+
                 // 2.1 MONITOR DE SISTEMA
                 Rectangle {
                     Layout.columnSpan: 2
@@ -234,6 +277,7 @@ Item {
                     border.width: 1
                     border.color: page.border0
                     clip: true
+                    
                     RowLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
@@ -242,15 +286,15 @@ Item {
                         anchors.topMargin: 18
                         z: 2
                         spacing: 8
-                        Rectangle { width: 4; height: 16; radius: 2; color: page.accent }
+                        Rectangle { width: 4; height: 16; radius: 2; color: page.smartAccent }
                         Text {
                             text: "SYSTEM VITALITY"
                             font.pixelSize: 13
                             font.family: page.theme.fontMain
                             font.weight: Font.Bold
                             font.letterSpacing: 0.5
-                            color: page.onSurface
-                            opacity: 0.85
+                            color: page.smartText
+                            opacity: 0.9
                         }
                         Canvas {
                             id: ekgCanvas
@@ -271,7 +315,7 @@ Item {
                                 var pulseWidth = 50; var cycleWidth = 180; var pulseHeight = 12;
                                 ctx.reset();
                                 ctx.lineWidth = 2;
-                                ctx.strokeStyle = page.accent;
+                                ctx.strokeStyle = page.smartAccent; // Línea EKG Celeste
                                 ctx.lineCap = "round"; ctx.lineJoin = "round";
                                 var xOffset = animationProgress * cycleWidth;
                                 ctx.beginPath();
@@ -290,15 +334,15 @@ Item {
                             }
                             onWidthChanged: requestPaint()
                             Connections {
-                                target: page.theme
-                                function onColAccentChanged() { ekgCanvas.requestPaint() }
+                                target: page
+                                function onSmartAccentChanged() { ekgCanvas.requestPaint() }
                             }
                         }
                         MaterialSymbol {
                             id: vitalHeart
                             text: "ecg_heart"
                             font.pixelSize: 20
-                            color: page.accent
+                            color: page.smartAccent
                             opacity: 0.9
                             transformOrigin: Item.Center
                             SequentialAnimation {
@@ -336,7 +380,7 @@ Item {
                             active: statsFlick.moving || statsFlick.flicking
                             contentItem: Rectangle {
                                 radius: 2
-                                color: page.accent
+                                color: page.smartAccent
                                 opacity: 0.45
                             }
                         }
@@ -344,19 +388,22 @@ Item {
                             id: statsCol
                             width: parent.width
                             spacing: 8
+                            // Usamos colores fijos para las píldoras (tint) porque esos identifican el hardware, 
+                            // pero el texto dentro se adaptará con smartText
                             ResourcePill { icon: "memory"; title: "Procesador"; val: dashboard.cpuVal; sub: "Uso total"; prog: parseFloat(dashboard.cpuVal) / 100; tint: "#ff6b6b" }
                             ResourcePill { icon: "sd_card"; title: "Memoria RAM"; val: dashboard.ramVal; sub: dashboard.ramDetail; prog: parseFloat(dashboard.ramVal) / 100; tint: "#feca57" }
                             ResourcePill { icon: "thermostat"; title: "Temperatura CPU"; val: dashboard.cpuTemp; sub: "Core Temp"; prog: parseFloat(dashboard.cpuTemp) / 100.0; isGauge: true; tint: "#ff7675" }
                             ResourcePill { icon: "device_thermostat"; title: "Temperatura GPU"; val: dashboard.gpuTemp; sub: "AMD Radeon"; prog: parseFloat(dashboard.gpuTemp) / 100.0; isGauge: true; tint: "#ff9f43" }
                             ResourcePill { icon: "hard_drive"; title: "Almacenamiento"; val: dashboard.diskUsePct; sub: dashboard.diskVal + " Libre"; prog: parseFloat(dashboard.diskUsePct) / 100; tint: "#48dbfb" }
                             ResourcePill { icon: "apps"; title: "Procesos Activos"; val: dashboard.processesVal; sub: "Total tareas"; prog: Math.min(parseFloat(dashboard.processesVal) / 500.0, 1.0); isGauge: true; tint: "#a29bfe" }
-                            ResourcePill { icon: "schedule"; title: "Tiempo Activo"; val: dashboard.upTimeVal; sub: "Desde inicio"; isGauge: false; tint: page.accent }
+                            ResourcePill { icon: "schedule"; title: "Tiempo Activo"; val: dashboard.upTimeVal; sub: "Desde inicio"; isGauge: false; tint: page.smartAccent }
                             ResourcePill { icon: "code_blocks"; title: "Quickshell"; val: dashboard.qsVer; sub: "Versión Instalada"; isGauge: false; tint: "#00d2d3" }
                             ResourcePill { icon: "grid_view"; title: "Hyprland"; val: dashboard.hyprVer; sub: "Compositor"; isGauge: false; tint: "#5f27cd" }
                             Item { Layout.preferredHeight: 4 }
                         }
                     }
                 }
+
                 // 2.2 BLOQUE CRIPTO
                 UI.CryptoCard {
                     Layout.columnSpan: 2
@@ -364,18 +411,12 @@ Item {
                     Layout.preferredHeight: 380
                     theme: page.theme
                 }
-                // 2.4 BLOQUE NOTICIAS
-         //       UI.NewsCard {
-          //          Layout.columnSpan: 2
-          //          Layout.fillWidth: true
-          //          Layout.preferredHeight: 580
-         //           theme: page.theme
-        //        }
 
                 Item { Layout.preferredHeight: 20; Layout.columnSpan: 2 }
             }
         }
     }
+
     // COMPONENTE: TEXTO CON MARQUEE
     component MarqueeText : Item {
         property alias text: txt.text
@@ -411,6 +452,7 @@ Item {
             }
         }
     }
+
     // COMPONENTE: PÍLDORA MEJORADA
     component ResourcePill : Rectangle {
         property string icon
@@ -446,7 +488,7 @@ Item {
                 spacing: 4
                 Text {
                     text: title
-                    color: page.onSurface
+                    color: page.smartText // Adapta a blanco/negro
                     font.bold: true
                     font.pixelSize: 13
                     font.family: page.theme.fontMain
@@ -457,17 +499,16 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 16
                     text: sub
-                    color: page.onSurfaceMuted
+                    color: page.smartTextMuted
                     font.pixelSize: 11
                     font.family: page.theme.fontMain
-                    opacity: 0.85
                 }
                 Rectangle {
                     visible: isGauge
                     Layout.fillWidth: true
                     Layout.preferredHeight: 6
                     radius: 3
-                    color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+                    color: Qt.rgba(page.smartText.r, page.smartText.g, page.smartText.b, 0.10)
                     Rectangle {
                         height: parent.height
                         width: parent.width * Math.min(Math.max(prog, 0), 1)
@@ -486,7 +527,7 @@ Item {
                     visible: isGauge
                     anchors.centerIn: parent
                     text: val
-                    color: page.onSurface
+                    color: page.smartText
                     font.pixelSize: 15
                     font.bold: true
                     font.family: page.theme.fontMain
@@ -509,7 +550,7 @@ Item {
                         id: badgeText
                         anchors.centerIn: parent
                         text: val
-                        color: page.onSurface
+                        color: page.smartText
                         font.pixelSize: 13
                         font.bold: true
                         font.family: page.theme.fontMain
