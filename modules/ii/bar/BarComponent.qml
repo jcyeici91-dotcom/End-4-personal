@@ -27,6 +27,36 @@ Item {
 
     readonly property var safeList: (Array.isArray(list) ? list : [])
 
+    // ---------------------------------------------------------
+    // Color helpers
+    // ---------------------------------------------------------
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.55 }
+    function _on(bg, a) { return _isDark(bg) ? Qt.rgba(1, 1, 1, a) : Qt.rgba(0, 0, 0, a) }
+
+    // ---------------------------------------------------------
+    // Tokens (se calculan a partir del background del grupo)
+    // Estos son los que arreglan el look en light.
+    // ---------------------------------------------------------
+    readonly property color groupBg: wrapper.colBackground
+
+    readonly property color onStrong: _on(groupBg, 0.95)
+    readonly property color onNormal: _on(groupBg, 0.86)
+    readonly property color onMuted:  _on(groupBg, 0.62)
+    readonly property color onIcon:   _on(groupBg, 0.90)
+
+    // Para chips/pills dentro del widget (si lo usan)
+    readonly property color chipBg: _isDark(groupBg)
+        ? Qt.rgba(1, 1, 1, 0.10)
+        : Qt.rgba(0, 0, 0, 0.08)
+
+    readonly property color chipBorder: _isDark(groupBg)
+        ? Qt.rgba(1, 1, 1, 0.16)
+        : Qt.rgba(0, 0, 0, 0.14)
+
+    // ---------------------------------------------------------
+    // Visibility toggle (igual que tu versión)
+    // ---------------------------------------------------------
     function toggleVisible(visibility) {
         rootItem.visible = visibility
 
@@ -45,11 +75,9 @@ Item {
         arr[rootItem.originalIndex].visible = visibility
     }
 
-    // [horizontal, vertical]
-    // FIX: Añadidos alias para que funcionen los IDs:
-    // - left_sidebar_button
-    // - right_sidebar_button
-    // Sin depender de que existan tipos QML LeftSidebarButton/RightSidebarButton.
+    // ---------------------------------------------------------
+    // Component map
+    // ---------------------------------------------------------
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
         "music_player": [musicPlayerComp, musicPlayerCompVert],
@@ -65,11 +93,9 @@ Item {
         "timer": [timerComp, timerCompVert],
         "weather": [weatherComp, weatherComp],
 
-        // IDs “nuevos”
         "policies_panel_button": [policiesPanelButtonComp, policiesPanelButtonComp],
         "dashboard_panel_button": [dashboardPanelButtonComp, dashboardPanelButtonCompVert],
 
-        // IDs “sidebar” (alias para compatibilidad con tu layout/config)
         "left_sidebar_button": [policiesPanelButtonComp, policiesPanelButtonComp],
         "right_sidebar_button": [dashboardPanelButtonComp, dashboardPanelButtonCompVert]
     })
@@ -88,7 +114,7 @@ Item {
             return (rootItem.originalIndex === 0) ? Appearance.rounding.full : Appearance.rounding.verysmall
         } else if (rootItem.isRight) {
             return rootItem.anyVisibleBefore(rootItem.originalIndex) ? Appearance.rounding.verysmall : Appearance.rounding.full
-        } else { // center
+        } else {
             if (rootItem.safeList.length <= 1) return Appearance.rounding.full
             return rootItem.anyVisibleBefore(rootItem.originalIndex) ? Appearance.rounding.verysmall : Appearance.rounding.full
         }
@@ -99,12 +125,38 @@ Item {
             return (rootItem.originalIndex === rootItem.safeList.length - 1) ? Appearance.rounding.full : Appearance.rounding.verysmall
         } else if (rootItem.isLeft) {
             return rootItem.anyVisibleAfter(rootItem.originalIndex) ? Appearance.rounding.verysmall : Appearance.rounding.full
-        } else { // center
+        } else {
             if (rootItem.safeList.length <= 1) return Appearance.rounding.full
             return rootItem.anyVisibleAfter(rootItem.originalIndex) ? Appearance.rounding.verysmall : Appearance.rounding.full
         }
     }
 
+    // ---------------------------------------------------------
+    // Token injection into loaded widget (no rompe si no existen)
+    // ---------------------------------------------------------
+    function applyTokens(item) {
+        if (!item) return
+
+        // “on*” colors
+        if (item.onStrong !== undefined) item.onStrong = rootItem.onStrong
+        if (item.onNormal !== undefined) item.onNormal = rootItem.onNormal
+        if (item.onMuted !== undefined)  item.onMuted  = rootItem.onMuted
+        if (item.onIcon !== undefined)   item.onIcon   = rootItem.onIcon
+
+        // chips
+        if (item.chipBg !== undefined) item.chipBg = rootItem.chipBg
+        if (item.chipBorder !== undefined) item.chipBorder = rootItem.chipBorder
+
+        // extra: por si tus widgets usan otros nombres típicos
+        if (item.textColor !== undefined) item.textColor = rootItem.onStrong
+        if (item.iconColor !== undefined) item.iconColor = rootItem.onIcon
+        if (item.mutedTextColor !== undefined) item.mutedTextColor = rootItem.onMuted
+        if (item.backgroundColor !== undefined) item.backgroundColor = rootItem.groupBg
+    }
+
+    // ---------------------------------------------------------
+    // Wrapper group
+    // ---------------------------------------------------------
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
@@ -117,6 +169,7 @@ Item {
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
 
+        // Fondo por widget (como lo tenías) — esto afecta el cálculo de tokens
         colBackground: (rootItem.modelData && rootItem.primaryBackgroundComps.includes(rootItem.modelData.id))
             ? Appearance.m3colors.m3primary
             : Appearance.m3colors.m3surfaceContainerLow
@@ -131,9 +184,14 @@ Item {
             readonly property var chosen: (pair && pair.length >= 2) ? pair[rootItem.vertical ? 1 : 0] : null
 
             sourceComponent: chosen ? chosen : unknownComp
+
+            onLoaded: rootItem.applyTokens(item)
         }
     }
 
+    // ---------------------------------------------------------
+    // Components
+    // ---------------------------------------------------------
     Component {
         id: unknownComp
         Item { implicitWidth: 1; implicitHeight: 1 }

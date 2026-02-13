@@ -3,16 +3,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 import Qt.labs.folderlistmodel
-import qs.services
+import Qt.labs.platform 1.1
+
+import qs.services            
 import qs.modules.common
 import qs.modules.common.widgets
-import Qt.labs.platform 1.1
 
 Item {
     id: page
     required property var theme
-    // Ruta de tus fondos
-    property url wallpapersFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0] + "/Wallpapers"
+
+    // Ruta de tus fondos    /HOME/usuario/Pictures/Wallpapers/
+    property url wallpapersFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0] + "/Wallpapers"        
 
     property string selectedPath: ""
     property bool reduceMotion: false
@@ -25,13 +27,16 @@ Item {
 
     readonly property color accent: (page.theme && page.theme.colAccent) ? page.theme.colAccent : Qt.rgba(0.45, 0.65, 1.0, 1.0)
     readonly property string fontMain: (page.theme && page.theme.fontMain) ? page.theme.fontMain : ""
+
     function toCleanPath(fileUrl) {
         return fileUrl.toString().replace("file://", "")
     }
+
     function applyWallpaper(cleanPath) {
         page.selectedPath = cleanPath
         Wallpapers.select(cleanPath, Appearance.m3colors.darkmode)
     }
+
     function pickRandomWallpaper() {
         if (wallpaperModel.count <= 0) return
         var idx = Math.floor(Math.random() * wallpaperModel.count)
@@ -39,12 +44,13 @@ Item {
         var clean = page.toCleanPath(url)
         page.applyWallpaper(clean)
     }
+
     function rescanWallpapers() {
- 
         var f = page.wallpapersFolder
         wallpaperModel.folder = ""
         wallpaperModel.folder = f
     }
+
     FolderListModel {
         id: wallpaperModel
         folder: page.wallpapersFolder
@@ -53,6 +59,7 @@ Item {
         showDotAndDotDot: false
         sortField: FolderListModel.Name
     }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
@@ -67,10 +74,12 @@ Item {
             border.width: 1
             border.color: page.border0
             clip: true
+
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 12
                 spacing: 10
+
                 Rectangle {
                     width: 34
                     height: 34
@@ -78,6 +87,7 @@ Item {
                     color: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.16)
                     border.width: 1
                     border.color: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.18)
+
                     MaterialSymbol {
                         anchors.centerIn: parent
                         text: "palette"
@@ -85,29 +95,36 @@ Item {
                         font.pixelSize: 20
                     }
                 }
+
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 0
+
                     Text {
-                        text: "Galería de fondos"
+                        text: Translation.tr("Wallpapers.GalleryTitle")
                         color: page.onSurface
                         font.pixelSize: 16
                         font.bold: true
                         font.family: page.fontMain
                         elide: Text.ElideRight
                     }
+
                     Text {
-                        text: wallpaperModel.count > 0 ? (wallpaperModel.count + " imágenes") : "Sin imágenes"
+                        text: wallpaperModel.count > 0
+                              ? Translation.tr("Wallpapers.ImageCount").arg(wallpaperModel.count)
+                              : Translation.tr("Wallpapers.NoImages")
                         color: page.onSurfaceMuted
                         font.pixelSize: 11
                         font.family: page.fontMain
                         elide: Text.ElideRight
                     }
                 }
+
                 // Botones de acción
                 RowLayout {
                     spacing: 8
                     Layout.alignment: Qt.AlignVCenter
+
                     // Botón: Aleatorio
                     Rectangle {
                         width: 34
@@ -116,6 +133,7 @@ Item {
                         color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
                         border.width: 1
                         border.color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "shuffle"
@@ -123,6 +141,7 @@ Item {
                             font.pixelSize: 18
                             opacity: 0.90
                         }
+
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
@@ -130,6 +149,7 @@ Item {
                             opacity: rndMouse.pressed ? 0.22 : (rndMouse.containsMouse ? 0.10 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
+
                         MouseArea {
                             id: rndMouse
                             anchors.fill: parent
@@ -138,6 +158,7 @@ Item {
                             onClicked: page.pickRandomWallpaper()
                         }
                     }
+
                     // Botón: Re-escanear
                     Rectangle {
                         width: 34
@@ -146,6 +167,7 @@ Item {
                         color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
                         border.width: 1
                         border.color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "refresh"
@@ -153,6 +175,7 @@ Item {
                             font.pixelSize: 18
                             opacity: 0.90
                         }
+
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
@@ -160,6 +183,7 @@ Item {
                             opacity: refMouse.pressed ? 0.22 : (refMouse.containsMouse ? 0.10 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
+
                         MouseArea {
                             id: refMouse
                             anchors.fill: parent
@@ -168,6 +192,7 @@ Item {
                             onClicked: page.rescanWallpapers()
                         }
                     }
+
                     // Botón: Reducir movimiento (toggle)
                     Rectangle {
                         width: 34
@@ -180,6 +205,7 @@ Item {
                         border.color: page.reduceMotion
                                      ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.35)
                                      : Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: page.reduceMotion ? "motion_photos_off" : "motion_photos_on"
@@ -187,6 +213,7 @@ Item {
                             font.pixelSize: 18
                             opacity: 0.95
                         }
+
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
@@ -194,6 +221,7 @@ Item {
                             opacity: motMouse.pressed ? 0.22 : (motMouse.containsMouse ? 0.10 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
+
                         MouseArea {
                             id: motMouse
                             anchors.fill: parent
@@ -203,62 +231,52 @@ Item {
                         }
                     }
                 }
-                // Chip de ruta 
-                Rectangle {
-                    radius: 14
-                    implicitHeight: 28
-                    implicitWidth: pathText.implicitWidth + 18
-                    color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
-                    border.width: 1
-                    border.color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
-                    Text {
-                        id: pathText
-                        anchors.centerIn: parent
-                        text: page.wallpapersFolder.toString().replace("file://", "")
-                        color: page.onSurfaceMuted
-                        font.pixelSize: 10
-                        font.family: page.fontMain
-                        elide: Text.ElideMiddle
-                        width: Math.min(260, implicitWidth)
-                    }
-                }
             }
         }
 
-        // GRID “TOP TOP” (pero sin brillos molestos)
-          GridView {
+        // GRID
+        GridView {
             id: wallGrid
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+
             readonly property int columns: width < 420 ? 1 : 2
             readonly property int gap: 10
+
             cellWidth: Math.floor((width - (gap * (columns - 1))) / columns)
             cellHeight: 176
+
             model: wallpaperModel
             boundsBehavior: Flickable.StopAtBounds
             cacheBuffer: 800
+
             ScrollBar.vertical: ScrollBar {
                 id: vbar
                 policy: ScrollBar.AsNeeded
                 width: 8
                 active: wallGrid.moving || wallGrid.flicking
+
                 contentItem: Rectangle {
                     radius: 4
                     color: vbar.pressed
                            ? Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.55)
                            : Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.35)
                 }
+
                 background: Rectangle {
                     radius: 4
                     color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.08)
                 }
             }
+
             delegate: Item {
                 width: wallGrid.cellWidth
                 height: wallGrid.cellHeight
+
                 readonly property string cleanPath: page.toCleanPath(fileUrl)
                 readonly property bool isSelected: page.selectedPath === cleanPath
+
                 Rectangle {
                     id: card
                     anchors.fill: parent
@@ -270,7 +288,7 @@ Item {
                                   ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.90)
                                   : page.border0
                     clip: true
-      
+
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         shadowEnabled: true
@@ -279,6 +297,7 @@ Item {
                         shadowVerticalOffset: 2
                         shadowHorizontalOffset: 0
                     }
+
                     Image {
                         id: img
                         anchors.fill: parent
@@ -289,23 +308,26 @@ Item {
                         sourceSize.width: 600
                         smooth: true
                     }
-          
+
                     Rectangle {
                         id: placeholder
                         anchors.fill: parent
                         visible: img.status !== Image.Ready
                         color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
+
                         Rectangle {
                             id: shimmer
                             width: parent.width * 0.45
                             height: parent.height
                             x: -width
                             color: "transparent"
+
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.00) }
                                 GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.08) }
                                 GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
                             }
+
                             NumberAnimation on x {
                                 running: placeholder.visible && !page.reduceMotion
                                 loops: Animation.Infinite
@@ -328,6 +350,7 @@ Item {
                             GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.60) }
                         }
                     }
+
                     Text {
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -340,7 +363,7 @@ Item {
                         font.family: page.fontMain
                         elide: Text.ElideRight
                     }
-                    // Indicador top-right
+
                     Rectangle {
                         anchors.top: parent.top
                         anchors.right: parent.right
@@ -354,6 +377,7 @@ Item {
                                : Qt.rgba(0, 0, 0, 0.35)
                         border.width: 1
                         border.color: Qt.rgba(1, 1, 1, 0.18)
+
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: isSelected ? "check" : "wallpaper"
@@ -361,14 +385,14 @@ Item {
                             font.pixelSize: 18
                         }
                     }
-                    // Overlay hover/press
+
                     Rectangle {
                         anchors.fill: parent
                         color: "black"
                         opacity: wallMouse.pressed ? 0.30 : (wallMouse.containsMouse ? 0.10 : 0.0)
                         Behavior on opacity { NumberAnimation { duration: 110 } }
                     }
-                    // Ripple discreto (solo en press)
+
                     Rectangle {
                         id: ripple
                         width: 12
@@ -379,8 +403,10 @@ Item {
                         x: cx - width / 2
                         y: cy - height / 2
                         opacity: 1.0
+
                         property real cx: card.width / 2
                         property real cy: card.height / 2
+
                         function burst(px, py) {
                             if (page.reduceMotion) return
                             cx = px
@@ -391,6 +417,7 @@ Item {
                             height = 12
                             anim.restart()
                         }
+
                         ParallelAnimation {
                             id: anim
                             NumberAnimation { target: ripple; property: "width"; to: Math.max(card.width, card.height) * 1.25; duration: 320; easing.type: Easing.OutCubic }
@@ -399,27 +426,25 @@ Item {
                             onFinished: ripple.visible = false
                         }
                     }
-                    // Elevación sutil en hover (muy leve)
+
                     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
                     Behavior on y { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
                     scale: wallMouse.containsMouse ? 1.008 : 1.0
                     y: wallMouse.containsMouse ? -1 : 0
+
                     MouseArea {
                         id: wallMouse
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onPressed: (mouse) => ripple.burst(mouse.x, mouse.y)
-                        onClicked: {
-                            // Funcionalidad ORIGINAL: cambiar fondo
-                            page.applyWallpaper(cleanPath)
-                        }
+                        onClicked: page.applyWallpaper(cleanPath)
                     }
                 }
             }
         }
-        // Estado vacío
-        Rectangle {
+
+            Rectangle {
             Layout.fillWidth: true
             visible: wallpaperModel.count === 0
             radius: 16
@@ -427,19 +452,23 @@ Item {
             border.width: 1
             border.color: page.border0
             implicitHeight: 86
+
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 14
                 spacing: 4
+
                 Text {
-                    text: "No se encontraron imágenes."
+                    text: Translation.tr("Wallpapers.EmptyTitle")
                     color: page.onSurface
                     font.pixelSize: 14
                     font.bold: true
                     font.family: page.fontMain
                 }
+
                 Text {
-                    text: "Carpeta: " + wallpaperModel.folder.toString().replace("file://", "")
+                    text: Translation.tr("Wallpapers.FolderLabel")
+                        .arg(wallpaperModel.folder.toString().replace("file://", ""))
                     color: page.onSurfaceMuted
                     font.pixelSize: 11
                     font.family: page.fontMain
@@ -450,3 +479,4 @@ Item {
         }
     }
 }
+

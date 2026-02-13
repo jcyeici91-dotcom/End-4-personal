@@ -1,7 +1,3 @@
-// SidebarPoliciesContent.qml (Qt6)
-// UI vieja (header + pills + frame) + sistema nuevo (policies + tabs dinámicos)
-// + Sistema (Overview) + Fondos (WallpapersPage viejo) + Wallpapers (WallpaperBrowserUI nuevo)
-
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -23,27 +19,34 @@ Item {
 
     UI.SidebarTheme { id: theme }
 
-    // Policies (nuevo)
+    // STICKER 
+     readonly property url welcomeStickerSourcePortable: Qt.resolvedUrl("./assets/gifs/1.png")
+    readonly property url welcomeStickerSourceFallback: "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/1.png"
+    property bool allowStickerFallback: true
+
+    // Header tuning
+    property int headerInnerPadding: 14
+
+    // PNG flotante 
+    property int floatingBadgeSize: 90         // tamaño del “mini/png”
+    property int floatingBadgeLift: -5        // cuanto sube por encima del header (más = más arriba)
+    property int floatingBadgeRightPadding: 10  // separación del borde derecho
+
+    // Policies
     property bool aiChatEnabled: Config.options.policies.ai !== 0
     property bool translatorEnabled: Config.options.policies.translator !== 0
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool wallpapersEnabled: Config.options.policies.wallpapers !== 0
 
-    // Tabs: Sistema + Fondos (viejo) + lo nuevo (incluyendo Wallpapers original)
-    // OJO: el orden DEBE coincidir con contentChildren.
     readonly property var tabButtonList: [
         { "key": "system", "icon": "dashboard", "name": Translation.tr("Sistema") },
-
-        // Fondos = tus fondos (viejo)
         { "key": "fundos", "icon": "palette", "name": Translation.tr("Fondos") },
 
-        ...(root.aiChatEnabled ? [{ "key": "ai", "icon": "neurology", "name": Translation.tr("Intelligence") }] : []),
-        ...(root.translatorEnabled ? [{ "key": "tr", "icon": "translate", "name": Translation.tr("Translator") }] : []),
+        ...(root.aiChatEnabled ? [{ "key": "ai", "icon": "neurology", "name": Translation.tr("IA") }] : []),
+        ...(root.translatorEnabled ? [{ "key": "tr", "icon": "translate", "name": Translation.tr("Traductor") }] : []),
 
-        // Wallpapers = buscador/manager nuevo (solo si policy lo permite)
         ...(root.wallpapersEnabled ? [{ "key": "walls", "icon": "wallpaper", "name": Translation.tr("Wallpapers") }] : []),
-
         ...((root.animeEnabled && !root.animeCloset) ? [{ "key": "anime", "icon": "bookmark_heart", "name": Translation.tr("Anime") }] : [])
     ]
 
@@ -66,7 +69,7 @@ Item {
         anchors.margins: root.sidebarPadding
         spacing: 16
 
-        // Header (viejo)
+        // Header
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
@@ -75,27 +78,112 @@ Item {
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.05)
 
-            RowLayout {
-                anchors.centerIn: parent
-                spacing: 12
+            // clave para que el PNG pueda “salirse” hacia arriba
+            clip: false
 
-                MaterialSymbol {
-                    text: "auto_awesome"
-                    font.pixelSize: 18
-                    color: theme.colAccent
+            // Contenedor general
+            Item {
+                anchors.fill: parent
+
+                // Grupo centrado (ícono + texto)
+                Row {
+                    id: centeredWelcome
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    MaterialSymbol {
+                        text: "auto_awesome"
+                        font.pixelSize: 18
+                        color: theme.colAccent
+                    }
+
+                    Text {
+                        id: welcomeText
+                        text: "Welcome to my fortress"
+                        color: theme.colText
+                        font.pixelSize: 14
+                        font.bold: true
+                        font.family: theme.fontMain
+                        wrapMode: Text.NoWrap
+                        maximumLineCount: 1
+                        elide: Text.ElideRight
+                    }
                 }
 
-                Text {
-                    text: "Hakadosh Baruj Hu"
-                    color: theme.colText
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: theme.fontMain
+                // “Badge” a la derecha (pero el PNG va flotando encima)
+                Item {
+                    id: floatingBadge
+                    width: root.floatingBadgeSize
+                    height: root.floatingBadgeSize
+                    anchors.right: parent.right
+                    anchors.rightMargin: root.floatingBadgeRightPadding
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    // El PNG flotante (encima del header)
+                    Image {
+                        id: welcomeStickerPortable
+                        width: root.floatingBadgeSize
+                        height: root.floatingBadgeSize
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: -root.floatingBadgeLift
+
+                        source: root.welcomeStickerSourcePortable
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        mipmap: true
+                        antialiasing: true
+                        visible: status === Image.Ready
+                    }
+
+                    Image {
+                        id: welcomeStickerFallback
+                        width: root.floatingBadgeSize
+                        height: root.floatingBadgeSize
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: -root.floatingBadgeLift
+
+                        source: root.welcomeStickerSourceFallback
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        mipmap: true
+                        antialiasing: true
+                        visible: root.allowStickerFallback
+                                 && !welcomeStickerPortable.visible
+                                 && status === Image.Ready
+                    }
+
+                    // Placeholder si ninguna carga
+                    Rectangle {
+                        width: root.floatingBadgeSize
+                        height: root.floatingBadgeSize
+                        radius: root.floatingBadgeSize / 2
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: -root.floatingBadgeLift
+                        color: Qt.rgba(1, 1, 1, 0.10)
+                        border.width: 1
+                        border.color: Qt.rgba(1, 1, 1, 0.10)
+                        visible: !welcomeStickerPortable.visible && !welcomeStickerFallback.visible
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "rocket_launch"
+                            font.pixelSize: Math.round(root.floatingBadgeSize * 0.55)
+                            color: theme.colAccent
+                        }
+                    }
+                }
+
+                // padding interno visual (opcional, por si luego añades cosas)
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: root.headerInnerPadding
+                    color: "transparent"
+                    visible: false
                 }
             }
         }
 
-        // Nav pills (viejo)
+        // Nav pills
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: root.hasTabs ? 85 : 0
@@ -151,6 +239,9 @@ Item {
                                 font.bold: navItem.isActive
                                 color: navItem.isActive ? theme.colText : theme.colSubText
                                 opacity: navItem.isActive ? 1.0 : 0.8
+                                wrapMode: Text.NoWrap
+                                maximumLineCount: 1
+                                elide: Text.ElideRight
                             }
                         }
 
@@ -197,18 +288,13 @@ Item {
                     maskSpreadAtMin: 0.7
                 }
 
-                // MISMO ORDEN que tabButtonList
                 contentChildren: [
-                    // Sistema
                     systemPage.createObject(root),
-
-                    // Fondos (viejo: tus fondos)
                     fondosPage.createObject(root),
 
                     ...(root.aiChatEnabled ? [aiChat.createObject(root)] : []),
                     ...(root.translatorEnabled ? [translator.createObject(root)] : []),
 
-                    // Wallpapers (nuevo) solo si policy lo permite
                     ...(root.wallpapersEnabled ? [wallpaperBrowser.createObject(root)] : []),
 
                     ...(root.animeEnabled ? [anime.createObject(root)] : [])
@@ -236,14 +322,8 @@ Item {
 
         // Pages
         Component { id: systemPage; Pages.OverviewPage { theme: theme } }
-
-        // Fondos = viejo (tus fondos)
         Component { id: fondosPage; Pages.WallpapersPage { theme: theme } }
-
-        // Wallpapers = nuevo (buscar/descubrir)
         Component { id: wallpaperBrowser; WallpaperBrowserUI { } }
-
-        // Nuevo
         Component { id: aiChat; AiChat { } }
         Component { id: translator; Translator { } }
         Component { id: anime; Anime { } }

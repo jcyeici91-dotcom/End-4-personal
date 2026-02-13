@@ -1,8 +1,4 @@
 pragma ComponentBehavior: Bound
-
-// ---------------------------------------------------------
-// 0) IMPORTS
-// ---------------------------------------------------------
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.models
@@ -17,9 +13,6 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import "../../common/utils"
 
-// ---------------------------------------------------------
-// 1) ROOT
-// ---------------------------------------------------------
 Item {
     id: root
 
@@ -119,10 +112,7 @@ property int islandMaxWidth: 780
     property int ringCycleMsPlay: tunedRingMsPlay
     property int ringCycleMsIdle: tunedRingMsIdle
 
-
-    // =====================================================
     // 2) MPRIS: bootstrap + estado del player + metadata
-    // =====================================================
     property int _mprisRefreshTick: 0
 
     Timer {
@@ -159,9 +149,40 @@ property int islandMaxWidth: 780
     readonly property string fullText: trackTitle + (trackArtist ? " • " + trackArtist : "")
 
 
-    // =====================================================
+// THEME: Colores adaptativos 
+function _luma(c) {
+    // luminancia aproximada sRGB (0..1)
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+}
+
+// Detecta si el tema es "claro" mirando el color base de layer
+// (si tu tema expone otro color más fiable, lo cambiamos)
+readonly property bool isLightTheme: _luma(Appearance.colors.colLayer1) > 0.55
+
+// Fondo/borde del island
+readonly property color islandBgColor: isLightTheme
+    ? Qt.rgba(1.0, 1.0, 1.0, 0.72)          // claro: “glass” blanco
+    : Qt.rgba(0.08, 0.08, 0.10, 0.72)       // oscuro: tu valor actual
+
+readonly property color islandBorderColor: isLightTheme
+    ? Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.14 : 0.10))
+    : Qt.rgba(1.0, 1.0, 1.0, (root.islandExpanded ? 0.13 : 0.11))
+
+// Textos: primario y secundario
+readonly property color islandTextPrimary: isLightTheme
+    ? Qt.rgba(0.06, 0.06, 0.07, 0.98)       // casi negro
+    : Qt.rgba(1.0, 1.0, 1.0, 0.92)
+
+readonly property color islandTextSecondary: isLightTheme
+    ? Qt.rgba(0.10, 0.10, 0.12, 0.72)
+    : Qt.rgba(1.0, 1.0, 1.0, 0.72)
+
+// Sombras de texto (en claro conviene MUY suave; en oscuro ayuda más)
+readonly property color islandTextShadowColor: isLightTheme
+    ? Qt.rgba(1.0, 1.0, 1.0, 0.35)          // glow suave claro
+    : Qt.rgba(0.0, 0.0, 0.0, 0.55)          // sombra oscura
+
     // 3) ART (carátula)
-    // =====================================================
     function normalizeArtUrl(u) {
         if (!u) return ""
         if (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("file://") || u.startsWith("image://"))
@@ -183,10 +204,8 @@ property int islandMaxWidth: 780
     readonly property string trackArt: normalizeArtUrl(trackArtRaw)
 
 
-    // =====================================================
-    // 4) LYRICS: config + loader + estado derivado
-    // =====================================================
-    readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
+     // 4) LYRICS: config + loader + estado derivado
+        readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
     readonly property bool useGradientMask: Config.options.bar.mediaPlayer.lyrics.useGradientMask
     readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style // "static" | "scrolling"
     readonly property bool showLoadingIndicator: Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator
@@ -277,10 +296,7 @@ property int islandMaxWidth: 780
         ? (lyricsLoader.item?.currentIndex ?? -1)
         : -1
 
-
-    // =====================================================
     // 5) WIDTH: límites + cálculos + “stable width” (anti-jitter)
-    // =====================================================
     property int maxWidthLyrics: 900
     property int maxWidthNoLyrics: 430
     property int minWidthNoLyrics: 180
@@ -397,11 +413,7 @@ property int islandMaxWidth: 780
         }
     }
 
-
-    // =====================================================
     // 6) WAVEVISUALIZER (cava): proceso + puntos
-    // (CORREGIDO: solo UNA declaración de visualizerPoints)
-    // =====================================================
     property list<real> visualizerPoints: []
 
     Process {
@@ -430,10 +442,7 @@ property int islandMaxWidth: 780
         }
     }
 
-
-    // =====================================================
     // 7) Anti-recorte: boot refresh + barHeightLimit
-    // =====================================================
     property int _bootRefresh: 0
 
     Timer {
@@ -461,11 +470,7 @@ property int islandMaxWidth: 780
         return Math.max(24, h)
     }
 
-
-    // =====================================================
     // 7.1) TUNING ADAPTATIVO (PONER AQUÍ)
-    // Este bloque es el que te decía: depende de barHeightLimit.
-    // =====================================================
     readonly property real barT: {
         // 0 en 30px, 1 en 50px
         var t = (root.barHeightLimit - 30) / 20.0
@@ -488,9 +493,7 @@ property int islandMaxWidth: 780
     readonly property int tunedRingMsPlay: Math.round(1050 + 200 * barT)     // 1050..1250
 
 
-    // =====================================================
     // 8) Expand/Collapse: regla + tamaños finales
-    // =====================================================
     readonly property bool islandExpanded: root.hasMedia && (
         GlobalStates.mediaControlsOpen ||
         (root.islandEnabled && root.expandOnHover && islandHover.hovered) ||
@@ -515,13 +518,13 @@ property int islandMaxWidth: 780
   readonly property int targetIslandHeight: {
     if (!root.hasMedia) return 0
 
-    // Nunca permitas un mínimo mayor que la barra real
+    // un mínimo mayor que la barra real
     var hLimit = Math.max(24, Math.floor(root.barHeightLimit))
     var minSafeH = Math.min(24, hLimit)   // <= 24, pero si la barra es 24 también encaja
 
     var expandedH  = Math.max(minSafeH, hLimit)
 
-    // Colapsado clamped para tu rango 30..50, pero sin pasarse del límite real
+    // Colapsado clamped 
     var collapsedH = Math.max(minSafeH, Math.floor(root.islandCollapsedHeight))
     collapsedH = Math.min(collapsedH, hLimit)
 
@@ -532,22 +535,15 @@ property int islandMaxWidth: 780
     // Clamp final: JAMÁS más alto que la barra
     return Math.max(minSafeH, Math.min(desired, hLimit))
 }
-
-
-
-    // =====================================================
+ 
     // 9) Hover “suavizado” (0..1) para reacciones (ring, etc.)
-    // =====================================================
     property real hoverAmount: islandHover.hovered ? 1.0 : 0.0
     Behavior on hoverAmount {
         enabled: root.animEnabled && root.animLayoutTransitions
         NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
 
-
-    // =====================================================
     // 10) Pulse al cambiar lyric line
-    // =====================================================
     property real islandScale: 1.0
     property int _lastPulseIndex: -999
 
@@ -584,10 +580,7 @@ property int islandMaxWidth: 780
         }
     }
 
-
-    // =====================================================
     // 11) Overshoot iOS-like (inercia visual en X)
-    // =====================================================
     property real overshootX: 1.0
 
     function triggerOvershoot(expanding) {
@@ -625,9 +618,7 @@ property int islandMaxWidth: 780
         }
     }
 
-// =====================================================
 // 12) Layout / Visibilidad  (FINAL: nudge adaptativo + minHeight limpio)
-// =====================================================
 property int _layoutNudgePx: 0
 
 Timer {
@@ -680,11 +671,8 @@ Behavior on opacity {
     NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
 }
 
-
-    // =====================================================
     // 13) SHELL VISUAL: fondo, borde, sombra, hover, aliveFx
-    // =====================================================
-    Item {
+     Item {
         id: islandShell
         anchors.fill: parent
         visible: root.hasMedia
@@ -702,15 +690,18 @@ Behavior on opacity {
                   * ((root.animEnabled && root.islandAliveFx && root.hasMedia) ? aliveFx.breatheY : 1.0)
         }
 
-        Rectangle {
-            id: islandBg
-            anchors.fill: parent
-            radius: root.islandRadius
-            color: Qt.rgba(0.08, 0.08, 0.10, 0.72)
+      Rectangle {
+    id: islandBg
+    anchors.fill: parent
+    radius: root.islandRadius
 
-            border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
-            border.color: Qt.rgba(1, 1, 1, root.islandExpanded ? 0.13 : 0.11)
-        }
+    // Antes: color fijo oscuro
+    // Ahora: adaptativo
+    color: root.islandBgColor
+
+    border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
+    border.color: root.islandBorderColor
+}
 
       layer.enabled: root.fxDropShadows
 layer.effect: DropShadow {
@@ -778,11 +769,8 @@ layer.effect: DropShadow {
             }
         }
 
-
-        // =================================================
         // 14) INPUT: MouseArea global
-        // =================================================
-        MouseArea {
+             MouseArea {
             id: mouseControl
             anchors.fill: parent
             hoverEnabled: true
@@ -812,10 +800,7 @@ layer.effect: DropShadow {
             }
         }
 
-
-        // =================================================
-        // 15) CONTENIDO: Collapsed / Expanded con STATE + Transition
-        // =================================================
+        // 15) CONTENIDO: Collapsed / Expanded
         Item {
             id: contentRoot
             anchors.fill: parent
@@ -848,9 +833,7 @@ layer.effect: DropShadow {
                 }
             ]
 
-             // ---------------------------------------------
         // 15.1) Vista COLAPSADA (FIX: Portada siempre visible)
-        // ---------------------------------------------
         Item {
             id: collapsedView
             anchors.fill: parent
@@ -972,7 +955,7 @@ layer.effect: DropShadow {
                         Layout.fillWidth: true
                         text: root.trackArtist.length ? root.trackArtist
                              : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
-                        color: Appearance.colors.colOnLayer1
+                        color: root.islandTextPrimary
                         font.pixelSize: Appearance.font.pixelSize.smallie + 1
                         font.bold: true
                         elide: Text.ElideRight
@@ -1014,7 +997,7 @@ layer.effect: DropShadow {
                             parent: collapsedStrip
                             anchors.verticalCenter: parent.verticalCenter
                             text: collapsedLyricViewport.lineText
-                            color: Qt.rgba(1, 1, 1, 0.75)
+                            color: root.islandTextSecondary
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             elide: Text.ElideNone
                         }
@@ -1054,11 +1037,7 @@ layer.effect: DropShadow {
             }
         }
 
-
-
-            // ---------------------------------------------
             // 15.2) Vista EXPANDIDA
-            // ---------------------------------------------
             Item {
                 id: expandedView
                 anchors.fill: parent
@@ -1114,7 +1093,7 @@ layer.effect: DropShadow {
 
                             readonly property real hoverT: root.hoverAmount
 
-                            // Opacidad base + boost por hover (ADAPTATIVO 30..50)
+                            // Opacidad base + boost por hover 
                             readonly property real baseOpacity: root.isPlaying ? 1.0 : 0.58
                             readonly property real hoverBoost: (0.20 + 0.10 * root.barT) * hoverT // 0.20..0.30
                             opacity: Math.min(1.0, baseOpacity + hoverBoost)
@@ -1303,11 +1282,8 @@ layer.effect: DropShadow {
                         }
                     }
 
-
-                    // =========================================
-                    // 15.2.1) LYRICS SCROLLER
-                    // =========================================
-                    Item {
+                      // 15.2.1) LYRICS SCROLLER
+                         Item {
                         id: lyricScroller
                         Layout.fillWidth: false
                         Layout.preferredWidth: implicitWidth
@@ -1512,11 +1488,8 @@ layer.effect: DropShadow {
                         }
                     }
 
-
-                    // =========================================
-                    // 15.2.2) NO LYRICS: marquee + waves
-                    // =========================================
-                    Item {
+                   // 15.2.2) NO LYRICS: marquee + waves
+                        Item {
                         id: marqueeViewport
                         Layout.fillWidth: false
                         Layout.preferredWidth: implicitWidth
@@ -1544,7 +1517,7 @@ layer.effect: DropShadow {
                             parent: movingStrip
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.fullText
-                            color: Appearance.colors.colOnLayer1
+                            color: root.islandTextPrimary
                             font.pixelSize: Appearance.font.pixelSize.smallie + 2
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
@@ -1607,9 +1580,7 @@ layer.effect: DropShadow {
         }
     }
 
-     // =====================================================
     // 16) COMPONENTE: LyricLine (seguro + limpio)
-    // =====================================================
     component LyricLine: Item {
         id: lyricLineItem
 
@@ -1619,7 +1590,7 @@ layer.effect: DropShadow {
         property string gradientDirection: "top" // "top" | "bottom"
         property real fillProgress: 0.0
 
-        // Altura inyectada desde lyricScroller (evita depender de ids externos)
+        // Altura inyectada desde lyricScroller 
         property int lineHeight: Math.max(12, Appearance.font.pixelSize.smallie + 4)
 
         property bool reallyUseGradient: useGradient && root.useGradientMask && root.fxLyricsGradientMask
@@ -1642,7 +1613,7 @@ layer.effect: DropShadow {
             StyledText {
                 anchors.centerIn: parent
                 text: lyricLineItem.text
-                color: lyricLineItem.highlight ? Qt.rgba(1, 1, 1, 0.3) : Appearance.colors.colSubtext
+                color: lyricLineItem.highlight ? root.islandTextSecondary : root.islandTextSecondary
                 font: textMeasurer.font
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -1663,7 +1634,7 @@ layer.effect: DropShadow {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     text: lyricLineItem.text
-                    color: Appearance.colors.colOnLayer1
+                    color: root.islandTextPrimary
                     font: textMeasurer.font
                     elide: Text.ElideNone
                     wrapMode: Text.NoWrap
@@ -1675,7 +1646,7 @@ layer.effect: DropShadow {
                         verticalOffset: 1
                         radius: 6
                         samples: 16
-                        color: Qt.rgba(0, 0, 0, 0.45)
+                        color: root.islandTextShadowColor
                     }
                 }
             }

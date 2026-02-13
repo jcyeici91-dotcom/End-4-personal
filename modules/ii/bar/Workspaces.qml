@@ -135,7 +135,21 @@ property int workspaceIconMarginShrinked: -4               // ajsute de la izqui
     // 1.2.5) Partículas
     property int activeParticlesCount: 5
 
+//==========================================================================
+// 🎨 DETECCIÓN INTELIGENTE DE TEMA (Auto-Contraste)
+//==========================================================================
 
+// Luminancia aproximada (suficiente para decidir claro/oscuro)
+function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+function _isDark(c) { return _lin(c) < 0.65 }
+
+// Detecta si el fondo base del tema es oscuro
+readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
+
+// Texto inteligente: oscuro->blanco, claro->casi negro
+readonly property color smartTextColor: themeIsDark ? "#FFFFFF" : "#0B0B0B"
+
+ 
     //==========================================================================
     // 1.3) ESTADO EXTERNO / BINDINGS (solo lectura)
     //==========================================================================
@@ -1213,12 +1227,18 @@ component WorkspaceBackgroundIndicator: Item {
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
 
-        // Colores más contrastados (recomendado para modo Super)
-        color: activeWorkspace
-            ? Qt.rgba(1, 1, 1, 1)
-            : (hasWindows
-                ? Qt.rgba(1, 1, 1, 0.75)
-                : Qt.rgba(1, 1, 1, 0.45))
+     // Color automático según tema + estado
+color: activeWorkspace
+    ? root.smartTextColor
+    : (hasWindows
+        ? ColorUtils.transparentize(root.smartTextColor, 0.05)
+        : ColorUtils.transparentize(root.smartTextColor, 0.35))
+
+// Contorno para legibilidad en fondos claros/ruidosos
+style: Text.Outline
+styleColor: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(1, 1, 1, 0.75)
+
+
 
         Behavior on opacity {
             animation: Appearance.animation.elementMove.numberAnimation.createObject(this)

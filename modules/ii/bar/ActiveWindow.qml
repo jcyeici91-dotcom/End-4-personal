@@ -16,7 +16,6 @@ Item {
 
     property bool vertical: false
 
-    // Configuración visual
     property int maxSize: 350
     property bool isFixedSize: Config.options.bar.activeWindow.fixedSize
     property int fixedSize: vertical ? 150 : 250
@@ -25,7 +24,6 @@ Item {
     property bool prismaticBorder: true
 
     property bool liveTitleEnabled: true
-
     property int liveTitleMaxShrinkPx: 60
     property int liveTitleRightExpandPx: 12
     property int liveTitleMinWidthPx: 120
@@ -39,8 +37,40 @@ Item {
     property real prismAngle: 0.0
     property point parallaxOffset: Qt.point(0, 0)
 
+    function _luma(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+
+    readonly property color _themeProbe: (
+        Appearance.colors.colLayer0
+        ?? Appearance.colors.colLayer1
+        ?? Appearance.colors.colSurface
+        ?? Appearance.colors.colBackground
+        ?? Appearance.colors.colOnSurface
+    )
+
+    readonly property bool isLightTheme: _luma(_themeProbe) > 0.55
+
+    readonly property color titleColor: isLightTheme
+        ? Qt.rgba(0.05, 0.05, 0.06, 0.98)
+        : Qt.rgba(1.00, 1.00, 1.00, 0.96)
+
+    readonly property color labelColor: isLightTheme
+        ? Qt.rgba(0.08, 0.08, 0.10, 0.84)
+        : Qt.rgba(1.00, 1.00, 1.00, 0.78)
+
+    readonly property real labelOpacity: 1.0
+
+    readonly property bool titleShadowEnabled: true
+    readonly property color titleShadowColor: isLightTheme
+        ? Qt.rgba(1.0, 1.0, 1.0, 0.10)
+        : Qt.rgba(0.0, 0.0, 0.0, 0.60)
+
+    readonly property color labelShadowColor: isLightTheme
+        ? Qt.rgba(1.0, 1.0, 1.0, 0.06)
+        : Qt.rgba(0.0, 0.0, 0.0, 0.50)
+
     QtObject {
         id: internal
+
         property bool focusingThisMonitor: HyprlandData.activeWorkspace?.monitor == monitor?.name
         property var biggestWindow: HyprlandData.biggestWindowForWorkspace(
             HyprlandData.monitors[root.monitor?.id]?.activeWorkspace.id
@@ -79,20 +109,22 @@ Item {
     Behavior on implicitHeight { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
 
     NumberAnimation on prismAngle {
-        from: 0; to: 360; duration: 10000; loops: Animation.Infinite
-        // aunque siga corriendo, ya no se ve porque apagamos bgCapsule
+        from: 0
+        to: 360
+        duration: 10000
+        loops: Animation.Infinite
         running: root.prismaticBorder && root.visible
     }
 
-        Rectangle {
+    Rectangle {
         id: bgCapsule
         anchors.fill: parent
         anchors.margins: 2
         radius: 10
         color: Appearance.colors.colOnSurface
         opacity: 0.0
-        visible: false          // <-  no se dibuja nunca
-        enabled: false          // <- y no procesa nada
+        visible: false
+        enabled: false
 
         Rectangle {
             anchors.fill: parent
@@ -100,7 +132,6 @@ Item {
             color: "transparent"
             border.width: 1.5
             opacity: 0.0
-
             layer.enabled: false
             layer.effect: ConicalGradient {
                 angle: root.prismAngle
@@ -138,7 +169,7 @@ Item {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
 
-                    Rectangle {
+                Rectangle {
                     anchors.centerIn: parent
                     width: 20
                     height: 20
@@ -168,7 +199,7 @@ Item {
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     shadowBlur: 0.8
-                    shadowOpacity: 0.3
+                    shadowOpacity: 0.30
                     shadowVerticalOffset: 1
                 }
             }
@@ -179,15 +210,25 @@ Item {
                 spacing: 0
 
                 StyledText {
+                    id: appClassText
                     visible: !root.vertical
                     Layout.fillWidth: true
                     text: internal.classText.toUpperCase()
                     font.pixelSize: 9
                     font.bold: true
                     font.capitalization: Font.AllUppercase
-                    color: Appearance.colors.colSubtext
-                    opacity: 0.65
+                    color: root.labelColor
+                    opacity: root.labelOpacity
                     elide: Text.ElideRight
+
+                    layer.enabled: root.titleShadowEnabled
+                    layer.effect: DropShadow {
+                        horizontalOffset: 0
+                        verticalOffset: root.isLightTheme ? 0 : 1
+                        radius: root.isLightTheme ? 3 : 6
+                        samples: root.isLightTheme ? 8 : 14
+                        color: root.labelShadowColor
+                    }
                 }
 
                 Item {
@@ -198,8 +239,6 @@ Item {
 
                     property int baseWidth: Math.min(titleTextMetrics.width, root.maxSize - 60)
                     property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
-
-                    // Scroll SOLO cuando el mouse está encima
                     readonly property bool hoverScrollEnabled: mouseArea.containsMouse
 
                     property real progress: {
@@ -225,10 +264,7 @@ Item {
                     Layout.preferredWidth: liveWidth
 
                     Behavior on liveWidth {
-                        NumberAnimation {
-                            duration: root.liveTitleWidthAnimMs
-                            easing.type: Easing.OutCubic
-                        }
+                        NumberAnimation { duration: root.liveTitleWidthAnimMs; easing.type: Easing.OutCubic }
                     }
 
                     TextMetrics {
@@ -243,7 +279,7 @@ Item {
                         text: internal.titleText
                         font.pixelSize: Appearance.font.pixelSize.medium
                         font.bold: true
-                        color: Appearance.colors.colOnLayer0
+                        color: root.titleColor
 
                         property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
 
@@ -254,6 +290,15 @@ Item {
                                      ? (0.015 * titleViewport.progress)
                                      : 0.0)
                         transformOrigin: Item.Left
+
+                        layer.enabled: root.titleShadowEnabled
+                        layer.effect: DropShadow {
+                            horizontalOffset: 0
+                            verticalOffset: root.isLightTheme ? 0 : 1
+                            radius: root.isLightTheme ? 4 : 8
+                            samples: root.isLightTheme ? 10 : 16
+                            color: root.titleShadowColor
+                        }
 
                         SequentialAnimation on x {
                             running: mainTitle.shouldScroll && root.visible && titleViewport.hoverScrollEnabled
@@ -312,9 +357,6 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
 
-         onEntered: {
-            // nada
-        }
         onExited: {
             root.parallaxOffset = Qt.point(0, 0)
             mainTitle.x = 0

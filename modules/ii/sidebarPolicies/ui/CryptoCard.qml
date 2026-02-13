@@ -6,8 +6,9 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 
-import qs.modules.common            // Appearance.*
+import qs.modules.common        
 import qs.modules.common.widgets
+import qs.services                  
 
 Rectangle {
     id: root
@@ -47,7 +48,7 @@ Rectangle {
     property string lastUpdated: ""
     property string apiUrl: "https://api.binance.com/api/v3/ticker/24hr"
 
-    // ---- Favoritos 
+    // ---- Favoritos
     property var favoritesMap: ({})
     property int favoritesRevision: 0
 
@@ -73,7 +74,7 @@ Rectangle {
         if (root.sortMode === "FAV") filterList(root.searchQuery)
     }
 
-      function nowHHMM() {
+    function nowHHMM() {
         var d = new Date()
         return (d.getHours().toString().padStart(2, "0")) + ":" + (d.getMinutes().toString().padStart(2, "0"))
     }
@@ -236,7 +237,7 @@ Rectangle {
                         ColumnLayout {
                             spacing: 2
                             Text {
-                                text: "Crypto Market"
+                                text: Translation.tr("Crypto Market")
                                 font.family: root.fontMain
                                 font.weight: Font.Black
                                 font.pixelSize: 16
@@ -246,7 +247,7 @@ Rectangle {
                                 spacing: 8
                                 Rectangle { width: 7; height: 7; radius: 4; color: root.isOffline ? "#ff7675" : "#00d084"; opacity: 0.95 }
                                 Text {
-                                    text: root.isOffline ? "Offline" : "Live"
+                                    text: root.isOffline ? Translation.tr("Offline") : Translation.tr("Live")
                                     font.family: root.fontMain
                                     font.pixelSize: 11
                                     color: root.isOffline ? root.onSurfaceMuted : "#00d084"
@@ -254,7 +255,7 @@ Rectangle {
                                 }
                                 Text {
                                     visible: !root.isOffline && root.lastUpdated !== ""
-                                    text: "· " + root.lastUpdated
+                                    text: Translation.tr("· %1").arg(root.lastUpdated)
                                     font.family: root.fontMain
                                     font.pixelSize: 11
                                     color: root.onSurfaceMuted
@@ -289,7 +290,6 @@ Rectangle {
                             Layout.fillHeight: true
                             radius: 16
 
-                            // Igual filosofía Vitality: superficie + borde del sistema
                             color: root.surface0
                             border.width: 1
                             border.color: searchInput.activeFocus
@@ -331,7 +331,7 @@ Rectangle {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: "Buscar (BTC, ETH...)"
+                                        text: Translation.tr("Search (BTC, ETH...)")
                                         font.family: root.fontMain
                                         font.pixelSize: 14
                                         color: root.onSurfaceMuted
@@ -388,12 +388,12 @@ Rectangle {
                 height: parent.height
                 spacing: 10
 
-                FilterChip { text: "Volumen";    active: root.sortMode === "VOL";  onClicked: { root.sortMode = "VOL";  refreshData() } }
-                FilterChip { text: "Ganadoras";  active: root.sortMode === "GAIN"; onClicked: { root.sortMode = "GAIN"; refreshData() } }
-                FilterChip { text: "Perdedoras"; active: root.sortMode === "LOSS"; onClicked: { root.sortMode = "LOSS"; refreshData() } }
+                FilterChip { text: Translation.tr("Volume");     active: root.sortMode === "VOL";  onClicked: { root.sortMode = "VOL";  refreshData() } }
+                FilterChip { text: Translation.tr("Gainers");    active: root.sortMode === "GAIN"; onClicked: { root.sortMode = "GAIN"; refreshData() } }
+                FilterChip { text: Translation.tr("Losers");     active: root.sortMode === "LOSS"; onClicked: { root.sortMode = "LOSS"; refreshData() } }
 
                 FilterChip {
-                    text: "Favoritos"
+                    text: Translation.tr("Favorites")
                     active: root.sortMode === "FAV"
                     onClicked: {
                         root.sortMode = "FAV"
@@ -416,7 +416,7 @@ Rectangle {
 
                         MaterialSymbol { text: "numbers"; font.pixelSize: 16; color: root.onSurfaceMuted; opacity: 0.7 }
                         Text {
-                            text: filteredModel.count + " coins"
+                            text: Translation.tr("%1 coins").arg(filteredModel.count)
                             font.family: root.fontMain
                             font.pixelSize: 12
                             font.weight: Font.DemiBold
@@ -441,7 +441,7 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 visible: !root.isLoading && filteredModel.count === 0
-                text: "Sin resultados"
+                text: Translation.tr("No results")
                 font.family: root.fontMain
                 font.pixelSize: 13
                 color: root.onSurfaceMuted
@@ -468,7 +468,7 @@ Rectangle {
     }
 
     // Components
-     component IconPillButton: Rectangle {
+    component IconPillButton: Rectangle {
         property string symbol: ""
         signal clicked()
 
@@ -476,7 +476,6 @@ Rectangle {
         implicitHeight: 40
         radius: 16
 
-        // Vitality style: surface + border del sistema
         color: root.surface0
         border.width: 1
         border.color: root.border0
@@ -516,7 +515,6 @@ Rectangle {
             ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.92)
             : root.surface0
 
-        // Importante: NO borde blanco; usamos border0
         border.width: 1
         border.color: active
             ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.55)
@@ -633,7 +631,7 @@ Rectangle {
         property bool hovered: ma.containsMouse
         property bool pressed: false
 
-             color: pressed
+        color: pressed
             ? Qt.rgba(root.onSurface.r, root.onSurface.g, root.onSurface.b, 0.10)
             : (hovered ? Qt.rgba(root.onSurface.r, root.onSurface.g, root.onSurface.b, 0.07)
                        : Qt.rgba(root.onSurface.r, root.onSurface.g, root.onSurface.b, 0.05))
