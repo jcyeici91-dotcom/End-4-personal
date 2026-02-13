@@ -46,6 +46,10 @@ Item {
     }
 
     // [horizontal, vertical]
+    // FIX: Añadidos alias para que funcionen los IDs:
+    // - left_sidebar_button
+    // - right_sidebar_button
+    // Sin depender de que existan tipos QML LeftSidebarButton/RightSidebarButton.
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
         "music_player": [musicPlayerComp, musicPlayerCompVert],
@@ -60,8 +64,14 @@ Item {
         "screen_share_indicator": [screenshareIndicatorComp, screenshareIndicatorComp],
         "timer": [timerComp, timerCompVert],
         "weather": [weatherComp, weatherComp],
+
+        // IDs “nuevos”
         "policies_panel_button": [policiesPanelButtonComp, policiesPanelButtonComp],
-        "dashboard_panel_button": [dashboardPanelButtonComp, dashboardPanelButtonCompVert]
+        "dashboard_panel_button": [dashboardPanelButtonComp, dashboardPanelButtonCompVert],
+
+        // IDs “sidebar” (alias para compatibilidad con tu layout/config)
+        "left_sidebar_button": [policiesPanelButtonComp, policiesPanelButtonComp],
+        "right_sidebar_button": [dashboardPanelButtonComp, dashboardPanelButtonCompVert]
     })
 
     property var primaryBackgroundComps: ["timer", "record_indicator", "screen_share_indicator"]

@@ -45,6 +45,17 @@ Item { // Bar content region
     readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
 
     // -----------------------------
+    // Glass tuning (MEJOR LEGIBILIDAD)
+    // -----------------------------
+    // Sube/baja estos valores si lo quieres más oscuro o más “cristal”.
+    readonly property color glassTint: Qt.rgba(0.02, 0.03, 0.05, 0.40)     // fondo oscuro translúcido (mejora texto)
+    readonly property color glassHighlightTop: Qt.rgba(1.0, 1.0, 1.0, 0.10) // brillo suave
+    readonly property color glassHighlightMid: Qt.rgba(1.0, 1.0, 1.0, 0.03)
+    readonly property color glassHighlightBot: Qt.rgba(0.9, 0.95, 1.0, 0.06)
+    readonly property color glassBorderOuter: Qt.rgba(1.0, 1.0, 1.0, 0.22) // menos “blanco duro”
+    readonly property color glassBorderInner: Qt.rgba(0.0, 0.0, 0.0, 0.22) // define borde y mejora contraste
+
+    // -----------------------------
     // Responsive sizing (igual que tu lógica)
     // -----------------------------
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width)
@@ -154,7 +165,7 @@ Item { // Bar content region
     onFullModelChanged: recomputeCenterSplit()
 
     // ---------------------------------------------------------
-    // Background shadow
+    // Background shadow (un poco más fuerte en glass para legibilidad)
     // ---------------------------------------------------------
     Loader {
         active: (Config?.options?.bar?.cornerStyle === 1)
@@ -165,9 +176,9 @@ Item { // Bar content region
         sourceComponent: StyledRectangularShadow {
             anchors.fill: undefined
             target: barBackground
-            color: root.useGlassMode ? Qt.rgba(0.0, 0.05, 0.1, 0.16) : Qt.rgba(0, 0, 0, 0.22)
-            blur: root.useGlassMode ? 26 : 14
-            spread: root.useGlassMode ? -3 : -2
+            color: root.useGlassMode ? Qt.rgba(0.0, 0.0, 0.0, 0.34) : Qt.rgba(0, 0, 0, 0.22)
+            blur: root.useGlassMode ? 30 : 14
+            spread: root.useGlassMode ? -2 : -2
         }
     }
 
@@ -186,62 +197,67 @@ Item { // Bar content region
         radius: (Config?.options?.bar?.cornerStyle === 1) ? Appearance.rounding.windowRounding : 0
         antialiasing: true
 
-        color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
+        // CLAVE: en glass ya NO es totalmente transparente -> mejora muchísimo la legibilidad
+        color: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
+
         border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
+        border.color: root.showSolidBackground ? Appearance.colors.colLayer0Border : Qt.rgba(1, 1, 1, 0.10)
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
 
-        // Glass overlay
-        Rectangle {
+        // Glass overlay (luces suaves, sin “lavar” el texto)
+        Item {
             anchors.fill: parent
-            radius: barBackground.radius
-            clip: true
-            antialiasing: true
             visible: root.useGlassMode
-            color: "transparent"
+            clip: true
 
+            // Highlight gradient (suave)
             Rectangle {
                 anchors.fill: parent
-                radius: parent.radius
+                radius: barBackground.radius
+                antialiasing: true
                 gradient: Gradient {
                     orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(1.0, 1.0, 1.0, 0.11) }
-                    GradientStop { position: 0.45; color: Qt.rgba(1.0, 1.0, 1.0, 0.04) }
-                    GradientStop { position: 1.0; color: Qt.rgba(0.9, 0.95, 1.0, 0.07) }
+                    GradientStop { position: 0.0; color: root.glassHighlightTop }
+                    GradientStop { position: 0.45; color: root.glassHighlightMid }
+                    GradientStop { position: 1.0; color: root.glassHighlightBot }
                 }
             }
 
+            // Very subtle sheen
             Rectangle {
                 anchors.fill: parent
-                radius: parent.radius
+                radius: barBackground.radius
+                antialiasing: true
                 gradient: Gradient {
                     orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.14) }
-                    GradientStop { position: 0.33; color: Qt.rgba(1, 1, 1, 0.0) }
-                    GradientStop { position: 1.0; color: "transparent" }
+                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.10) }
+                    GradientStop { position: 0.30; color: Qt.rgba(1, 1, 1, 0.00) }
+                    GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
                 }
             }
 
+            // Outer border (menos fuerte que antes)
+            Rectangle {
+                anchors.fill: parent
+                radius: barBackground.radius
+                color: "transparent"
+                border.width: 1
+                antialiasing: true
+                border.color: root.glassBorderOuter
+            }
+
+            // Inner border (oscuro) para separar del wallpaper y mejorar lectura
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
-                radius: Math.max(0, parent.radius - 1)
+                radius: Math.max(0, barBackground.radius - 1)
                 color: "transparent"
                 border.width: 1
                 antialiasing: true
-                border.color: Qt.rgba(1.0, 1.0, 1.0, 0.45)
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                color: "transparent"
-                border.width: 1
-                border.color: Qt.rgba(1.0, 1.0, 1.0, 0.16)
-                antialiasing: true
+                border.color: root.glassBorderInner
             }
         }
 
