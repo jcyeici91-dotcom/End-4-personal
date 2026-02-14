@@ -10,26 +10,17 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
 
-Item { // Bar content region
+Item {
     id: root
 
-    // -----------------------------
-    // Screen / monitor
-    // -----------------------------
     property var screen: root.QsWindow?.window?.screen ?? null
     property int monitorIndex: -1
 
-    // -----------------------------
-    // Brightness
-    // -----------------------------
     property var brightnessMonitor: null
     function recomputeBrightnessMonitor() {
         root.brightnessMonitor = Brightness.getMonitorForScreen(root.screen)
     }
 
-    // -----------------------------
-    // Background style logic
-    // -----------------------------
     property bool hasActiveWindows: false
     readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
@@ -40,83 +31,34 @@ Item { // Bar content region
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
     readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
 
-    // -----------------------------
-    // Theme helpers (CONTRASTE MEJORADO)
-    // -----------------------------
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
-    
-    // Umbral ajustado: Si el fondo es medianamente oscuro, lo tratamos como oscuro
     function _isDark(c) { return _lin(c) < 0.65 }
-
-    // NUEVO HELPER DE TEXTO:
-    // Si el fondo es oscuro -> Blanco Puro
-    // Si el fondo es claro -> Negro Puro (Máximo contraste)
-    function _on(bg, a) { 
-        // Ignoramos el alpha 'a' para el color base para evitar que se vea "opaco"
-        return _isDark(bg) ? "#FFFFFF" : "#000000" 
-    }
+    function _on(bg) { return _isDark(bg) ? "#FFFFFF" : "#000000" }
 
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
-    // -----------------------------
-    // GLASS TUNING (CRISTAL LECHOSO)
-    // -----------------------------
     readonly property color glassTint: themeIsDark
-        ? Qt.rgba(0.05, 0.05, 0.05, 0.50) // Dark: Más sólido para que resalte el blanco
-        : Qt.rgba(0.96, 0.96, 0.98, 0.75) // Light: BLANCO LECHOSO (75% opacidad) para que el texto negro se lea
+        ? Qt.rgba(0.02, 0.02, 0.03, 0.42)
+        : Qt.rgba(0.98, 0.98, 1.00, 0.58)
 
-    readonly property color glassHighlightTop: themeIsDark
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.15)
-        : Qt.rgba(1.0, 1.0, 1.0, 0.90) // Brillo casi sólido arriba
+    readonly property color glassRim: themeIsDark
+        ? Qt.rgba(1, 1, 1, 0.18)
+        : Qt.rgba(1, 1, 1, 0.55)
 
-    readonly property color glassHighlightMid: themeIsDark
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.02)
-        : Qt.rgba(1.0, 1.0, 1.0, 0.40) // Centro iluminado
+    readonly property color glassRimInner: themeIsDark
+        ? Qt.rgba(0, 0, 0, 0.26)
+        : Qt.rgba(0, 0, 0, 0.12)
 
-    readonly property color glassHighlightBot: themeIsDark
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.05)
-        : Qt.rgba(1.0, 1.0, 1.0, 0.60) // Reflejo inferior fuerte
+    readonly property color barBgColor: showSolidBackground ? Appearance.colors.colLayer0 : glassTint
 
-    readonly property color glassBorderOuter: themeIsDark
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.25)
-        : Qt.rgba(1.0, 1.0, 1.0, 0.80) // Borde blanco muy visible en light mode
+    readonly property color onBarStrong: _on(barBgColor)
+    readonly property color onBar: _on(barBgColor)
+    readonly property color onBarMuted: themeIsDark ? "#AAAAAA" : "#444444"
+    readonly property color onBarIcon: _on(barBgColor)
 
-    readonly property color glassBorderInner: themeIsDark
-        ? Qt.rgba(0.0, 0.0, 0.0, 0.30)
-        : Qt.rgba(0.0, 0.0, 0.0, 0.10) // Borde interno sutil
+    readonly property color chipBg: themeIsDark ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(0, 0, 0, 0.10)
+    readonly property color chipBorder: themeIsDark ? Qt.rgba(1, 1, 1, 0.20) : Qt.rgba(0, 0, 0, 0.20)
 
-    readonly property color glassScrim: themeIsDark
-        ? Qt.rgba(0, 0, 0, 0.10)
-        : Qt.rgba(1, 1, 1, 0.30) // Base blanca extra
-
-    // -----------------------------
-    // TOKENS DE CONTENIDO (COLORES FUERTES)
-    // -----------------------------
-    readonly property color barBgColor: showSolidBackground
-        ? Appearance.colors.colLayer0
-        : glassTint
-
-    // Aquí forzamos colores sólidos sin opacidad para evitar el look "opaco/lavado"
-    readonly property color onBarStrong: _on(barBgColor, 1.0) 
-    readonly property color onBar:       _on(barBgColor, 1.0)
-    
-    // Los iconos secundarios (Muted) ahora son gris oscuro (#444) en vez de gris claro (#AAA) en light mode
-    readonly property color onBarMuted:  themeIsDark ? "#AAAAAA" : "#444444" 
-    
-    readonly property color onBarIcon:   _on(barBgColor, 1.0)
-
-    // Chips más visibles
-    readonly property color chipBg: themeIsDark
-        ? Qt.rgba(1, 1, 1, 0.15)
-        : Qt.rgba(0, 0, 0, 0.10) // Negro al 10% en light mode
-
-    readonly property color chipBorder: themeIsDark
-        ? Qt.rgba(1, 1, 1, 0.20)
-        : Qt.rgba(0, 0, 0, 0.20)
-
-    // -----------------------------
-    // Responsive sizing
-    // -----------------------------
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width)
         ? 2
         : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width)
@@ -129,9 +71,6 @@ Item { // Bar content region
             ? Appearance.sizes.barCenterSideModuleWidthShortened
             : Appearance.sizes.barCenterSideModuleWidth
 
-    // ---------------------------------------------------------
-    // Hyprland: detectar ventanas
-    // ---------------------------------------------------------
     function resolveMonitorForThisBar() {
         if (!HyprlandData) return null
         if (root.monitorIndex >= 0) {
@@ -184,9 +123,6 @@ Item { // Bar content region
         if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
     }
 
-    // ---------------------------------------------------------
-    // Center split
-    // ---------------------------------------------------------
     property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
     property var leftList: []
     property var centerList: []
@@ -213,9 +149,6 @@ Item { // Bar content region
     }
     onFullModelChanged: recomputeCenterSplit()
 
-    // ---------------------------------------------------------
-    // Background shadow
-    // ---------------------------------------------------------
     Loader {
         active: (Config?.options?.bar?.cornerStyle === 1)
                 && !!(Config?.options?.bar?.floatStyleShadow)
@@ -226,16 +159,13 @@ Item { // Bar content region
             anchors.fill: undefined
             target: barBackground
             color: root.useGlassMode
-                ? (root.themeIsDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.25)) // Sombra más fuerte
-                : Qt.rgba(0, 0, 0, 0.22)
-            blur: root.useGlassMode ? 40 : 14
+                ? (root.themeIsDark ? Qt.rgba(0, 0, 0, 0.42) : Qt.rgba(0, 0, 0, 0.22))
+                : Qt.rgba(0, 0, 0, 0.20)
+            blur: root.useGlassMode ? 46 : 14
             spread: -2
         }
     }
 
-    // ---------------------------------------------------------
-    // Background (SOLID o GLASS)
-    // ---------------------------------------------------------
     Rectangle {
         id: barBackground
         z: -10
@@ -251,53 +181,69 @@ Item { // Bar content region
         color: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
 
         border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
-        // Borde blanco en modo claro para separar del fondo
         border.color: root.showSolidBackground
             ? Appearance.colors.colLayer0Border
-            : (root.themeIsDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.40))
+            : (root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.28))
 
         Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
         Behavior on border.color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
 
-        // --- CAPAS EFECTO CRISTAL ---
         Item {
             anchors.fill: parent
             visible: root.useGlassMode
             clip: true
 
-            // 1. Tinte base
             Rectangle {
                 anchors.fill: parent
                 radius: barBackground.radius
-                color: root.glassScrim
                 antialiasing: true
+                color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.10)
             }
 
-            // 2. Gradiente
             Rectangle {
                 anchors.fill: parent
                 radius: barBackground.radius
                 antialiasing: true
                 gradient: Gradient {
                     orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: root.glassHighlightTop }
-                    GradientStop { position: 0.45; color: root.glassHighlightMid }
-                    GradientStop { position: 1.0; color: root.glassHighlightBot }
+                    GradientStop { position: 0.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.65) }
+                    GradientStop { position: 0.40; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.22) }
+                    GradientStop { position: 1.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.40) }
                 }
             }
 
-            // 3. Borde exterior brillante
+            Rectangle {
+                anchors.fill: parent
+                radius: barBackground.radius
+                antialiasing: true
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.22) }
+                    GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
+                }
+                transform: Rotation { origin.x: barBackground.width / 2; origin.y: barBackground.height / 2; angle: -18 }
+                opacity: 0.85
+            }
+
             Rectangle {
                 anchors.fill: parent
                 radius: barBackground.radius
                 color: "transparent"
                 border.width: 1
                 antialiasing: true
-                border.color: root.glassBorderOuter
+                border.color: root.glassRim
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, barBackground.radius - 1)
+                color: "transparent"
+                border.width: 1
+                antialiasing: true
+                border.color: root.glassRimInner
             }
         }
 
-        // Capa sólida para transición
         Rectangle {
             anchors.fill: parent
             radius: barBackground.radius
@@ -309,9 +255,6 @@ Item { // Bar content region
         }
     }
 
-    // ---------------------------------------------------------
-    // Left scroll
-    // ---------------------------------------------------------
     FocusedScrollMouseArea {
         id: barLeftSideMouseArea
         anchors.top: parent.top
@@ -335,13 +278,9 @@ Item { // Bar content region
             side: "left"
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            // Ya no asignamos 'color' aquí para evitar el error anterior
         }
     }
 
-    // ---------------------------------------------------------
-    // Layout sections
-    // ---------------------------------------------------------
     Item {
         id: leftStopper
         anchors.top: parent.top
@@ -481,3 +420,4 @@ Item { // Bar content region
         if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
     }
 }
+

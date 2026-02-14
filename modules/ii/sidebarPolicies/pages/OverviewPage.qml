@@ -637,7 +637,20 @@ Item {
                  //   Layout.preferredHeight: 420
                 //    theme: page.theme
               //  }
-
+                         // 2.3 BLOQUE GOOGLE DISCOVER (NOTICIAS)
+                GoogleDiscoverPage {
+                    Layout.columnSpan: 2
+                    Layout.fillWidth: true
+                    
+                    // IMPORTANTE: Como tiene una lista infinita dentro, 
+                    // debes darle altura o no se verá dentro de un ScrollView.
+                 //   Layout.preferredHeight: 500 
+                    
+                    // Opcional: Un fondo o borde para que parezca tarjeta unificada
+                    // Si tu GoogleDiscoverPage ya tiene fondo, esto no es necesario.
+                  //  clip: true
+                }
+   
                 Item { Layout.preferredHeight: 20; Layout.columnSpan: 2 }
             }
         }
