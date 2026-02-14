@@ -38,7 +38,7 @@ Item {
         spacing: 16
 
         // ---------------------------------------------------------
-        // 1) BARRA DE BÚSQUEDA (Google bonito) + búsqueda como antes
+        // 1) BARRA DE BÚSQUEDA
         // ---------------------------------------------------------
         Rectangle {
             Layout.fillWidth: true
@@ -60,7 +60,6 @@ Item {
                 anchors.rightMargin: 14
                 spacing: 12
 
-                // Logo estilo Google (colores)
                 Text {
                     visible: !root.inSearchMode
                     textFormat: Text.RichText
@@ -126,8 +125,10 @@ Item {
         }
 
         // ---------------------------------------------------------
-        // 2) CARRUSEL (PARTIDOS) + flechas
-        // + DETECTOR DE GOLES (notificación instantánea con anotador)
+        // 2) CARRUSEL (PARTIDOS)
+        //   - FIX rueda: clamp correcto usando originX (evita “espacios vacíos”)
+        //   - FIX “se queda en 3”: no bloqueamos el flick; wheel solo ajusta contentX con límites reales
+        //   - Flechas: ahora avanzan “poco a poco” (por página) y con repetición al mantener presionado
         // ---------------------------------------------------------
         Item {
             Layout.fillWidth: true
@@ -144,18 +145,78 @@ Item {
                 interactive: true
                 flickableDirection: Flickable.HorizontalFlick
                 boundsBehavior: Flickable.StopAtBounds
+                cacheBuffer: 1200
 
-                function maxX() { return Math.max(0, contentWidth - width) }
+                // Animación suave cuando ajustamos contentX (rueda/flechas)
+                Behavior on contentX {
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
 
+                // ---- Límites robustos (IMPORTANTÍSIMO) ----
+                // En QtQuick, el “inicio” real es originX (no siempre 0).
+                function minX() { return originX }
+                function maxX() { return Math.max(originX, originX + contentWidth - width) }
+
+                function setX(x) {
+                    contentX = clamp(x, minX(), maxX())
+                }
+
+                function clampNow() {
+                    setX(contentX)
+                }
+
+                // “Página” (avanzar poco a poco con flechas)
+                function pageStepPx() {
+                    // 85% del ancho visible se siente como “pasar tarjetas”
+                    return Math.max(160, Math.floor(width * 0.85))
+                }
+
+                function scrollPage(side) {
+                    var step = pageStepPx()
+                    if (side === "left") setX(contentX - step)
+                    else setX(contentX + step)
+                }
+
+                // Repara cambios de layout/modelo (evita quedarse en blanco)
+                onContentWidthChanged: Qt.callLater(clampNow)
+                onWidthChanged: Qt.callLater(clampNow)
+                onCountChanged: Qt.callLater(clampNow)
+                onMovementEnded: clampNow
+
+                // Wheel: usa pixelDelta si existe; si no, angleDelta.
+                // Y siempre “clamp” con minX/maxX reales (originX).
                 WheelHandler {
                     target: scoresList
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+                    // Nota: Si aceptamos el wheel, el ListView no hace scroll “solo”.
+                    // Aquí lo hacemos nosotros de forma correcta.
                     onWheel: (wheel) => {
-                        const dy = wheel.angleDelta.y
-                        const dx = wheel.angleDelta.x
-                        const delta = (Math.abs(dy) >= Math.abs(dx)) ? dy : dx
-                        const step = delta * 1.2
-                        scoresList.contentX = clamp(scoresList.contentX - step, 0, scoresList.maxX())
+                        // Preferir scroll horizontal si existe
+                        var dx = 0
+                        var dy = 0
+
+                        if (wheel.pixelDelta) {
+                            dx = wheel.pixelDelta.x
+                            dy = wheel.pixelDelta.y
+                        }
+                        if ((dx === 0 && dy === 0) && wheel.angleDelta) {
+                            dx = wheel.angleDelta.x
+                            dy = wheel.angleDelta.y
+                        }
+
+                        // En muchos mouse, el scroll viene por dy.
+                        // Elegimos el eje dominante y lo aplicamos horizontal.
+                        var dominant = (Math.abs(dx) > Math.abs(dy)) ? dx : dy
+
+                        // Sensibilidad (ajústala si quieres)
+                        var factor = wheel.pixelDelta && (wheel.pixelDelta.x !== 0 || wheel.pixelDelta.y !== 0) ? 1.0 : 0.35
+                        var delta = dominant * factor
+
+                        // Importante: el signo usualmente viene invertido respecto a contentX,
+                        // esta fórmula se siente natural: wheel arriba => mover hacia la izquierda.
+                        scoresList.setX(scoresList.contentX - delta)
+
                         wheel.accepted = true
                     }
                 }
@@ -301,12 +362,23 @@ Item {
                 }
             }
 
-            CarouselEdgeArrow { side: "left";  list: scoresList; visibleWhenCount: scoresModel.count }
-            CarouselEdgeArrow { side: "right"; list: scoresList; visibleWhenCount: scoresModel.count }
+            // Flechas “por página” (paso a paso).
+            CarouselEdgeArrow {
+                side: "left"
+                list: scoresList
+                visibleWhenCount: scoresModel.count
+                onTriggered: scoresList.scrollPage("left")
+            }
+            CarouselEdgeArrow {
+                side: "right"
+                list: scoresList
+                visibleWhenCount: scoresModel.count
+                onTriggered: scoresList.scrollPage("right")
+            }
         }
 
         // ---------------------------------------------------------
-        // 3) NOTICIAS (más recientes: mundo + El Salvador)
+        // 3) NOTICIAS
         // ---------------------------------------------------------
         Item {
             Layout.fillWidth: true
@@ -409,14 +481,16 @@ Item {
     component MaterialSymbol : Text { font.family: "Material Symbols Rounded" }
 
     component CarouselEdgeArrow : Rectangle {
+        id: arrow
         property string side: "left"
         property Flickable list: null
         property int visibleWhenCount: 0
+        signal triggered()
 
-        width: 28; height: 56; radius: 14
-        color: "#202124"
-        border.width: 1
-        border.color: "#3c4043"
+        width: 30; height: 60; radius: 15
+        color: pressed ? "#2a2b2e" : "#202124"
+        border.width: (activeFocus || hovered || pressed) ? 1.5 : 1
+        border.color: (activeFocus || hovered || pressed) ? root.accent : "#3c4043"
         visible: visibleWhenCount > 0
 
         anchors.verticalCenter: parent.verticalCenter
@@ -425,33 +499,71 @@ Item {
         anchors.leftMargin: (side === "left") ? 6 : 0
         anchors.rightMargin: (side === "right") ? 6 : 0
 
-        opacity: {
-            if (!list) return 0.2
-            const maxX = Math.max(0, list.contentWidth - list.width)
-            return (side === "left")
-                ? (list.contentX > 2 ? 0.85 : 0.25)
-                : (list.contentX < maxX - 2 ? 0.85 : 0.25)
-        }
+        readonly property bool atBeginning: list ? list.atXBeginning : true
+        readonly property bool atEnd: list ? list.atXEnd : true
+        readonly property bool disabled: (side === "left") ? atBeginning : atEnd
+
+        opacity: disabled ? 0.25 : 0.88
+        enabled: !disabled
+
+        property bool pressed: false
+        property bool hovered: false
+
+        scale: pressed ? 0.96 : (hovered || activeFocus ? 1.04 : 1.0)
+
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on border.color { ColorAnimation { duration: 120 } }
+        Behavior on opacity { NumberAnimation { duration: 120 } }
 
         layer.enabled: true
-        layer.effect: MultiEffect { shadowEnabled: true; shadowBlur: 0.7; shadowVerticalOffset: 1; shadowColor: "#50000000" }
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowBlur: (arrow.hovered || arrow.activeFocus) ? 0.9 : 0.7
+            shadowVerticalOffset: 1
+            shadowColor: "#50000000"
+        }
 
         MaterialSymbol {
             anchors.centerIn: parent
             text: (side === "left") ? "chevron_left" : "chevron_right"
             color: root.textMain
             font.pixelSize: 22
-            opacity: 0.9
+            opacity: 0.95
+        }
+
+        // Mantener presionado: avanza por páginas repetidamente
+        Timer {
+            id: repeatTimer
+            interval: 90
+            repeat: true
+            running: false
+            onTriggered: arrow.triggered()
         }
 
         TapHandler {
-            enabled: !!list
-            onTapped: {
-                if (!list) return
-                const maxX = Math.max(0, list.contentWidth - list.width)
-                list.contentX = (side === "left") ? 0 : maxX
+            onPressedChanged: {
+                arrow.pressed = pressed
+                if (pressed) {
+                    arrow.forceActiveFocus()
+                    arrow.triggered()     // primer paso inmediato
+                    repeatTimer.start()   // luego repite mientras sostienes
+                } else {
+                    repeatTimer.stop()
+                }
             }
+            onCanceled: {
+                arrow.pressed = false
+                repeatTimer.stop()
+            }
+            onTapped: { /* no-op: ya lo manejamos en pressedChanged */ }
         }
+
+        HoverHandler { onHoveredChanged: arrow.hovered = hovered }
+
+        Keys.onReturnPressed: triggered()
+        Keys.onEnterPressed: triggered()
+        focusPolicy: Qt.StrongFocus
     }
 
     function resetSearch() {
@@ -467,7 +579,7 @@ Item {
         return v
     }
 
-    // --- Hora ES (mantener) ---
+    // --- Hora ES ---
     function two(n) { return (n < 10 ? "0" : "") + n }
     function epochFromIso(iso) {
         try {
@@ -493,6 +605,14 @@ Item {
         return two(d.getUTCDate()) + "/" + two(d.getUTCMonth() + 1) + " " +
                two(d.getUTCHours()) + ":" + two(d.getUTCMinutes()) + " (ES)"
     }
+    function msFromIso(iso) {
+        try {
+            var t = (new Date(iso)).getTime()
+            return isNaN(t) ? NaN : t
+        } catch (e) {
+            return NaN
+        }
+    }
 
     // ---------------------------------------------------------
     // NAVEGADOR
@@ -506,8 +626,7 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // NOTIFICACIÓN (Hyprland/Arch) -> notify-send (ya probaste que funciona)
-    // Usamos bash -lc para asegurar PATH correcto.
+    // NOTIFICACIÓN -> notify-send
     // ---------------------------------------------------------
     Process {
         id: procNotify
@@ -528,15 +647,14 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // DETALLES DEL GOL (para obtener anotador)
-    // Cuando detectamos cambio de marcador, pedimos el "summary" del evento.
+    // DETALLES DEL GOL (anotador)
     // ---------------------------------------------------------
     Process {
         id: procGoalDetails
 
-        property var queue: []               // [{leagueKey,eventId,leagueName,homeName,awayName,hs,as,detail}]
+        property var queue: []
         property bool busy: false
-        property var lastGoalKeyByEvent: ({}) // {eventId: "some-unique-key"} evita duplicados
+        property var lastGoalKeyByEvent: ({})
 
         function request(leagueKey, eventId, leagueName, homeName, awayName, hs, as, detail) {
             if (!eventId || !leagueKey) return
@@ -559,7 +677,7 @@ Item {
             busy = true
 
             var j = queue.shift()
-            procGoalDetails._job = j
+            _job = j
 
             var url = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + j.leagueKey + "/summary?event=" + j.eventId
             command = ["curl", "-s", "-L", url]
@@ -583,52 +701,40 @@ Item {
         }
 
         function pickLastGoal(json) {
-            // Intento 1: keyEvents (muy común)
             var keyEvents = safe(json, "keyEvents", [])
             if (Array.isArray(keyEvents) && keyEvents.length > 0) {
                 for (var i = keyEvents.length - 1; i >= 0; i--) {
                     var ev = keyEvents[i]
                     var typeText = (safe(ev, "type.text", "") + "").toLowerCase()
                     var text = (safe(ev, "text", "") + "").toLowerCase()
-                    // buscamos "goal" en tipo o texto
-                    if (typeText.indexOf("goal") !== -1 || text.indexOf("goal") !== -1 || text.indexOf("gol") !== -1) {
+                    if (typeText.indexOf("goal") !== -1 || text.indexOf("goal") !== -1 || text.indexOf("gol") !== -1)
                         return ev
-                    }
                 }
             }
 
-            // Intento 2: scoringPlays (algunas respuestas)
             var scoringPlays = safe(json, "scoringPlays", [])
-            if (Array.isArray(scoringPlays) && scoringPlays.length > 0) {
+            if (Array.isArray(scoringPlays) && scoringPlays.length > 0)
                 return scoringPlays[scoringPlays.length - 1]
-            }
 
             return null
         }
 
         function extractScorer(ev) {
-            // sacamos un nombre humano si existe
-            var candidate =
-                safe(ev, "participants.0.athlete.displayName", "") ||
-                safe(ev, "participants.0.athlete.shortName", "") ||
-                safe(ev, "athletes.0.displayName", "") ||
-                safe(ev, "player.displayName", "") ||
-                ""
-
-            return candidate
+            return safe(ev, "participants.0.athlete.displayName", "") ||
+                   safe(ev, "participants.0.athlete.shortName", "") ||
+                   safe(ev, "athletes.0.displayName", "") ||
+                   safe(ev, "player.displayName", "") ||
+                   ""
         }
 
-        function extractTeam(ev, fallbackTeam) {
-            var t =
-                safe(ev, "team.displayName", "") ||
-                safe(ev, "team.shortDisplayName", "") ||
-                safe(ev, "competitor.displayName", "") ||
-                ""
-            return (t !== "") ? t : fallbackTeam
+        function extractTeam(ev) {
+            return safe(ev, "team.displayName", "") ||
+                   safe(ev, "team.shortDisplayName", "") ||
+                   safe(ev, "competitor.displayName", "") ||
+                   ""
         }
 
         function extractClock(ev) {
-            // a veces viene como "clock.displayValue" o dentro de "time"
             return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || ""
         }
 
@@ -648,20 +754,16 @@ Item {
 
                     if (lastGoal) {
                         scorer = procGoalDetails.extractScorer(lastGoal)
-                        team = procGoalDetails.extractTeam(lastGoal, "")
+                        team = procGoalDetails.extractTeam(lastGoal)
                         clock = procGoalDetails.extractClock(lastGoal)
                         rawText = procGoalDetails.safe(lastGoal, "text", "")
                     }
 
-                    // Construimos una llave única (para no repetir el mismo gol)
                     var goalKey = (scorer + "|" + team + "|" + clock + "|" + j.hs + "-" + j.as + "|" + rawText).trim()
                     var prevKey = procGoalDetails.lastGoalKeyByEvent[j.eventId] || ""
-                    if (goalKey !== "" && goalKey === prevKey) {
-                        // duplicado
-                    } else {
+                    if (!(goalKey !== "" && goalKey === prevKey)) {
                         if (goalKey !== "") procGoalDetails.lastGoalKeyByEvent[j.eventId] = goalKey
 
-                        // Mensaje final
                         var title = "GOOOL"
                         if (scorer !== "") title = "GOOOL: " + scorer
                         else if (team !== "") title = "GOOOL: " + team
@@ -675,7 +777,6 @@ Item {
                         procNotify.send(title, body)
                     }
                 } catch (e) {
-                    // Si falla el summary, al menos mostramos notificación básica
                     if (j) {
                         var title2 = "GOOOL"
                         var body2 = j.homeName + " " + j.hs + " - " + j.as + " " + j.awayName + "\n" + j.leagueName
@@ -691,7 +792,7 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // PARTIDOS (con detector de goles)
+    // PARTIDOS: goles + aviso 10 min antes + final
     // ---------------------------------------------------------
     Process {
         id: procScores
@@ -716,8 +817,18 @@ Item {
 
         // Detector de goles
         property bool initializedOnce: false
-        property var lastScoreByEvent: ({})      // { eventId: {home:int, away:int} }
-        property var lastNotifyAtByEvent: ({})   // { eventId: epochMs }
+        property var lastScoreByEvent: ({})
+        property var lastNotifyAtByEvent: ({})
+
+        // Avisos inicio/final
+        property var notifiedPreByEvent: ({})
+        property var notifiedFinalByEvent: ({})
+        property var lastStateByEvent: ({})
+
+        // Config
+        property int preNotifyMinutes: 10
+        property int preWindowMs: 90000
+        property int goalCooldownMs: 5000
 
         function startLoadScores() {
             if (loading) return
@@ -793,26 +904,53 @@ Item {
             try { return new Date(eventDateIso).getTime() } catch (e) { return 0 }
         }
 
+        function maybeNotifyPreKickoff(eventId, leagueName, homeName, awayName, eventDateIso, kickoffLocal) {
+            if (!eventId || !eventDateIso) return
+            if (notifiedPreByEvent[eventId] === true) return
+            if (!initializedOnce) return
+
+            var t = msFromIso(eventDateIso)
+            if (isNaN(t)) return
+
+            var now = Date.now()
+            var target = t - preNotifyMinutes * 60000
+            var delta = now - target
+
+            if (delta >= 0 && delta <= preWindowMs) {
+                notifiedPreByEvent[eventId] = true
+                var title = "Partido en " + preNotifyMinutes + " min"
+                var body = homeName + " vs " + awayName + "\nHora (ES): " + (kickoffLocal || fmtTimeES(eventDateIso)) + "\n" + leagueName
+                procNotify.send(title, body)
+            }
+        }
+
+        function maybeNotifyFinal(eventId, leagueName, homeName, awayName, hs, as) {
+            if (!eventId) return
+            if (notifiedFinalByEvent[eventId] === true) return
+            if (!initializedOnce) return
+
+            notifiedFinalByEvent[eventId] = true
+            var title = "Final: " + homeName + " " + hs + " - " + as + " " + awayName
+            procNotify.send(title, leagueName)
+        }
+
         function maybeNotifyGoal(eventId, leagueKey, leagueName, homeName, awayName, hs, as, detail) {
             if (!eventId || eventId === "") return
 
             var prev = lastScoreByEvent[eventId]
             lastScoreByEvent[eventId] = ({ home: hs, away: as })
 
-            // No notificar en la primera carga para evitar spam
             if (!initializedOnce) return
             if (!prev) return
 
             var changed = (hs !== prev.home) || (as !== prev.away)
             if (!changed) return
 
-            // Cooldown corto (instantáneo pero sin duplicar por refrescos)
             var now = Date.now()
             var lastAt = lastNotifyAtByEvent[eventId] || 0
-            if (now - lastAt < 5000) return
+            if (now - lastAt < goalCooldownMs) return
             lastNotifyAtByEvent[eventId] = now
 
-            // Pedimos el summary para saber quién anotó
             procGoalDetails.request(leagueKey, eventId, leagueName, homeName, awayName, hs, as, detail)
         }
 
@@ -893,18 +1031,7 @@ Item {
                         var hs = parseInt(homeScoreStr, 10); if (isNaN(hs)) hs = 0
                         var as = parseInt(awayScoreStr, 10); if (isNaN(as)) as = 0
 
-                        // Notificación de gol SOLO si está en vivo
-                        if (state === "in") {
-                            procScores.maybeNotifyGoal(eid, lg.key, lg.name, homeName, awayName, hs, as, shortDetail)
-                        }
-
-                        var scoreStr = (state === "pre") ? "vs" : (hs + " - " + as)
-
                         var eventDate = procScores.safe(e, "date", "")
-                        var linkUrl = procScores.safe(
-                            e, "links.0.href",
-                            "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName)
-                        )
 
                         var kickoffLocal = ""
                         var kickoffDetail = ""
@@ -912,6 +1039,28 @@ Item {
                             kickoffLocal = fmtTimeES(eventDate)
                             kickoffDetail = fmtDetailES(eventDate)
                         }
+
+                        var prevState = procScores.lastStateByEvent[eid] || ""
+                        procScores.lastStateByEvent[eid] = state
+
+                        if (state === "pre" && eventDate !== "") {
+                            procScores.maybeNotifyPreKickoff(eid, lg.name, homeName, awayName, eventDate, kickoffLocal)
+                        }
+
+                        if (state === "in") {
+                            procScores.maybeNotifyGoal(eid, lg.key, lg.name, homeName, awayName, hs, as, shortDetail)
+                        }
+
+                        if (state === "post" && prevState !== "post") {
+                            procScores.maybeNotifyFinal(eid, lg.name, homeName, awayName, hs, as)
+                        }
+
+                        var scoreStr = (state === "pre") ? "vs" : (hs + " - " + as)
+
+                        var linkUrl = procScores.safe(
+                            e, "links.0.href",
+                            "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName)
+                        )
 
                         procScores.pendingScores.push({
                             "id": eid,
@@ -946,7 +1095,7 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // NOTICIAS RSS: Mundo + El Salvador, ordenadas por MÁS RECIENTES
+    // NOTICIAS RSS
     // ---------------------------------------------------------
     Process {
         id: procNews
@@ -966,8 +1115,8 @@ Item {
             if (root.inSearchMode) {
                 queue.push({ url: "https://news.google.com/rss/search?q=" + encodeURIComponent(root.searchQuery) + "&hl=es-419&gl=US&ceid=US:es-419", isSV: false })
             } else {
-                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=US&ceid=US:es-419", isSV: false }) // mundo
-                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=SV&ceid=SV:es-419", isSV: true })  // SV
+                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=US&ceid=US:es-419", isSV: false })
+                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=SV&ceid=SV:es-419", isSV: true })
                 queue.push({ url: "https://news.google.com/rss/search?q=" + encodeURIComponent("El Salvador") + "&hl=es-419&gl=SV&ceid=SV:es-419", isSV: true })
             }
 
@@ -1083,8 +1232,6 @@ Item {
     // TIMERS / INICIO
     // ---------------------------------------------------------
     Timer {
-        // Para “al instante”: bajamos a 15s.
-        // (Más rápido consume más requests; 15s es un buen punto.)
         interval: 15000
         running: true
         repeat: true
