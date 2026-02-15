@@ -6,6 +6,7 @@ import QtQuick.Layouts
 import Quickshell
 import qs.modules.ii.bar.weather
 import qs.modules.ii.verticalBar as Vertical
+import Quickshell.Services.Mpris
 
 Item {
     id: rootItem
@@ -26,6 +27,25 @@ Item {
     readonly property bool isRight: barSection === 2
 
     readonly property var safeList: (Array.isArray(list) ? list : [])
+
+    // ---------------------------------------------------------
+    // MUSIC_PLAYER: hide group fully when no media
+    // ---------------------------------------------------------
+    readonly property bool isMusicPlayer: (rootItem.modelData && rootItem.modelData.id === "music_player")
+
+    // "hasMedia": hay player activo y NO está en Stopped (Paused cuenta como activo)
+    readonly property bool musicHasMedia: (MprisController.activePlayer !== null)
+        && (MprisController.activePlayer.playbackState !== MprisPlaybackState.Stopped)
+
+    // Visibilidad pedida por config/usuario (la maneja toggleVisible)
+    property bool userVisible: (rootItem.modelData ? (rootItem.modelData.visible !== false) : true)
+
+    // Visibilidad final (regla especial para music_player)
+    readonly property bool effectiveVisible: rootItem.userVisible
+        && (!rootItem.isMusicPlayer || rootItem.musicHasMedia)
+
+    // IMPORTANT: que el item completo desaparezca del layout
+    visible: effectiveVisible
 
     // ---------------------------------------------------------
     // Color helpers
@@ -55,10 +75,10 @@ Item {
         : Qt.rgba(0, 0, 0, 0.14)
 
     // ---------------------------------------------------------
-    // Visibility toggle (igual que tu versión)
+    // Visibility toggle (igual que tu versión, pero usando userVisible)
     // ---------------------------------------------------------
     function toggleVisible(visibility) {
-        rootItem.visible = visibility
+        rootItem.userVisible = visibility
 
         const layouts = Config?.options?.bar?.layouts
         if (!layouts) return
@@ -160,6 +180,7 @@ Item {
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
+        visible: rootItem.effectiveVisible
 
         anchors {
             verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
@@ -177,7 +198,9 @@ Item {
         // EXPLÍCITO: esto va al default property alias "items"
         items: Loader {
             id: itemLoader
-            active: true
+
+            // Clave: si no es visible (p. ej. music_player sin media), NO cargar nada
+            active: rootItem.effectiveVisible
 
             readonly property string itemId: (rootItem.modelData && rootItem.modelData.id) ? rootItem.modelData.id : ""
             readonly property var pair: rootItem.compMap[itemId]
@@ -211,6 +234,8 @@ Item {
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
 
+    // IMPORTANTE: no hace falta tocar Media.qml para el huequito,
+    // porque aquí ya escondemos el grupo completo cuando no hay media.
     Component { id: musicPlayerComp; Media {} }
     Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
 

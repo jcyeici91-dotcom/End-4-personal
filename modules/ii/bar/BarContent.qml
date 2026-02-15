@@ -10,6 +10,11 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
 
+// Usa los archivos nuevos en el mismo directorio:
+// - BarBgOverlay.qml
+// - BarBgShadowOverlay.qml
+import "." as Bar
+
 Item {
     id: root
 
@@ -24,12 +29,19 @@ Item {
     property bool hasActiveWindows: false
     readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
+    // 0: Transparent | 1: Visible | 2: Adaptive
     readonly property bool bgIsGlass: barBackgroundStyle === 0
     readonly property bool bgIsSolid: barBackgroundStyle === 1
     readonly property bool bgIsAdaptive: barBackgroundStyle === 2
 
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
     readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
+
+    // CORREGIDO:
+    // - Transparent => Overlay (siempre)
+    // - Adaptive => Overlay SOLO cuando NO hay ventanas
+    // - Visible => Classic
+    readonly property bool useOverlayBg: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
@@ -149,109 +161,162 @@ Item {
     }
     onFullModelChanged: recomputeCenterSplit()
 
+    // --------------------------
+    // Background:
+    // - Transparent => Overlay
+    // - Adaptive => Overlay cuando NO hay ventanas
+    // - Visible + Adaptive con ventanas => Classic
+    // --------------------------
     Loader {
-        active: (Config?.options?.bar?.cornerStyle === 1)
-                && !!(Config?.options?.bar?.floatStyleShadow)
-                && (root.showSolidBackground || root.useGlassMode)
-
-        anchors.fill: barBackground
-        sourceComponent: StyledRectangularShadow {
-            anchors.fill: undefined
-            target: barBackground
-            color: root.useGlassMode
-                ? (root.themeIsDark ? Qt.rgba(0, 0, 0, 0.42) : Qt.rgba(0, 0, 0, 0.22))
-                : Qt.rgba(0, 0, 0, 0.20)
-            blur: root.useGlassMode ? 46 : 14
-            spread: -2
-        }
+        id: bgLoader
+        z: -10
+        anchors.fill: parent
+        sourceComponent: root.useOverlayBg ? overlayBgComponent : classicBgComponent
     }
 
-    Rectangle {
-        id: barBackground
-        z: -10
-
-        anchors.fill: parent
-        anchors.margins: (Config?.options?.bar?.cornerStyle === 1)
-            ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut))
-            : 0
-
-        radius: (Config?.options?.bar?.cornerStyle === 1) ? Appearance.rounding.windowRounding : 0
-        antialiasing: true
-
-        color: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
-
-        border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
-        border.color: root.showSolidBackground
-            ? Appearance.colors.colLayer0Border
-            : (root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.28))
-
-        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
-        Behavior on border.color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
+    // ===== Classic (tu implementación original) =====
+    Component {
+        id: classicBgComponent
 
         Item {
             anchors.fill: parent
-            visible: root.useGlassMode
-            clip: true
 
-            Rectangle {
-                anchors.fill: parent
-                radius: barBackground.radius
-                antialiasing: true
-                color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.10)
-            }
+            Loader {
+                active: (Config?.options?.bar?.cornerStyle === 1)
+                        && !!(Config?.options?.bar?.floatStyleShadow)
+                        && (root.showSolidBackground || root.useGlassMode)
 
-            Rectangle {
-                anchors.fill: parent
-                radius: barBackground.radius
-                antialiasing: true
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.65) }
-                    GradientStop { position: 0.40; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.22) }
-                    GradientStop { position: 1.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.40) }
+                anchors.fill: barBackground
+                sourceComponent: StyledRectangularShadow {
+                    anchors.fill: undefined
+                    target: barBackground
+                    color: root.useGlassMode
+                        ? (root.themeIsDark ? Qt.rgba(0, 0, 0, 0.42) : Qt.rgba(0, 0, 0, 0.22))
+                        : Qt.rgba(0, 0, 0, 0.20)
+                    blur: root.useGlassMode ? 46 : 14
+                    spread: -2
                 }
             }
 
             Rectangle {
+                id: barBackground
+                z: -10
+
                 anchors.fill: parent
-                radius: barBackground.radius
+                anchors.margins: (Config?.options?.bar?.cornerStyle === 1)
+                    ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut))
+                    : 0
+
+                radius: (Config?.options?.bar?.cornerStyle === 1) ? Appearance.rounding.windowRounding : 0
                 antialiasing: true
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.22) }
-                    GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
+
+                color: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
+
+                border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
+                border.color: root.showSolidBackground
+                    ? Appearance.colors.colLayer0Border
+                    : (root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.28))
+
+                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
+                Behavior on border.color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
+
+                Item {
+                    anchors.fill: parent
+                    visible: root.useGlassMode
+                    clip: true
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: barBackground.radius
+                        antialiasing: true
+                        color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.10)
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: barBackground.radius
+                        antialiasing: true
+                        gradient: Gradient {
+                            orientation: Gradient.Vertical
+                            GradientStop { position: 0.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.65) }
+                            GradientStop { position: 0.40; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.22) }
+                            GradientStop { position: 1.0; color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.40) }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: barBackground.radius
+                        antialiasing: true
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.22) }
+                            GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
+                        }
+                        transform: Rotation { origin.x: barBackground.width / 2; origin.y: barBackground.height / 2; angle: -18 }
+                        opacity: 0.85
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: barBackground.radius
+                        color: "transparent"
+                        border.width: 1
+                        antialiasing: true
+                        border.color: root.glassRim
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        radius: Math.max(0, barBackground.radius - 1)
+                        color: "transparent"
+                        border.width: 1
+                        antialiasing: true
+                        border.color: root.glassRimInner
+                    }
                 }
-                transform: Rotation { origin.x: barBackground.width / 2; origin.y: barBackground.height / 2; angle: -18 }
-                opacity: 0.85
-            }
 
-            Rectangle {
-                anchors.fill: parent
-                radius: barBackground.radius
-                color: "transparent"
-                border.width: 1
-                antialiasing: true
-                border.color: root.glassRim
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: Math.max(0, barBackground.radius - 1)
-                color: "transparent"
-                border.width: 1
-                antialiasing: true
-                border.color: root.glassRimInner
+                Rectangle {
+                    anchors.fill: parent
+                    radius: barBackground.radius
+                    color: "transparent"
+                    border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
+                    border.color: Appearance.colors.colLayer0Border
+                    opacity: root.showSolidBackground ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 220 } }
+                }
             }
         }
+    }
 
-        Rectangle {
+    // ===== Overlay (se usa para Transparent y para Adaptive sin ventanas) =====
+    Component {
+        id: overlayBgComponent
+
+        Item {
             anchors.fill: parent
-            radius: barBackground.radius
-            color: "transparent"
-            border.width: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
-            border.color: Appearance.colors.colLayer0Border
-            opacity: root.showSolidBackground ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 220 } }
+
+            Bar.BarBgShadowOverlay {
+                targetItem: overlayBg
+                cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+                visibleWhen: (Config?.options?.bar?.cornerStyle === 1)
+                    && !!(Config?.options?.bar?.floatStyleShadow)
+                    && (root.showSolidBackground || root.useGlassMode)
+            }
+
+            Bar.BarBgOverlay {
+                id: overlayBg
+                anchors.fill: parent
+
+                position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
+                cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+
+                // En Transparent => useGlassMode=true
+                // En Adaptive sin ventanas => useGlassMode=true
+                useGlassMode: root.useGlassMode
+                showSolidBackground: root.showSolidBackground
+                backgroundColor: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
+            }
         }
     }
 
