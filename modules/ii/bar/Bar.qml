@@ -15,10 +15,8 @@ Scope {
     id: bar
 
     Variants {
-        // One bar per monitor
         id: barVariant
 
-        // Screen model (filtered by screenList if configured)
         readonly property var variantModel: {
             const screens = Quickshell.screens;
             const list = Config?.options?.bar?.screenList;
@@ -33,7 +31,6 @@ Scope {
             active: GlobalStates.barOpen && !GlobalStates.screenLocked
             required property ShellScreen modelData
 
-            // Index in variantModel (NOT Hyprland monitor id)
             property int monitorIndex: barVariant.variantModel.indexOf(modelData)
 
             component: PanelWindow {
@@ -53,9 +50,10 @@ Scope {
                 // 0 = glass(transparent), 1 = always visible, 2 = adaptive
                 readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
-                // --------------------------
+                // Hybrid groups
+                readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
+
                 // Background style / adaptive
-                // --------------------------
                 property bool hasActiveWindows: false
 
                 readonly property bool showBarBackground: (
@@ -72,12 +70,10 @@ Scope {
                 function recomputeHasActiveWindows() {
                     const screenName = barRoot.screen?.name;
 
-                    // Prefer mapping by name
                     let monitor = null;
                     if (screenName) {
                         monitor = HyprlandData.monitors.find(m => m && m.name === screenName) ?? null;
                     }
-                    // Fallback mapping by index/id
                     if (!monitor) {
                         monitor = HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) ?? null;
                     }
@@ -95,9 +91,7 @@ Scope {
                     function onMonitorsChanged() { barRoot.recomputeHasActiveWindows(); }
                 }
 
-                // --------------------------
                 // Super show / hover show
-                // --------------------------
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
 
@@ -122,9 +116,7 @@ Scope {
                     }
                 }
 
-                // --------------------------
                 // Layershell / size / mask
-                // --------------------------
                 exclusionMode: ExclusionMode.Ignore
 
                 exclusiveZone: (barRoot.autoHideEnabled && (!barRoot.mustShow || !barRoot.pushWindows))
@@ -138,10 +130,7 @@ Scope {
 
                 mask: Region { item: hoverMaskRegion }
 
-                // --------------------------
                 // Positioning (TOP/BOTTOM)
-                // PanelWindow has NO `states`, so do it imperatively.
-                // --------------------------
                 function applyWindowAnchors() {
                     barRoot.anchors.top = !barRoot.isBottom;
                     barRoot.anchors.bottom = barRoot.isBottom;
@@ -158,9 +147,6 @@ Scope {
                     bottom: (barRoot.deadPixelFix && barRoot.anchors.bottom) * -1
                 }
 
-                // --------------------------
-                // Lifecycle
-                // --------------------------
                 Component.onCompleted: {
                     applyWindowAnchors();
                     barRoot.recomputeHasActiveWindows();
@@ -195,7 +181,6 @@ Scope {
                         id: barContent
                         implicitHeight: Appearance.sizes.barHeight
 
-                        // Give BarContent correct context
                         monitorIndex: barRoot.monitorIndex
                         screen: barRoot.screen
 
@@ -220,7 +205,6 @@ Scope {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
 
-                        // Anchor-safe bottom mode (prevents "growing")
                         states: State {
                             name: "bottom"
                             when: barRoot.isBottom
@@ -240,36 +224,65 @@ Scope {
                     }
 
                     // =========================================================
-                    // Rounded decorators (cornerStyle Hug)
+                    // Hug decorators
+                    // =========================================================
+                    readonly property bool isHugStyleHere: (Config?.options?.bar?.cornerStyle === 0)
+
+                    // En hybrid NO podemos “pegar” con Rectangles planos (se ve parchado).
+                    // Esos bridges deben ir dentro de BarContent usando el mismo efecto.
+                    readonly property bool allowFlatHugPaintingHere: (!barRoot.useHybridGroups)
+
+                    readonly property int seamOverlapPx: 2
+
+                    // Solo válido en no-hybrid:
+                    readonly property color effectiveCornerColor: barRoot.barBackgroundColorForCorners
+
+                    // =========================================================
+                    // (DESACTIVADO) Edge fillers en Hybrid para evitar parches feos
+                    // =========================================================
+                    Item {
+                        id: edgeFillers
+                        visible: false // <-- intencional: se debe implementar “bien” en BarContent para Hybrid+Hug
+                    }
+
+                    // =========================================================
+                    // Rounded decorators (Hug) — solo NO-HYBRID
                     // =========================================================
                     Loader {
                         id: roundDecorators
-                        active: barRoot.showBarBackground && (Config?.options?.bar?.cornerStyle === 0)
-                        height: Appearance.rounding.screenRounding
+
+                        active: hoverRegion.isHugStyleHere
+                                && hoverRegion.allowFlatHugPaintingHere
+                                && barRoot.showBarBackground
+
+                        height: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
 
                         anchors {
                             left: parent.left
                             right: parent.right
                             top: barContent.bottom
                             bottom: undefined
+                            topMargin: -hoverRegion.seamOverlapPx
                         }
 
                         states: State {
                             name: "bottom"
                             when: barRoot.isBottom
-                            AnchorChanges {
+                            AnchorChanges { target: roundDecorators; anchors { top: undefined; bottom: barContent.top } }
+                            PropertyChanges {
                                 target: roundDecorators
-                                anchors { top: undefined; bottom: barContent.top }
+                                anchors.topMargin: 0
+                                anchors.bottomMargin: -hoverRegion.seamOverlapPx
                             }
                         }
 
                         sourceComponent: Item {
-                            implicitHeight: Appearance.rounding.screenRounding
+                            implicitHeight: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
 
                             RoundCorner {
                                 anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                                implicitSize: Appearance.rounding.screenRounding
-                                color: barRoot.showBarBackground ? barRoot.barBackgroundColorForCorners : "transparent"
+                                implicitSize: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
+                                color: hoverRegion.effectiveCornerColor
                                 corner: barRoot.isBottom
                                     ? RoundCorner.CornerEnum.BottomLeft
                                     : RoundCorner.CornerEnum.TopLeft
@@ -277,8 +290,8 @@ Scope {
 
                             RoundCorner {
                                 anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
-                                implicitSize: Appearance.rounding.screenRounding
-                                color: barRoot.showBarBackground ? barRoot.barBackgroundColorForCorners : "transparent"
+                                implicitSize: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
+                                color: hoverRegion.effectiveCornerColor
                                 corner: barRoot.isBottom
                                     ? RoundCorner.CornerEnum.BottomRight
                                     : RoundCorner.CornerEnum.TopRight
@@ -290,9 +303,7 @@ Scope {
         }
     }
 
-    // =========================================================
-    // IPC: external control
-    // =========================================================
+    // IPC
     IpcHandler {
         target: "bar"
         function toggle(): void { GlobalStates.barOpen = !GlobalStates.barOpen }
@@ -300,9 +311,7 @@ Scope {
         function open(): void { GlobalStates.barOpen = true }
     }
 
-    // =========================================================
-    // Global shortcuts
-    // =========================================================
+    // Shortcuts
     GlobalShortcut {
         name: "barToggle"
         description: "Toggles bar on press"

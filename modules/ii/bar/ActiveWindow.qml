@@ -16,20 +16,21 @@ Item {
 
     property bool vertical: false
 
-    property int maxSize: 350
+    // --- Tamaño: NO crecer por más letras ---
+    // Si fixedSize está activo, usa fixedSize.
+    // Si no, usa maxSize como ancho/alto fijo (no depende del texto).
+    property int maxSize: 165
     property bool isFixedSize: Config.options.bar.activeWindow.fixedSize
     property int fixedSize: vertical ? 150 : 250
+    readonly property int capsuleSize: isFixedSize ? fixedSize : maxSize
 
     property bool parallaxEnabled: true
     property bool prismaticBorder: true
 
-    property bool liveTitleEnabled: true
-    property int liveTitleMaxShrinkPx: 60
-    property int liveTitleRightExpandPx: 12
-    property int liveTitleMinWidthPx: 120
-    property int liveTitleWidthAnimMs: 150
-
-    property int titleScrollSpeedFactor: 18
+    // --- Hover scroll: velocidad “media” (px/seg) ---
+    property int titleScrollPxPerSecond: 25
+    property int titleScrollPauseStartMs: 450
+    property int titleScrollPauseEndMs: 650
 
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
     readonly property Toplevel activeWindow: ToplevelManager.activeToplevel
@@ -97,14 +98,11 @@ Item {
         }
     }
 
-    implicitWidth: vertical
-        ? Appearance.sizes.barHeight
-        : (isFixedSize ? fixedSize : Math.min(contentRow.implicitWidth + 30, maxSize))
+    // Tamaño fijo (no depende del contentRow / texto)
+    implicitWidth: vertical ? Appearance.sizes.barHeight : capsuleSize
+    implicitHeight: vertical ? capsuleSize : Appearance.sizes.barHeight
 
-    implicitHeight: vertical
-        ? (isFixedSize ? fixedSize : Math.min(contentRow.implicitWidth + 30, maxSize))
-        : Appearance.sizes.barHeight
-
+    // Mantengo animación suave cuando cambie fixedSize/maxSize, etc.
     Behavior on implicitWidth { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
     Behavior on implicitHeight { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
 
@@ -154,12 +152,13 @@ Item {
         x: root.parallaxOffset.x
         y: root.parallaxOffset.y
 
-        Behavior on x { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
-        Behavior on y { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+        Behavior on x { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+        Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
         RowLayout {
             id: contentRow
-            anchors.centerIn: parent
+            anchors.fill: parent
+            anchors.margins: 10
             rotation: vertical ? 90 : 0
             spacing: 12
 
@@ -168,14 +167,6 @@ Item {
                 Layout.alignment: Qt.AlignVCenter
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: 20
-                    height: 20
-                    radius: 10
-                    visible: false
-                }
 
                 Image {
                     id: appIcon
@@ -190,8 +181,16 @@ Item {
 
                     SequentialAnimation {
                         id: popAnim
-                        NumberAnimation { target: appIcon; property: "scale"; from: 0.5; to: 1.25; duration: 200; easing.type: Easing.OutBack }
-                        NumberAnimation { target: appIcon; property: "scale"; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
+                        NumberAnimation {
+                            target: appIcon; property: "scale"
+                            from: 0.5; to: 1.25
+                            duration: 200; easing.type: Easing.OutBack
+                        }
+                        NumberAnimation {
+                            target: appIcon; property: "scale"
+                            to: 1.0
+                            duration: 150; easing.type: Easing.OutQuad
+                        }
                     }
                 }
 
@@ -205,6 +204,7 @@ Item {
             }
 
             ColumnLayout {
+                id: textCol
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 spacing: 0
@@ -237,35 +237,11 @@ Item {
                     Layout.preferredHeight: titleTextMetrics.height
                     clip: true
 
-                    property int baseWidth: Math.min(titleTextMetrics.width, root.maxSize - 60)
-                    property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
+                    // IMPORTANTE: el viewport ya no “crece” con el texto.
+                    // Ocupa el ancho disponible del layout (y se elide/scroll dentro).
+                    readonly property int baseWidth: width
+                    readonly property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
                     readonly property bool hoverScrollEnabled: mouseArea.containsMouse
-
-                    property real progress: {
-                        if (!mainTitle.shouldScroll || delta <= 0) return 0.0
-                        return Math.max(0.0, Math.min(1.0, (-mainTitle.x) / delta))
-                    }
-
-                    property int shrinkNow: {
-                        if (!(root.liveTitleEnabled && mainTitle.shouldScroll && hoverScrollEnabled)) return 0
-                        return Math.round(root.liveTitleMaxShrinkPx * progress)
-                    }
-
-                    property int expandNow: {
-                        if (!(root.liveTitleEnabled && mainTitle.shouldScroll && hoverScrollEnabled)) return 0
-                        return Math.round(root.liveTitleRightExpandPx * (1.0 - progress))
-                    }
-
-                    property int liveWidth: {
-                        var w = baseWidth + expandNow - shrinkNow
-                        return Math.max(root.liveTitleMinWidthPx, w)
-                    }
-
-                    Layout.preferredWidth: liveWidth
-
-                    Behavior on liveWidth {
-                        NumberAnimation { duration: root.liveTitleWidthAnimMs; easing.type: Easing.OutCubic }
-                    }
 
                     TextMetrics {
                         id: titleTextMetrics
@@ -281,15 +257,10 @@ Item {
                         font.bold: true
                         color: root.titleColor
 
-                        property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
-
                         anchors.verticalCenter: parent.verticalCenter
                         x: 0
 
-                        scale: 1.0 - (root.liveTitleEnabled && shouldScroll && titleViewport.hoverScrollEnabled
-                                     ? (0.015 * titleViewport.progress)
-                                     : 0.0)
-                        transformOrigin: Item.Left
+                        property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
 
                         layer.enabled: root.titleShadowEnabled
                         layer.effect: DropShadow {
@@ -300,23 +271,26 @@ Item {
                             color: root.titleShadowColor
                         }
 
+                        // Scroll SOLO al pasar el mouse, y con velocidad controlada (px/seg).
                         SequentialAnimation on x {
+                            id: hoverScrollAnim
                             running: mainTitle.shouldScroll && root.visible && titleViewport.hoverScrollEnabled
                             loops: Animation.Infinite
 
-                            PauseAnimation { duration: 500 }
+                            PauseAnimation { duration: root.titleScrollPauseStartMs }
 
                             NumberAnimation {
-                                to: -(titleTextMetrics.width - titleViewport.baseWidth)
-                                duration: (titleTextMetrics.width) * root.titleScrollSpeedFactor
+                                // mueve hasta el final visible
+                                to: -titleViewport.delta
+                                duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
                                 easing.type: Easing.InOutSine
                             }
 
-                            PauseAnimation { duration: 700 }
+                            PauseAnimation { duration: root.titleScrollPauseEndMs }
 
                             NumberAnimation {
                                 to: 0
-                                duration: (titleTextMetrics.width) * root.titleScrollSpeedFactor
+                                duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
                                 easing.type: Easing.InOutSine
                             }
                         }
@@ -362,15 +336,15 @@ Item {
             mainTitle.x = 0
         }
 
-        onMouseXChanged: {
-            if (root.parallaxEnabled) {
-                var centerX = width / 2
-                var centerY = height / 2
-                root.parallaxOffset = Qt.point(
-                    (centerX - mouseX) * 0.05,
-                    (centerY - mouseY) * 0.05
-                )
-            }
+        // Mejor: usar position changes (X e Y) en un solo handler
+        onPositionChanged: {
+            if (!root.parallaxEnabled) return
+            var centerX = width / 2
+            var centerY = height / 2
+            root.parallaxOffset = Qt.point(
+                (centerX - mouseX) * 0.05,
+                (centerY - mouseY) * 0.05
+            )
         }
 
         onClicked: clickSquish.restart()

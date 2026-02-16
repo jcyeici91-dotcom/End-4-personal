@@ -1,5 +1,6 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -17,15 +18,13 @@ Singleton {
     function setNestedValue(nestedKey, value) {
         let keys = nestedKey.split(".");
         let obj = root.options;
-        let parents = [obj];
 
-        // Traverse and collect parent objects
+        // Traverse / create parent objects
         for (let i = 0; i < keys.length - 1; ++i) {
             if (!obj[keys[i]] || typeof obj[keys[i]] !== "object") {
                 obj[keys[i]] = {};
             }
             obj = obj[keys[i]];
-            parents.push(obj);
         }
 
         // Convert value to correct type using JSON.parse when safe
@@ -84,7 +83,7 @@ Singleton {
             property JsonObject policies: JsonObject {
                 property int ai: 1 // 0: No | 1: Yes | 2: Local
                 property int weeb: 0 // 0: No | 1: Open | 2: Closet
-                property int wallpapers: 1 // 0: No | 1: Yes  
+                property int wallpapers: 1 // 0: No | 1: Yes
                 property int translator: 0 // 0: No | 1: Yes
             }
 
@@ -99,7 +98,7 @@ Singleton {
                     {"google": [
                     ]},
                     {"mistral": [
-                        
+
                     ]},
                 ]
             }
@@ -177,7 +176,7 @@ Singleton {
                             property bool aiStyling: false
                             property string aiStylingModel: "gemini" // Options "gemini", "openrouter"
                             property int sides: 14
-                            property string backgroundStyle: "cookie"     // Options: "cookie", "sine", "shape" 
+                            property string backgroundStyle: "cookie"     // Options: "cookie", "sine", "shape"
                             property string backgroundShape: "Arch"  // Options: MaterialShape.Shape enum values as string
                             property string dialNumberStyle: "full"   // Options: "dots" , "numbers", "full" , "none"
                             property string hourHandStyle: "fill"     // Options: "classic", "fill", "hollow", "hide"
@@ -250,7 +249,7 @@ Singleton {
                 property JsonObject activeWindow: JsonObject {
                     property bool fixedSize: false
                 }
-                
+
                 property JsonObject autoHide: JsonObject {
                     property bool enable: false
                     property int hoverRegionWidth: 2
@@ -260,16 +259,22 @@ Singleton {
                         property int delay: 140
                     }
                 }
-                
+
                 property bool bottom: false // Instead of top
-                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle
+                
+                // 0: Hug | 1: Float | 2: Rect | 3: Hybrid (Notch)
+                property int cornerStyle: 0 
+                
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
                 property bool borderless: false // true for no grouping of items
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
                 property int barBackgroundStyle: 1 // 0: Transparent | 1: Visible | 2: Adaptive
                 property bool verbose: true
                 property bool vertical: false
-                
+
+                // "rounded" (Pills/Line) | "rect" (Canvas) | "hybrid" (Notch)
+                property string groupBackgroundStyle: "rounded"
+
                 property JsonObject mediaPlayer: JsonObject {
                     property bool useCustomSize: false
                     property int customSize: 250
@@ -282,8 +287,6 @@ Singleton {
                     }
                 }
 
-                
-                
                 property JsonObject resources: JsonObject {
                     property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true
@@ -292,7 +295,7 @@ Singleton {
                     property int cpuWarningThreshold: 90
                 }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
-                
+
                 property JsonObject timers: JsonObject {
                     property bool showPomodoro: true
                     property bool showStopwatch: true
@@ -314,7 +317,7 @@ Singleton {
                     property int showNumberDelay: 300 // milliseconds
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
                     property bool useWorkspaceMap: true
-                    property list<var> workspaceMap: [0, 10] 
+                    property list<var> workspaceMap: [0, 10]
                     property int maxWindowCount: 5 // Maximum windows to show in one workspace
                     property bool useNerdFont: false
                     property int activeIndicatorOpacity: 100 // 0-100
@@ -354,7 +357,7 @@ Singleton {
                         { id: "system_monitor", icon: "monitor_heart", title: "System monitor" }
                     ]
                     property list<var> right: [
-                        { id: "clock", icon: "nest_clock_farsight_analog", title: "Clock" }, 
+                        { id: "clock", icon: "nest_clock_farsight_analog", title: "Clock" },
                         { id: "system_tray", icon: "system_update_alt", title: "System tray" },
                         { id: "dashboard_panel_button", icon: "notifications", title: "Dashboard panel button" }
                     ]
@@ -539,12 +542,12 @@ Singleton {
                     property int maxWorkspaceWidth: 1200
                 }
                 property JsonObject scrollingStyle: JsonObject {
-                    
+
                     property int dimPercentage: 50 // 0-75
                     property string backgroundStyle: "blur" // Options: transparent, blur, dim
                     property string zoomStyle: "in"         // Options: in, out
                 }
-                
+
                 property string position: "center" // Options: top, center, bottom
                 property int centerTopPaddingRatio: 3
             }
@@ -711,11 +714,11 @@ Singleton {
                 property int adviseUpdateThreshold: 75 // packages
                 property int stronglyAdviseUpdateThreshold: 200 // packages
             }
-            
+
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
             }
-            
+
             property JsonObject windows: JsonObject {
                 property bool showTitlebar: true // Client-side decoration for shell apps
                 property bool centerTitle: true
@@ -737,8 +740,8 @@ Singleton {
                 }
             }
 
-            property JsonObject wallpapers: JsonObject {  
-                property string service: "wallhaven" // "unsplash" or "wallhaven"  
+            property JsonObject wallpapers: JsonObject {
+                property string service: "wallhaven" // "unsplash" or "wallhaven"
                 property string sort: "favourites"
                 property bool showAnimeResults: false // only for wallhaven service
                 property JsonObject paths: JsonObject {
@@ -749,7 +752,7 @@ Singleton {
 
             property JsonObject waffles: JsonObject {
                 // Some spots are kinda janky/awkward. Setting the following to
-                // false will make (some) stuff also be like that for accuracy. 
+                // false will make (some) stuff also be like that for accuracy.
                 // Example: the right-click menu of the Start button
                 property JsonObject tweaks: JsonObject {
                     property bool switchHandlePositionFix: true

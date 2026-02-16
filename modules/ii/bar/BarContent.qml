@@ -10,9 +10,6 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
 
-// Usa los archivos nuevos en el mismo directorio:
-// - BarBgOverlay.qml
-// - BarBgShadowOverlay.qml
 import "." as Bar
 
 Item {
@@ -29,7 +26,6 @@ Item {
     property bool hasActiveWindows: false
     readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
-    // 0: Transparent | 1: Visible | 2: Adaptive
     readonly property bool bgIsGlass: barBackgroundStyle === 0
     readonly property bool bgIsSolid: barBackgroundStyle === 1
     readonly property bool bgIsAdaptive: barBackgroundStyle === 2
@@ -37,11 +33,19 @@ Item {
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
     readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
 
-    // CORREGIDO:
-    // - Transparent => Overlay (siempre)
-    // - Adaptive => Overlay SOLO cuando NO hay ventanas
-    // - Visible => Classic
     readonly property bool useOverlayBg: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
+
+    readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
+    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0) // 0 Hug | 1 Float | 2 Rect
+    readonly property bool isBottom: (Config?.options?.bar?.bottom ?? false)
+
+    readonly property bool allowFullBarBackgroundInHybrid: (useHybridGroups && showSolidBackground)
+    readonly property bool shouldDrawBackground: (!useHybridGroups) || allowFullBarBackgroundInHybrid
+
+    // ----------------------------------------------------------
+    // Hybrid resize: rápido y natural (SIN propiedad "delay")
+    // ----------------------------------------------------------
+    readonly property int hybridResizeMs: 85
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
@@ -161,20 +165,15 @@ Item {
     }
     onFullModelChanged: recomputeCenterSplit()
 
-    // --------------------------
-    // Background:
-    // - Transparent => Overlay
-    // - Adaptive => Overlay cuando NO hay ventanas
-    // - Visible + Adaptive con ventanas => Classic
-    // --------------------------
     Loader {
         id: bgLoader
         z: -10
         anchors.fill: parent
-        sourceComponent: root.useOverlayBg ? overlayBgComponent : classicBgComponent
+        sourceComponent: root.shouldDrawBackground
+            ? (root.useOverlayBg ? overlayBgComponent : classicBgComponent)
+            : null
     }
 
-    // ===== Classic (tu implementación original) =====
     Component {
         id: classicBgComponent
 
@@ -289,7 +288,6 @@ Item {
         }
     }
 
-    // ===== Overlay (se usa para Transparent y para Adaptive sin ventanas) =====
     Component {
         id: overlayBgComponent
 
@@ -311,8 +309,6 @@ Item {
                 position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
                 cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
 
-                // En Transparent => useGlassMode=true
-                // En Adaptive sin ventanas => useGlassMode=true
                 useGlassMode: root.useGlassMode
                 showSolidBackground: root.showSolidBackground
                 backgroundColor: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
@@ -320,6 +316,90 @@ Item {
         }
     }
 
+    // ==========================================================
+    // Puentes (Hybrid + Hug/Float) — (tu versión actual)
+    // ==========================================================
+    readonly property bool bridgeEnabled: (useHybridGroups
+        && (cornerStyle === 0 || cornerStyle === 1)
+        && !allowFullBarBackgroundInHybrid)
+
+    readonly property int seamOverlapPx: 3
+
+    readonly property int bridgeOuterMargin: (cornerStyle === 1)
+        ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0))
+        : 0
+
+    readonly property int bridgeExtraBleed: (cornerStyle === 0) ? seamOverlapPx : 0
+
+    readonly property int bridgeBandPx: bridgeEnabled
+        ? Math.max(2, Math.min(6, Math.round((Appearance.rounding.normal ?? 12) * 0.30)))
+        : 0
+
+    readonly property color bridgeColor: Appearance.m3colors.m3surfaceContainerLow
+
+    Item {
+        id: topBridge
+        z: -9
+        visible: (!root.isBottom) && root.bridgeEnabled
+        clip: true
+
+        layer.enabled: true
+        layer.smooth: false
+
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            leftMargin: root.bridgeOuterMargin - root.bridgeExtraBleed
+            rightMargin: root.bridgeOuterMargin - root.bridgeExtraBleed
+        }
+
+        height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
+            antialiasing: false
+            color: root.bridgeColor
+            radius: 0
+        }
+    }
+
+    Item {
+        id: bottomBridge
+        z: -9
+        visible: (root.isBottom) && root.bridgeEnabled
+        clip: true
+
+        layer.enabled: true
+        layer.smooth: false
+
+        anchors {
+            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
+            leftMargin: root.bridgeOuterMargin - root.bridgeExtraBleed
+            rightMargin: root.bridgeOuterMargin - root.bridgeExtraBleed
+        }
+
+        height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
+            antialiasing: false
+            color: root.bridgeColor
+            radius: 0
+        }
+    }
+
+    // =========================================================
+    // Mouse areas / content
+    // =========================================================
     FocusedScrollMouseArea {
         id: barLeftSideMouseArea
         anchors.top: parent.top
@@ -351,22 +431,53 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        anchors.leftMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
+        anchors.leftMargin: root.useHybridGroups ? 0 : Math.ceil(Appearance.rounding.screenRounding / 2)
         width: 1
     }
 
-    RowLayout {
-        id: leftSection
+    Loader {
+        id: leftContent
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: leftStopper.right
-        spacing: 4
+        active: true
+        sourceComponent: root.useHybridGroups ? leftHybridComponent : leftClassicComponent
+    }
 
-        Repeater {
-            model: Config.options.bar.layouts.left
-            delegate: BarComponent {
-                list: Config.options.bar.layouts.left
-                barSection: 0
+    Component {
+        id: leftClassicComponent
+        RowLayout {
+            spacing: 4
+            Repeater {
+                model: Config.options.bar.layouts.left
+                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
+            }
+        }
+    }
+
+    Component {
+        id: leftHybridComponent
+        Bar.BarGroup {
+            vertical: false
+            spacing: 4
+            isContainer: true
+            autoHide: false
+            padding: 6
+            edgeInset: 2
+            attachScreenLeft: true
+
+            // --- resize suave (Hybrid) ---
+            width: implicitWidth
+            Behavior on width {
+                NumberAnimation {
+                    duration: root.hybridResizeMs
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Repeater {
+                model: Config.options.bar.layouts.left
+                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
             }
         }
     }
@@ -377,50 +488,169 @@ Item {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
 
-        RowLayout {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.right: centerCenter.left
-            anchors.rightMargin: 4
+        Loader {
+            anchors.fill: parent
+            active: true
+            sourceComponent: root.useHybridGroups ? middleHybridComponent : middleClassicComponent
+        }
 
-            Repeater {
-                model: root.leftList
-                delegate: BarComponent {
-                    list: Config.options.bar.layouts.center
-                    barSection: 1
-                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+        Component {
+            id: middleClassicComponent
+            Item {
+                anchors.fill: parent
+
+                RowLayout {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: centerCenter.left
+                    anchors.rightMargin: 4
+                    Repeater {
+                        model: root.leftList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                RowLayout {
+                    id: centerCenter
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    Repeater {
+                        model: root.centerList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                RowLayout {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: centerCenter.right
+                    anchors.leftMargin: 4
+                    Repeater {
+                        model: root.rightList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
                 }
             }
         }
 
-        RowLayout {
-            id: centerCenter
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
+        Component {
+            id: middleHybridComponent
+            Item {
+                anchors.fill: parent
 
-            Repeater {
-                model: root.centerList
-                delegate: BarComponent {
-                    list: Config.options.bar.layouts.center
-                    barSection: 1
-                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                Loader {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: centerCenterGroup.left
+                    anchors.rightMargin: 4
+                    active: (root.leftList && root.leftList.length > 0)
+                    visible: active
+                    sourceComponent: Bar.BarGroup {
+                        vertical: false
+                        spacing: 4
+                        isContainer: true
+                        autoHide: true
+                        padding: 6
+                        edgeInset: 2
+
+                        // --- resize suave (Hybrid) ---
+                        width: implicitWidth
+                        Behavior on width {
+                            NumberAnimation {
+                                duration: root.hybridResizeMs
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Repeater {
+                            model: root.leftList
+                            delegate: BarComponent {
+                                list: Config.options.bar.layouts.center
+                                barSection: 1
+                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                            }
+                        }
+                    }
                 }
-            }
-        }
 
-        RowLayout {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: centerCenter.right
-            anchors.leftMargin: 4
+                Bar.BarGroup {
+                    id: centerCenterGroup
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
 
-            Repeater {
-                model: root.rightList
-                delegate: BarComponent {
-                    list: Config.options.bar.layouts.center
-                    barSection: 1
-                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                    vertical: false
+                    spacing: 4
+                    isContainer: true
+                    autoHide: true
+                    padding: 6
+                    edgeInset: 2
+
+                    // --- resize suave (Hybrid) ---
+                    width: implicitWidth
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: root.hybridResizeMs
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Repeater {
+                        model: root.centerList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: centerCenterGroup.right
+                    anchors.leftMargin: 4
+                    active: (root.rightList && root.rightList.length > 0)
+                    visible: active
+                    sourceComponent: Bar.BarGroup {
+                        vertical: false
+                        spacing: 4
+                        isContainer: true
+                        autoHide: true
+                        padding: 6
+                        edgeInset: 2
+
+                        // --- resize suave (Hybrid) ---
+                        width: implicitWidth
+                        Behavior on width {
+                            NumberAnimation {
+                                duration: root.hybridResizeMs
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Repeater {
+                            model: root.rightList
+                            delegate: BarComponent {
+                                list: Config.options.bar.layouts.center
+                                barSection: 1
+                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -434,20 +664,50 @@ Item {
         width: 1
     }
 
-    RowLayout {
-        id: rightSection
+    Loader {
+        id: rightContent
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.right: rightStopper.left
-        anchors.rightMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
-        spacing: 4
+        anchors.rightMargin: root.useHybridGroups ? 0 : Math.ceil(Appearance.rounding.screenRounding / 2)
+        active: true
+        sourceComponent: root.useHybridGroups ? rightHybridComponent : rightClassicComponent
+    }
 
-        Repeater {
-            id: rightRepeater
-            model: Config.options.bar.layouts.right
-            delegate: BarComponent {
-                list: Config.options.bar.layouts.right
-                barSection: 2
+    Component {
+        id: rightClassicComponent
+        RowLayout {
+            spacing: 4
+            Repeater {
+                model: Config.options.bar.layouts.right
+                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
+            }
+        }
+    }
+
+    Component {
+        id: rightHybridComponent
+        Bar.BarGroup {
+            vertical: false
+            spacing: 4
+            isContainer: true
+            autoHide: false
+            padding: 6
+            edgeInset: 2
+            attachScreenRight: true
+
+            // --- resize suave (Hybrid) ---
+            width: implicitWidth
+            Behavior on width {
+                NumberAnimation {
+                    duration: root.hybridResizeMs
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Repeater {
+                model: Config.options.bar.layouts.right
+                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
             }
         }
     }
