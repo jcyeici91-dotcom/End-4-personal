@@ -2,21 +2,30 @@ pragma ComponentBehavior: Bound
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
+import QtQuick
+import QtQuick.Layouts
+
+// --- IMPORTS DE LOS WIDGETS ---
 import qs.modules.ii.sidebarDashboard.calendar
 import qs.modules.ii.sidebarDashboard.todo
 import qs.modules.ii.sidebarDashboard.pomodoro
-import QtQuick
-import QtQuick.Layouts
+import qs.modules.ii.sidebarDashboard.calculator // Calculadora
+import qs.modules.ii.sidebarDashboard.notepad    // Notepad
+import qs.modules.ii.sidebarDashboard.sysmon     // System Monitor (NUEVO)
 
 Rectangle {
     id: root
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
     clip: true
-    implicitHeight: collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : 350
+    // Altura ajustada para que quepan bien los gráficos del sistema
+    implicitHeight: collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : 380 
+    
     property int selectedTab: Persistent.states.sidebar.bottomGroup.tab
     property int previousIndex: -1
     property bool collapsed: Persistent.states.sidebar.bottomGroup.collapsed
+    
+    // --- LISTA DE PESTAÑAS (TABS) ---
     property var tabs: [
         {
             "type": "calendar",
@@ -36,6 +45,25 @@ Rectangle {
             "icon": "schedule",
             "widget": "pomodoro/PomodoroWidget.qml"
         },
+        {
+            "type": "calculator",
+            "name": Translation.tr("Calculator"),
+            "icon": "calculate",
+            "widget": "calculator/CalculatorWidget.qml"
+        },
+        {
+            "type": "notepad",
+            "name": Translation.tr("Notes"),
+            "icon": "edit_note",
+            "widget": "notepad/NotepadWidget.qml"
+        },
+        {
+            // --- AQUÍ ESTÁ EL MONITOR DE SISTEMA ---
+            "type": "sysmon",
+            "name": Translation.tr("System"),
+            "icon": "memory", // Icono de chip/memoria
+            "widget": "sysmon/SystemMonitorWidget.qml"
+        }
     ]
 
     Behavior on implicitHeight {
@@ -79,7 +107,7 @@ Rectangle {
         }
     }
 
-    // The thing when collapsed
+    // VISTA COLAPSADA (MINIMIZADA)
     RowLayout {
         id: collapsedBottomWidgetGroupRow
         opacity: collapsed ? 1 : 0
@@ -114,14 +142,13 @@ Rectangle {
             property int remainingTasks: Todo.list.filter(task => !task.done).length
             Layout.margins: 10
             Layout.leftMargin: 0
-            // text: `${DateTime.collapsedCalendarFormat}   •   ${remainingTasks} task${remainingTasks > 1 ? "s" : ""}`
-            text: Translation.tr("%1   •   %2 tasks").arg(DateTime.collapsedCalendarFormat).arg(remainingTasks)
+            text: Translation.tr("%1    •    %2 tasks").arg(DateTime.collapsedCalendarFormat).arg(remainingTasks)
             font.pixelSize: Appearance.font.pixelSize.large
             color: Appearance.colors.colOnLayer1
         }
     }
 
-    // The thing when expanded
+    // VISTA EXPANDIDA (NORMAL)
     RowLayout {
         id: bottomWidgetGroupRow
 
@@ -137,17 +164,17 @@ Rectangle {
         }
 
         anchors.fill: parent
-        // implicitHeight: tabStack.implicitHeight
         spacing: 20
 
-        // Navigation rail
+        // BARRA LATERAL DE PESTAÑAS (NAVEGACIÓN)
         Item {
             Layout.fillHeight: true
             Layout.fillWidth: false
             Layout.leftMargin: 10
             Layout.topMargin: 10
             implicitWidth: tabBar.implicitWidth
-            // Navigation rail buttons
+            
+            // Botones de las pestañas
             NavigationRailTabArray {
                 id: tabBar
                 anchors.verticalCenter: parent.verticalCenter
@@ -165,13 +192,14 @@ Rectangle {
                         buttonText: modelData.name
                         buttonIcon: modelData.icon
                         onPressed: {
+                            root.previousIndex = root.selectedTab // Guardar previo para animación
                             root.selectedTab = index;
                             Persistent.states.sidebar.bottomGroup.tab = index;
                         }
                     }
                 }
             }
-            // Collapse button
+            // Botón de colapsar
             CalendarHeaderButton {
                 anchors.left: parent.left
                 anchors.top: parent.top
@@ -188,91 +216,92 @@ Rectangle {
             }
         }
 
-        // Content area
+        // ÁREA DE CONTENIDO (Donde se muestra el widget)
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            // implicitHeight: tabStack.implicitHeight
 
             Loader {
                 id: tabStack
                 anchors.fill: parent
-                anchors.bottomMargin: -anchors.topMargin
+                // Ajuste para evitar solapamiento
+                anchors.bottomMargin: 0 
+                anchors.topMargin: 0
 
                 Component.onCompleted: {
                     tabStack.source = root.tabs[root.selectedTab].widget;
                 }
 
-                Connections {
-                    target: root
-                    function onSelectedTabChanged() {
-                        if (root.currentTab > root.previousIndex)
-                            tabSwitchBehavior.animation.down = true;
-                        else if (root.currentTab < root.previousIndex)
-                            tabSwitchBehavior.animation.down = false;
-                        tabStack.source = root.tabs[root.selectedTab].widget;
-                    }
-                }
-
-                Behavior on source {
-                    id: tabSwitchBehavior
-                    animation: TabSwitchAnim {
-                        id: upAnim
-                        down: true
-                    }
+                onSourceChanged: {
+                    // Resetear opacidad al cambiar fuente para asegurar visibilidad
+                    tabStack.opacity = 1
                 }
             }
-        }
-    }
-
-    component TabSwitchAnim: SequentialAnimation {
-        id: switchAnim
-        property bool down: false
-        ParallelAnimation {
-            PropertyAnimation {
-                target: tabStack
-                properties: "opacity"
-                to: 0
-                duration: Appearance.animation.elementMoveFast.duration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
+            
+            // Lógica de cambio de pestaña
+            Connections {
+                target: root
+                function onSelectedTabChanged() {
+                     // Determinar dirección de animación
+                    if (root.selectedTab > root.previousIndex)
+                        switchAnim.down = true;
+                    else
+                        switchAnim.down = false;
+                    
+                    // Ejecutar animación manual
+                    switchAnim.restart()
+                }
             }
-            PropertyAnimation {
-                target: tabStack.anchors
-                properties: "topMargin"
-                to: 10 * (switchAnim.down ? -1 : 1)
-                duration: Appearance.animation.elementMoveFast.duration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
-            }
-        }
-        PropertyAction {
-            target: tabStack
-            property: "source"
-            value: root.tabs[root.selectedTab].widget
-        } // The source change happens here
-        ParallelAnimation {
-            PropertyAnimation {
-                target: tabStack.anchors
-                properties: "topMargin"
-                from: 10 * -(switchAnim.down ? -1 : 1)
-                to: 0
-                duration: Appearance.animation.elementMoveFast.duration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Appearance.animation.elementMoveEnter.bezierCurve
-            }
-            PropertyAnimation {
-                target: tabStack
-                properties: "opacity"
-                to: 1
-                duration: Appearance.animation.elementMoveFast.duration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Appearance.animation.elementMoveEnter.bezierCurve
-            }
-        }
-        ScriptAction {
-            script: {
-                root.previousIndex = root.selectedTab;
+            
+            // Animación manual secuencial para cambio de pestaña
+            SequentialAnimation {
+                id: switchAnim
+                property bool down: false
+                
+                // 1. Desvanecer salida
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: tabStack
+                        property: "opacity"
+                        to: 0
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                    NumberAnimation {
+                        target: tabStack.anchors
+                        property: "topMargin"
+                        to: 10 * (switchAnim.down ? -1 : 1)
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                }
+                
+                // 2. Cambiar Fuente (Instante)
+                ScriptAction {
+                    script: {
+                        tabStack.source = root.tabs[root.selectedTab].widget
+                        // Resetear margen para la entrada
+                        tabStack.anchors.topMargin = 10 * -(switchAnim.down ? -1 : 1)
+                    }
+                }
+                
+                // 3. Desvanecer entrada
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: tabStack.anchors
+                        property: "topMargin"
+                        to: 0
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                    NumberAnimation {
+                        target: tabStack
+                        property: "opacity"
+                        to: 1
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                }
             }
         }
     }
