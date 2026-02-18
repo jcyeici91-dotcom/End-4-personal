@@ -5,7 +5,6 @@ import qs.modules.common.widgets
 import qs.services
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
 import Quickshell
 
 MouseArea {
@@ -16,13 +15,18 @@ MouseArea {
 
     // Controls
     property bool interactionsEnabled: true
-    property bool tactileFeedback: true
+    property bool allowPopup: true
 
-    // Premium toggles
-    property bool enableGlassBlur: true
-    property bool enableSheen: true
-    property bool enableShimmer: true
-    property bool enableIconGlow: true
+    // Pixel/Google toggles
+    property bool enablePixelGrid: true
+    property bool enableWeatherAura: true
+
+    // NEW: efecto “barrido” que pasa por todo el widget
+    property bool enableSweep: true
+
+    // Heartbeat (SIN brillo; solo escala/“palpitar”)
+    property bool enableHeartbeat: true
+    property real heartbeatStrength: 1.0 // 0..1
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
@@ -30,14 +34,14 @@ MouseArea {
     cursorShape: Qt.PointingHandCursor
 
     // =====================================================
-    // SMART THEME (auto claro/oscuro)
+    // THEME
     // =====================================================
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
-    readonly property color smartTextColor: themeIsDark ? "#FFFFFF" : "#111111"
-    readonly property color smartShadowColor: themeIsDark ? Qt.rgba(0,0,0,0.45) : Qt.rgba(0,0,0,0.18)
+    readonly property color fg: themeIsDark ? "#FFFFFF" : "#161616"
+    readonly property color fgSoft: themeIsDark ? Qt.rgba(1,1,1,0.74) : Qt.rgba(0,0,0,0.60)
 
     // =====================================================
     // HOVER / PRESS
@@ -45,20 +49,29 @@ MouseArea {
     property real hoverAmount: containsMouse ? 1.0 : 0.0
     Behavior on hoverAmount {
         enabled: root.interactionsEnabled
-        NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
 
     property real pressAmount: pressed ? 1.0 : 0.0
     Behavior on pressAmount {
         enabled: root.interactionsEnabled
-        NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 90; easing.type: Easing.OutCubic }
     }
 
     // =====================================================
     // WEATHER DATA
     // =====================================================
-    readonly property var wCode: Weather.data?.wCode
-    readonly property string tempText: Weather.data?.temp ?? "--°"
+    readonly property var w: Weather.data
+    readonly property var wCode: w?.wCode
+
+    readonly property string tempText: (w?.temp !== undefined && w?.temp !== null) ? ("" + w.temp + "°") : "--°"
+
+    readonly property string cityText: {
+        var c = w?.city ?? w?.location ?? w?.name ?? w?.place ?? ""
+        c = (c === null || c === undefined) ? "" : ("" + c).trim()
+        if (c.length > 22) c = c.slice(0, 22) + "…"
+        return c
+    }
 
     function _codeStr() {
         return (wCode === undefined || wCode === null) ? "" : ("" + wCode).toLowerCase().trim()
@@ -96,55 +109,67 @@ MouseArea {
         }
     }
 
-    // =====================================================
-    // ICON ACCENT (sol amarillo, lluvia azul, etc.)
-    // Auto theme-safe + sube un poquito en hover
-    // =====================================================
-    function _clamp(x, a, b) { return Math.max(a, Math.min(b, x)) }
-
-    function weatherAccentBase() {
+    function accentBase() {
         switch (weatherKind()) {
-        case "sun":   return Qt.rgba(1.00, 0.78, 0.18, 1.0)  // amber
-        case "cloud": return Qt.rgba(0.80, 0.86, 0.95, 1.0)  // cool gray/blue
-        case "rain":  return Qt.rgba(0.33, 0.70, 1.00, 1.0)  // sky blue
-        case "storm": return Qt.rgba(0.76, 0.46, 1.00, 1.0)  // violet
-        case "snow":  return Qt.rgba(0.70, 0.95, 1.00, 1.0)  // icy cyan
-        case "fog":   return Qt.rgba(0.78, 0.82, 0.86, 1.0)  // neutral gray
-        default:      return Qt.rgba(1.00, 1.00, 1.00, 1.0)
+        case "sun":   return Qt.rgba(1.00, 0.78, 0.18, 1.0)
+        case "cloud": return Qt.rgba(0.78, 0.86, 0.98, 1.0)
+        case "rain":  return Qt.rgba(0.28, 0.68, 1.00, 1.0)
+        case "storm": return Qt.rgba(0.72, 0.46, 1.00, 1.0)
+        case "snow":  return Qt.rgba(0.66, 0.95, 1.00, 1.0)
+        case "fog":   return Qt.rgba(0.80, 0.84, 0.88, 1.0)
+        default:      return Qt.rgba(1, 1, 1, 1.0)
         }
     }
 
-    readonly property color weatherAccent: {
-        var a = weatherAccentBase()
+    function _clamp(x, a, b) { return Math.max(a, Math.min(b, x)) }
 
-        // Claro: más controlado. Oscuro: más “vivo”.
-        var tTheme = themeIsDark ? 0.72 : 0.50
-        var tHover = _clamp(tTheme + (0.18 * hoverAmount), 0.35, 0.88)
-
+    readonly property color accent: {
+        var a = accentBase()
+        var tTheme = themeIsDark ? 0.70 : 0.54
+        var t = _clamp(tTheme + 0.18 * hoverAmount, 0.30, 0.92)
         return Qt.rgba(
-            smartTextColor.r * (1.0 - tHover) + a.r * tHover,
-            smartTextColor.g * (1.0 - tHover) + a.g * tHover,
-            smartTextColor.b * (1.0 - tHover) + a.b * tHover,
+            fg.r * (1.0 - t) + a.r * t,
+            fg.g * (1.0 - t) + a.g * t,
+            fg.b * (1.0 - t) + a.b * t,
+            1.0
+        )
+    }
+
+    readonly property color cityColor: {
+        var base = fgSoft
+        var a = accent
+        var t = themeIsDark ? 0.60 : 0.48
+        t = _clamp(t + 0.12 * hoverAmount, 0.30, 0.85)
+        return Qt.rgba(
+            base.r * (1.0 - t) + a.r * t,
+            base.g * (1.0 - t) + a.g * t,
+            base.b * (1.0 - t) + a.b * t,
             1.0
         )
     }
 
     // =====================================================
-    // TONAL PILL (mismo lenguaje que tu barra)
-    // =====================================================
-    readonly property color tonalWeather: Appearance.m3colors.m3secondary
-    function _rgba(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
-    function _mix(a, b, t) { return a + (b - a) * t }
-    function _a(idleA, hoverA) { return _mix(idleA, hoverA, hoverAmount) }
-
-    // =====================================================
     // POPUP
     // =====================================================
     function openWeatherPopup() {
-        if (typeof weatherPopup.open === "function") { weatherPopup.open(); return }
-        if (typeof weatherPopup.show === "function") { weatherPopup.show(); return }
-        if (typeof weatherPopup.popup === "function") { weatherPopup.popup(); return }
+        if (!root.allowPopup) return
+
+        if (typeof weatherPopup.toggle === "function") { weatherPopup.toggle(); return }
         if (typeof weatherPopup.requestOpen === "function") { weatherPopup.requestOpen(); return }
+
+        if (typeof weatherPopup.popup === "function") {
+            if (weatherPopup.popup.length >= 1) weatherPopup.popup(root)
+            else weatherPopup.popup()
+            return
+        }
+
+        if (typeof weatherPopup.open === "function") {
+            if (weatherPopup.open.length >= 1) weatherPopup.open(root)
+            else weatherPopup.open()
+            return
+        }
+
+        if (typeof weatherPopup.show === "function") { weatherPopup.show(); return }
     }
 
     onPressed: (mouse) => {
@@ -169,165 +194,261 @@ MouseArea {
     }
 
     // =====================================================
-    // SIZE / SPACING
+    // CHIP LAYOUT
     // =====================================================
-    property int chipPadH: 9
-    property int chipPadV: 5
-    property int chipGap: 7
-    property int chipRadius: 999
+    property int padX: 12
+    property int padY: 7
+    property int gap: 8
+    property int radius: 12
 
     implicitWidth: chip.implicitWidth
     implicitHeight: chip.implicitHeight
 
-    // Subtle shimmer (solo en hover)
-    property real shimmerPhase: 0.0
-    NumberAnimation on shimmerPhase {
-        running: root.enableShimmer && root.hoverAmount > 0.2
+    // Aura animation phase
+    property real auraPhase: 0.0
+    NumberAnimation on auraPhase {
+        running: root.enableWeatherAura
         loops: Animation.Infinite
         from: 0.0
         to: 1.0
-        duration: 1400
+        duration: 2400
         easing.type: Easing.InOutSine
     }
 
+    // NEW: Sweep phase (efecto que “pasa por todo el widget”)
+    property real sweepPhase: 0.0
+    NumberAnimation on sweepPhase {
+        running: root.enableSweep
+        loops: Animation.Infinite
+        from: 0.0
+        to: 1.0
+        duration: 1800
+        easing.type: Easing.InOutSine
+    }
+
+    // Heartbeat phase (doble latido) — SOLO escala
+    property real beat: 0.0
+    SequentialAnimation on beat {
+        running: root.enableHeartbeat
+        loops: Animation.Infinite
+
+        NumberAnimation { from: 0.0; to: 1.0; duration: 110; easing.type: Easing.OutCubic }
+        NumberAnimation { from: 1.0; to: 0.0; duration: 190; easing.type: Easing.OutCubic }
+
+        PauseAnimation { duration: 140 }
+
+        NumberAnimation { from: 0.0; to: 0.78; duration: 105; easing.type: Easing.OutCubic }
+        NumberAnimation { from: 0.78; to: 0.0; duration: 220; easing.type: Easing.OutCubic }
+
+        PauseAnimation { duration: 900 }
+    }
+
+    readonly property real beatAmt: root.beat * root.heartbeatStrength
+
     Item {
         id: chip
-        implicitWidth: row.implicitWidth + (root.chipPadH * 2)
-        implicitHeight: Math.max(22, Math.round(Appearance.font.pixelSize.small + (root.chipPadV * 2)))
+        implicitWidth: row.implicitWidth + root.padX * 2
+        implicitHeight: Math.max(24, row.implicitHeight + root.padY * 2)
 
-        // micro lift + squish
         transformOrigin: Item.Center
         transform: [
             Scale {
                 origin.x: chip.width / 2
                 origin.y: chip.height / 2
-                xScale: 1.0 - (0.012 * root.pressAmount)
-                yScale: 1.0 - (0.012 * root.pressAmount)
+
+                readonly property real s: (root.interactionsEnabled ? (1.0 + 0.0065 * root.beatAmt) : 1.0)
+                xScale: s - 0.010 * root.pressAmount
+                yScale: s - 0.010 * root.pressAmount
             },
-            Translate { y: -0.6 * root.hoverAmount + 0.2 * root.pressAmount }
+            Translate { y: (-0.40 * root.hoverAmount) + (0.20 * root.pressAmount) }
         ]
 
-        // ---------- BACKPLATE (hover-to-pill) ----------
         Rectangle {
             id: plate
             anchors.fill: parent
-            radius: root.chipRadius
+            radius: root.radius
             antialiasing: true
+            clip: true
 
-            // idle invisible, hover glass-tonal
-            color: root._rgba(root.tonalWeather, root._a(0.00, root.themeIsDark ? 0.20 : 0.13))
+            color: Qt.rgba(
+                Appearance.m3colors.m3secondary.r,
+                Appearance.m3colors.m3secondary.g,
+                Appearance.m3colors.m3secondary.b,
+                (root.themeIsDark ? 0.22 : 0.14) + 0.06 * root.hoverAmount
+            )
 
             border.width: 1
             border.color: Qt.rgba(
-                1, 1, 1,
-                root._a(0.00, root.themeIsDark ? 0.16 : 0.12)
+                root.accent.r, root.accent.g, root.accent.b,
+                (root.themeIsDark ? 0.38 : 0.30) + 0.18 * root.hoverAmount
             )
 
-            layer.enabled: root.hoverAmount > 0.01
-            layer.smooth: true
-            layer.samples: 4
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowOpacity: (root.themeIsDark ? 0.12 : 0.05) * root.hoverAmount
-                shadowBlur: 0.9 + (0.4 * root.hoverAmount)
-                shadowVerticalOffset: 1
-            }
-
-            Behavior on color { ColorAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on border.color { ColorAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        }
-
-        // Optional: subtle glass blur on hover
-        Item {
-            anchors.fill: plate
-            visible: root.enableGlassBlur && root.hoverAmount > 0.05
-            layer.enabled: visible
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 0.35 + (0.35 * root.hoverAmount)
-                saturation: 1.05
-                brightness: 1.02
-            }
-        }
-
-        // iOS-like top sheen
-        Rectangle {
-            visible: root.enableSheen && root.hoverAmount > 0.05
-            anchors.fill: plate
-            radius: plate.radius
-            clip: true
-            color: "transparent"
-            opacity: root.hoverAmount
-            Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
             Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: parent.height * 0.55
-                y: 1
-                radius: 999
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.rgba(1,1,1, root.themeIsDark ? 0.12 : 0.16) }
-                    GradientStop { position: 1.0; color: Qt.rgba(1,1,1, 0.00) }
+                anchors.fill: parent
+                radius: root.radius
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(
+                    1, 1, 1,
+                    root.themeIsDark ? (0.10 + 0.06 * root.hoverAmount) : (0.08 + 0.05 * root.hoverAmount)
+                )
+            }
+
+            // =================================================
+            // SWEEP EFFECT (pasa por todo el widget)
+            //   - No es “brillo” ligado al latido
+            //   - Es un barrido suave constante
+            // =================================================
+            Item {
+                anchors.fill: parent
+                visible: root.enableSweep
+                clip: true
+                opacity: 0.12 + 0.08 * root.hoverAmount
+
+                Rectangle {
+                    width: parent.width * 0.60
+                    height: parent.height * 2.0
+                    radius: 10
+                    rotation: -18
+
+                    // De izquierda a derecha
+                    x: (-parent.width * 0.75) + (parent.width * 1.75 * root.sweepPhase)
+                    y: -parent.height * 0.60
+
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.00) }
+                        GradientStop { position: 0.5; color: Qt.rgba(1,1,1, root.themeIsDark ? 0.10 : 0.08) }
+                        GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0.00) }
+                    }
+                    opacity: 0.85
+                }
+            }
+
+            // =================================================
+            // PIXEL GRID
+            //   FIX: quitada la “línea” cerca del icono:
+            //   - ya NO dibuja una línea en x=0
+            // =================================================
+            Item {
+                anchors.fill: parent
+                visible: root.enablePixelGrid
+                opacity: 0.10 + 0.10 * root.hoverAmount
+                clip: true
+
+                Repeater {
+                    // antes: floor(width/10) empezaba en 0 => línea pegada al icono/borde
+                    model: Math.max(0, Math.floor((plate.width - 10) / 10))
+                    delegate: Rectangle {
+                        width: 1
+                        height: plate.height
+                        x: 10 + index * 10   // <-- empieza en 10, no en 0
+                        y: 0
+                        color: Qt.rgba(1,1,1, root.themeIsDark ? 0.10 : 0.08)
+                        opacity: 0.35
+                    }
+                }
+
+                Repeater {
+                    // también evitamos y=0 por simetría (opcional, se ve más limpio)
+                    model: Math.max(0, Math.floor((plate.height - 10) / 10))
+                    delegate: Rectangle {
+                        width: plate.width
+                        height: 1
+                        x: 0
+                        y: 10 + index * 10   // <-- empieza en 10
+                        color: Qt.rgba(0,0,0, root.themeIsDark ? 0.14 : 0.10)
+                        opacity: 0.28
+                    }
+                }
+            }
+
+            // Weather aura (tu efecto existente)
+            Item {
+                anchors.fill: parent
+                visible: root.enableWeatherAura
+                opacity: 0.20 + 0.18 * root.hoverAmount
+                clip: true
+
+                Rectangle {
+                    width: parent.width * 0.55
+                    height: parent.height * 1.2
+                    radius: 6
+                    rotation: -18
+                    x: (-parent.width * 0.50) + (parent.width * 1.20 * root.auraPhase)
+                    y: -parent.height * 0.20
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.00) }
+                        GradientStop { position: 0.5; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.themeIsDark ? 0.10 : 0.07) }
+                        GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0.00) }
+                    }
+                    opacity: 0.9
+                }
+
+                Rectangle {
+                    visible: root.weatherKind() === "sun"
+                    width: parent.height * 1.0
+                    height: width
+                    radius: 8
+                    x: parent.width * 0.08
+                    y: -parent.height * 0.40
+                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
+                                  0.08 + 0.08 * (0.5 + 0.5 * Math.sin(6.28318 * root.auraPhase)))
+                }
+
+                Repeater {
+                    model: (root.weatherKind() === "rain" || root.weatherKind() === "storm") ? 6 : 0
+                    delegate: Rectangle {
+                        width: 2
+                        height: parent.height * 0.60
+                        radius: 1
+                        rotation: -18
+                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "storm" ? 0.18 : 0.14)
+                        x: (index * parent.width * 0.16) + (parent.width * 0.30 * root.auraPhase)
+                        y: parent.height * 0.10 + (index % 2) * 2
+                        opacity: 0.55
+                    }
+                }
+
+                Repeater {
+                    model: (root.weatherKind() === "snow" || root.weatherKind() === "fog") ? 8 : 0
+                    delegate: Rectangle {
+                        width: 2 + (index % 2)
+                        height: width
+                        radius: 1
+                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "fog" ? 0.10 : 0.16)
+                        x: (index * parent.width * 0.12 + parent.width * 0.22 * root.auraPhase) % parent.width
+                        y: parent.height * (0.18 + 0.09 * (index % 4)) + (parent.height * 0.08 * Math.sin(6.28318 * (root.auraPhase + index * 0.14)))
+                        opacity: 0.6
+                    }
+                }
+
+                Repeater {
+                    model: (root.weatherKind() === "cloud") ? 3 : 0
+                    delegate: Rectangle {
+                        width: parent.width * (0.24 + 0.10 * (index % 2))
+                        height: 2
+                        radius: 1
+                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.12)
+                        x: (-parent.width * 0.25) + (parent.width * 1.20 * root.auraPhase) - (index * 14)
+                        y: parent.height * (0.26 + 0.22 * index)
+                        opacity: 0.7
+                    }
                 }
             }
         }
 
-        // Diagonal shimmer (super sutil)
-        Rectangle {
-            visible: root.enableShimmer && root.hoverAmount > 0.20
-            anchors.fill: plate
-            radius: plate.radius
-            clip: true
-            color: "transparent"
-            opacity: 0.55 * root.hoverAmount
-            Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-            Rectangle {
-                width: parent.width * 0.65
-                height: parent.height * 0.9
-                radius: 999
-                rotation: -20
-
-                x: (-parent.width * 0.55) + (parent.width * 1.25 * root.shimmerPhase)
-                y: -parent.height * 0.15
-
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.00) }
-                    GradientStop { position: 0.5; color: Qt.rgba(1,1,1, root.themeIsDark ? 0.07 : 0.09) }
-                    GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0.00) }
-                }
-            }
-        }
-
-        // ---------- CONTENT ----------
         RowLayout {
             id: row
             anchors.centerIn: parent
-            spacing: root.chipGap
+            spacing: root.gap
 
             MaterialSymbol {
-                id: weatherIconItem
                 Layout.alignment: Qt.AlignVCenter
-                fill: 0
                 text: root.weatherIcon()
-                iconSize: Math.max(16, Appearance.font.pixelSize.small)
-
-                // Aquí está lo importante: icono con color según clima
-                color: root.weatherAccent
-
-                opacity: 0.90 + (0.10 * root.hoverAmount)
-                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-                // Glow muy sutil (se nota más en hover)
-                layer.enabled: root.enableIconGlow
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 0.9
-                    shadowVerticalOffset: 0
-                    shadowOpacity: (root.themeIsDark ? 0.16 : 0.10) * root.hoverAmount
-                    shadowColor: root.weatherAccent
-                }
+                fill: 0
+                iconSize: Math.max(16, Appearance.font.pixelSize.small + 2)
+                color: root.accent
+                opacity: 0.92 + 0.08 * root.hoverAmount
             }
 
             StyledText {
@@ -337,27 +458,33 @@ MouseArea {
                 font.bold: true
                 font.weight: Font.Bold
                 font.features: ({ "tnum": 1 })
-                color: root.smartTextColor
-                opacity: 0.86 + (0.14 * root.hoverAmount)
+                color: root.fg
                 renderType: Text.NativeRendering
-                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+            }
 
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 0.45
-                    shadowColor: root.smartShadowColor
-                    shadowOpacity: root.themeIsDark ? 0.18 : 0.10
-                    shadowVerticalOffset: 1
-                }
+            // FIX: quitado el “punto” al lado de la ciudad (se eliminó el separador)
+            // (No hay Rectangle separador aquí)
+
+            StyledText {
+                Layout.alignment: Qt.AlignVCenter
+                visible: root.cityText !== ""
+                text: root.cityText
+                font.pixelSize: (Appearance.font.pixelSize.tiny ?? Math.max(10, Appearance.font.pixelSize.small - 2)) + 1
+                font.bold: true
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.35
+                color: root.cityColor
+                opacity: 0.94 + 0.05 * root.hoverAmount
+                elide: Text.ElideRight
+                Layout.maximumWidth: 170
+                renderType: Text.NativeRendering
             }
         }
     }
 
     WeatherPopup {
         id: weatherPopup
-        hoverTarget: root
+        // NO z: StyledPopup no es Item
     }
 }
-
 

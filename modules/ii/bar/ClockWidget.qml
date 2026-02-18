@@ -45,6 +45,12 @@ Item {
     property int pillGap: 8
     property int timeColonGap: 2
 
+    // NUEVO: gap más compacto al expandir (para que no quede hueco)
+    property int expandedGap: 0
+
+    // NUEVO: margen lateral del divider (reduce el hueco extra)
+    property int dividerSideMargin: 0
+
     // =====================================================
     // 4) COLORS
     // =====================================================
@@ -109,13 +115,13 @@ Item {
         id: content
         anchors.fill: parent
         transformOrigin: Item.Center
-        // PERF: nada de layer.enabled ni effects
-        // layer.enabled: false
 
         RowLayout {
             id: contentRow
             anchors.centerIn: parent
-            spacing: root.pillGap
+
+            // FIX: al expandir, cerramos el gap general
+            spacing: root.expanded ? root.expandedGap : root.pillGap
 
             // --- PILL BACKGROUND (PERF: sin efectos, sin sombra) ---
             component TonalPillBg: Rectangle {
@@ -130,8 +136,6 @@ Item {
 
                 border.width: 1
                 border.color: Qt.rgba(root.themeIsDark ? 1 : 0, root.themeIsDark ? 1 : 0, root.themeIsDark ? 1 : 0, 0.12)
-
-                // PERF: sin layer.effect, sin samples
             }
 
             // --- TIME PILL ---
@@ -162,7 +166,6 @@ Item {
                             opacity: 0.95
                             Layout.alignment: Qt.AlignVCenter
                             renderType: Text.NativeRendering
-                            // PERF: sin layer.effect de sombra
                             layer.enabled: false
                         }
                     }
@@ -229,11 +232,13 @@ Item {
                 text: "•"
                 font.pixelSize: Appearance.font.pixelSize.large
                 color: root.themeIsDark ? Appearance.colors.colOnLayer1Variant : "#444444"
-                Layout.leftMargin: 6
-                Layout.rightMargin: 2
+
+                // FIX: márgenes más pequeños para que no haya “hueco”
+                Layout.leftMargin: root.dividerSideMargin
+                Layout.rightMargin: root.dividerSideMargin
+
                 Layout.alignment: Qt.AlignVCenter
                 renderType: Text.NativeRendering
-                // PERF: sin animación de opacity
                 opacity: visible ? 1 : 0
             }
 
