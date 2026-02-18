@@ -29,34 +29,29 @@ Item {
     readonly property var safeList: (Array.isArray(list) ? list : [])
 
     // ---------------------------------------------------------
-    // MUSIC_PLAYER: hide group fully when no media
+    // MUSIC_PLAYER: Ocultar grupo si no hay medios
     // ---------------------------------------------------------
     readonly property bool isMusicPlayer: (rootItem.modelData && rootItem.modelData.id === "music_player")
 
-    // "hasMedia": hay player activo y NO está en Stopped (Paused cuenta como activo)
     readonly property bool musicHasMedia: (MprisController.activePlayer !== null)
         && (MprisController.activePlayer.playbackState !== MprisPlaybackState.Stopped)
 
-    // Visibilidad pedida por config/usuario (la maneja toggleVisible)
     property bool userVisible: (rootItem.modelData ? (rootItem.modelData.visible !== false) : true)
 
-    // Visibilidad final (regla especial para music_player)
     readonly property bool effectiveVisible: rootItem.userVisible
         && (!rootItem.isMusicPlayer || rootItem.musicHasMedia)
 
-    // IMPORTANT: que el item completo desaparezca del layout
     visible: effectiveVisible
 
     // ---------------------------------------------------------
-    // Color helpers
+    // Helpers de Color
     // ---------------------------------------------------------
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.55 }
     function _on(bg, a) { return _isDark(bg) ? Qt.rgba(1, 1, 1, a) : Qt.rgba(0, 0, 0, a) }
 
     // ---------------------------------------------------------
-    // Tokens (se calculan a partir del background del grupo)
-    // Estos son los que arreglan el look en light.
+    // Tokens
     // ---------------------------------------------------------
     readonly property color groupBg: wrapper.colBackground
 
@@ -65,7 +60,6 @@ Item {
     readonly property color onMuted:  _on(groupBg, 0.62)
     readonly property color onIcon:   _on(groupBg, 0.90)
 
-    // Para chips/pills dentro del widget (si lo usan)
     readonly property color chipBg: _isDark(groupBg)
         ? Qt.rgba(1, 1, 1, 0.10)
         : Qt.rgba(0, 0, 0, 0.08)
@@ -75,7 +69,7 @@ Item {
         : Qt.rgba(0, 0, 0, 0.14)
 
     // ---------------------------------------------------------
-    // Visibility toggle (igual que tu versión, pero usando userVisible)
+    // Toggle de Visibilidad
     // ---------------------------------------------------------
     function toggleVisible(visibility) {
         rootItem.userVisible = visibility
@@ -96,13 +90,17 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // Component map
+    // Mapa de Componentes
     // ---------------------------------------------------------
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
         "music_player": [musicPlayerComp, musicPlayerCompVert],
         "system_monitor": [systemMonitorComp, systemMonitorCompVert],
-        "clock": [clockComp, clockCompVert],
+        
+        // --- AQUÍ ESTÁ EL HÍBRIDO ---
+        // Se usa hybridClockComp para barra horizontal, y clockCompVert para vertical
+        "clock": [hybridClockComp, clockCompVert],
+        
         "battery": [batteryComp, batteryCompVert],
         "utility_buttons": [utilityButtonsComp, utilityButtonsComp],
         "system_tray": [systemTrayComp, systemTrayComp],
@@ -152,22 +150,16 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // Token injection into loaded widget (no rompe si no existen)
+    // Inyección de Tokens
     // ---------------------------------------------------------
     function applyTokens(item) {
         if (!item) return
-
-        // “on*” colors
         if (item.onStrong !== undefined) item.onStrong = rootItem.onStrong
         if (item.onNormal !== undefined) item.onNormal = rootItem.onNormal
         if (item.onMuted !== undefined)  item.onMuted  = rootItem.onMuted
         if (item.onIcon !== undefined)   item.onIcon   = rootItem.onIcon
-
-        // chips
         if (item.chipBg !== undefined) item.chipBg = rootItem.chipBg
         if (item.chipBorder !== undefined) item.chipBorder = rootItem.chipBorder
-
-        // extra: por si tus widgets usan otros nombres típicos
         if (item.textColor !== undefined) item.textColor = rootItem.onStrong
         if (item.iconColor !== undefined) item.iconColor = rootItem.onIcon
         if (item.mutedTextColor !== undefined) item.mutedTextColor = rootItem.onMuted
@@ -175,7 +167,7 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // Wrapper group
+    // Wrapper (Grupo)
     // ---------------------------------------------------------
     BarGroup {
         id: wrapper
@@ -190,16 +182,12 @@ Item {
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
 
-        // Fondo por widget (como lo tenías) — esto afecta el cálculo de tokens
         colBackground: (rootItem.modelData && rootItem.primaryBackgroundComps.includes(rootItem.modelData.id))
             ? Appearance.m3colors.m3primary
             : Appearance.m3colors.m3surfaceContainerLow
 
-        // EXPLÍCITO: esto va al default property alias "items"
         items: Loader {
             id: itemLoader
-
-            // Clave: si no es visible (p. ej. music_player sin media), NO cargar nada
             active: rootItem.effectiveVisible
 
             readonly property string itemId: (rootItem.modelData && rootItem.modelData.id) ? rootItem.modelData.id : ""
@@ -213,7 +201,7 @@ Item {
     }
 
     // ---------------------------------------------------------
-    // Components
+    // Componentes
     // ---------------------------------------------------------
     Component {
         id: unknownComp
@@ -234,8 +222,6 @@ Item {
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
 
-    // IMPORTANTE: no hace falta tocar Media.qml para el huequito,
-    // porque aquí ya escondemos el grupo completo cuando no hay media.
     Component { id: musicPlayerComp; Media {} }
     Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
 
@@ -244,6 +230,10 @@ Item {
     Component { id: batteryComp; BatteryIndicator {} }
     Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
 
+    // -- AQUÍ DEFINIMOS EL HÍBRIDO --
+    Component { id: hybridClockComp; HybridClockWeather {} }
+    
+    // Componentes antiguos (necesarios para el modo vertical)
     Component { id: clockComp; ClockWidget {} }
     Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
 
@@ -258,4 +248,3 @@ Item {
     Component { id: dashboardPanelButtonComp; DashboardPanelButton {} }
     Component { id: dashboardPanelButtonCompVert; VerticalDashboardPanelButton {} }
 }
-
