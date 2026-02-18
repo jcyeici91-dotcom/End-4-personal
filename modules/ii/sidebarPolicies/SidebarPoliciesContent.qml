@@ -19,18 +19,18 @@ Item {
 
     UI.SidebarTheme { id: theme }
 
-    // STICKER 
-     readonly property url welcomeStickerSourcePortable: Qt.resolvedUrl("./assets/gifs/1.png")
+    // STICKER
+    readonly property url welcomeStickerSourcePortable: Qt.resolvedUrl("./assets/gifs/1.png")
     readonly property url welcomeStickerSourceFallback: "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/1.png"
     property bool allowStickerFallback: true
 
     // Header tuning
     property int headerInnerPadding: 14
 
-    // PNG flotante 
-    property int floatingBadgeSize: 90         // tamaño del “mini/png”
-    property int floatingBadgeLift: -5        // cuanto sube por encima del header (más = más arriba)
-    property int floatingBadgeRightPadding: 10  // separación del borde derecho
+    // PNG flotante
+    property int floatingBadgeSize: 90
+    property int floatingBadgeLift: -5
+    property int floatingBadgeRightPadding: 10
 
     // Policies
     property bool aiChatEnabled: Config.options.policies.ai !== 0
@@ -39,6 +39,7 @@ Item {
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool wallpapersEnabled: Config.options.policies.wallpapers !== 0
 
+    // --- LISTA DE PESTAÑAS ---
     readonly property var tabButtonList: [
         { "key": "system", "icon": "dashboard", "name": Translation.tr("Sistema") },
         { "key": "fundos", "icon": "palette", "name": Translation.tr("Fondos") },
@@ -77,15 +78,11 @@ Item {
             color: Qt.rgba(0, 0, 0, 0.20)
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.05)
-
-            // clave para que el PNG pueda “salirse” hacia arriba
             clip: false
 
-            // Contenedor general
             Item {
                 anchors.fill: parent
 
-                // Grupo centrado (ícono + texto)
                 Row {
                     id: centeredWelcome
                     anchors.centerIn: parent
@@ -110,7 +107,6 @@ Item {
                     }
                 }
 
-                // “Badge” a la derecha (pero el PNG va flotando encima)
                 Item {
                     id: floatingBadge
                     width: root.floatingBadgeSize
@@ -119,14 +115,12 @@ Item {
                     anchors.rightMargin: root.floatingBadgeRightPadding
                     anchors.verticalCenter: parent.verticalCenter
 
-                    // El PNG flotante (encima del header)
                     Image {
                         id: welcomeStickerPortable
                         width: root.floatingBadgeSize
                         height: root.floatingBadgeSize
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: -root.floatingBadgeLift
-
                         source: root.welcomeStickerSourcePortable
                         fillMode: Image.PreserveAspectFit
                         smooth: true
@@ -141,18 +135,14 @@ Item {
                         height: root.floatingBadgeSize
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: -root.floatingBadgeLift
-
                         source: root.welcomeStickerSourceFallback
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         mipmap: true
                         antialiasing: true
-                        visible: root.allowStickerFallback
-                                 && !welcomeStickerPortable.visible
-                                 && status === Image.Ready
+                        visible: root.allowStickerFallback && !welcomeStickerPortable.visible && status === Image.Ready
                     }
 
-                    // Placeholder si ninguna carga
                     Rectangle {
                         width: root.floatingBadgeSize
                         height: root.floatingBadgeSize
@@ -172,18 +162,10 @@ Item {
                         }
                     }
                 }
-
-                // padding interno visual (opcional, por si luego añades cosas)
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: root.headerInnerPadding
-                    color: "transparent"
-                    visible: false
-                }
             }
         }
 
-        // Nav pills
+        // --- BARRA DE PESTAÑAS ---
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: root.hasTabs ? 85 : 0
@@ -192,25 +174,75 @@ Item {
             color: Qt.rgba(0, 0, 0, 0.15)
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.05)
+            clip: true
 
-            RowLayout {
+            ListView {
+                id: tabsListView
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+                anchors.margins: 4
+                orientation: ListView.Horizontal
                 spacing: 4
 
-                Repeater {
-                    model: root.tabButtonList
+                model: root.tabButtonList
 
-                    delegate: Item {
-                        id: navItem
-                        required property var modelData
-                        required property int index
+                interactive: true
+                flickableDirection: Flickable.HorizontalFlick
+                boundsBehavior: Flickable.StopAtBounds
 
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                // ---- CLAMP para que al final NO deje hueco ----
+                function clampTabsContentX() {
+                    const maxX = Math.max(0, tabsListView.contentWidth - tabsListView.width)
+                    if (tabsListView.contentX < 0) tabsListView.contentX = 0
+                    else if (tabsListView.contentX > maxX) tabsListView.contentX = maxX
+                }
 
-                        readonly property bool isActive: swipeView.currentIndex === index
+                onWidthChanged: clampTabsContentX()
+                onContentWidthChanged: clampTabsContentX()
+
+                // Rueda del mouse => scroll horizontal (SIN dejar espacio al final)
+                // No bloquea arrastre/clicks porque acceptedButtons = Qt.NoButton
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
+                    propagateComposedEvents: true
+
+                    // Sensibilidad: más alto = más rápido
+                    property real wheelScale: 1.2
+
+                    onWheel: (wheel) => {
+                        const dy = wheel.angleDelta ? wheel.angleDelta.y : 0
+                        const dx = wheel.angleDelta ? wheel.angleDelta.x : 0
+                        const delta = (dy !== 0) ? dy : dx
+                        if (delta === 0) return
+
+                        tabsListView.contentX = tabsListView.contentX - (delta * wheelScale)
+                        tabsListView.clampTabsContentX()
+
+                        wheel.accepted = true
+                    }
+                }
+
+                ScrollBar.horizontal: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                    height: 3
+                    anchors.bottom: parent.bottom
+                }
+
+                delegate: Item {
+                    id: navItem
+                    required property var modelData
+                    required property int index
+
+                    width: Math.max(100, (tabsListView.width / Math.min(root.tabButtonList.length, 4)) - 4)
+                    height: tabsListView.height - 8
+
+                    readonly property bool isActive: swipeView.currentIndex === index
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 20
+                        color: "transparent"
 
                         ColumnLayout {
                             anchors.centerIn: parent
@@ -219,6 +251,7 @@ Item {
                             Rectangle {
                                 Layout.preferredWidth: 64
                                 Layout.preferredHeight: 32
+                                Layout.alignment: Qt.AlignHCenter
                                 radius: 16
                                 color: navItem.isActive ? theme.colAccent : "transparent"
                                 Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutQuad } }
@@ -239,9 +272,9 @@ Item {
                                 font.bold: navItem.isActive
                                 color: navItem.isActive ? theme.colText : theme.colSubText
                                 opacity: navItem.isActive ? 1.0 : 0.8
-                                wrapMode: Text.NoWrap
-                                maximumLineCount: 1
+                                horizontalAlignment: Text.AlignHCenter
                                 elide: Text.ElideRight
+                                maximumLineCount: 1
                             }
                         }
 
@@ -256,7 +289,7 @@ Item {
             }
         }
 
-        // Content frame + SwipeView
+        // Contenedor de Páginas
         Rectangle {
             id: contentFrame
             Layout.fillWidth: true
@@ -277,16 +310,7 @@ Item {
                 orientation: Qt.Horizontal
                 currentIndex: 0
 
-                clip: false
-                layer.enabled: true
-                layer.samples: 8
-                layer.smooth: true
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: swipeMask
-                    maskThresholdMin: 0.5
-                    maskSpreadAtMin: 0.7
-                }
+                clip: true
 
                 contentChildren: [
                     systemPage.createObject(root),
@@ -300,27 +324,9 @@ Item {
                     ...(root.animeEnabled ? [anime.createObject(root)] : [])
                 ]
             }
-
-            Item {
-                id: swipeMask
-                visible: false
-                width: swipeView.width
-                height: swipeView.height
-
-                layer.enabled: true
-                layer.samples: 8
-                layer.smooth: true
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Math.max(0, contentFrame.radius - 8)
-                    color: "white"
-                    antialiasing: true
-                }
-            }
         }
 
-        // Pages
+        // Componentes de las páginas
         Component { id: systemPage; Pages.OverviewPage { theme: theme } }
         Component { id: fondosPage; Pages.WallpapersPage { theme: theme } }
         Component { id: wallpaperBrowser; WallpaperBrowserUI { } }
