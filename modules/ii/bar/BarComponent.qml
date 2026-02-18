@@ -95,14 +95,22 @@ Item {
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
         "music_player": [musicPlayerComp, musicPlayerCompVert],
-        "system_monitor": [systemMonitorComp, systemMonitorCompVert],
-        
-        // --- AQUÍ ESTÁ EL HÍBRIDO ---
-        // Se usa hybridClockComp para barra horizontal, y clockCompVert para vertical
+
+        // --- AQUÍ VA EL HÍBRIDO RESOURCES <-> UTILBUTTONS (HORIZONTAL) ---
+        // Vertical se mantiene como Resources vertical (como lo tenías).
+        "system_monitor": [hybridResUtilComp, systemMonitorCompVert],
+
+        // --- HÍBRIDO RELOJ <-> CLIMA (HORIZONTAL) ---
+        // Vertical se mantiene como reloj vertical (como lo tenías).
         "clock": [hybridClockComp, clockCompVert],
-        
+
         "battery": [batteryComp, batteryCompVert],
-        "utility_buttons": [utilityButtonsComp, utilityButtonsComp],
+
+        // IMPORTANTE:
+        // Si tu layout aún incluye "utility_buttons", se vería otro grupo aparte.
+        // Para evitar duplicado, aquí lo “anulamos”. (Recomendado si no vas a tocar el layout.)
+        "utility_buttons": [unknownComp, unknownComp],
+
         "system_tray": [systemTrayComp, systemTrayComp],
         "active_window": [activeWindowComp, activeWindowComp],
         "date": [dateCompVert, dateCompVert],
@@ -219,6 +227,7 @@ Item {
 
     Component { id: activeWindowComp; ActiveWindow { vertical: rootItem.vertical } }
 
+    // Originales (se mantienen para vertical y/o fallback)
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
 
@@ -230,9 +239,12 @@ Item {
     Component { id: batteryComp; BatteryIndicator {} }
     Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
 
-    // -- AQUÍ DEFINIMOS EL HÍBRIDO --
+    // Híbrido reloj/clima (ya lo tenías)
     Component { id: hybridClockComp; HybridClockWeather {} }
-    
+
+    // Híbrido Resources/UtilButtons (NUEVO)
+    Component { id: hybridResUtilComp; HybridResourcesUtilButtons {} }
+
     // Componentes antiguos (necesarios para el modo vertical)
     Component { id: clockComp; ClockWidget {} }
     Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
@@ -248,3 +260,4 @@ Item {
     Component { id: dashboardPanelButtonComp; DashboardPanelButton {} }
     Component { id: dashboardPanelButtonCompVert; VerticalDashboardPanelButton {} }
 }
+
