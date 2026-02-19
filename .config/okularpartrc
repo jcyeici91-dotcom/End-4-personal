@@ -2,9 +2,6 @@
 ChangeColors=true
 RenderMode=InvertLightness
 
-[Main View]
-ShowLeftPanel=false
-
 [PageView]
 MouseMode=TextSelect
 

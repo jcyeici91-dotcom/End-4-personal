@@ -360,7 +360,29 @@ vec4 computeVisualization(vec2 uv, float iTime, float bass, float mid, float hig
 }
 
 void main() {
-    vec2 uv = qt_TexCoord0;
+    // ============================================
+    // DYNAMIC CONTENT SCALING
+    // ============================================
+    // Calculate max possible extent from current settings to guarantee
+    // nothing ever reaches the widget border.
+    //
+    // Max visualization radius in centered space [-1,1]:
+    //   Bars/Wave: baseRadius(0.35) + sensitivity * 0.5
+    //   Rings:     innerDiameter/2 + sensitivity * 0.05 (always smaller)
+    //
+    // Bloom reach: exp(-dist * minDecayRate / bloomIntensity) decays to
+    // < 1/255 at dist ≈ bloomIntensity * 1.0 (from solving exp decay
+    // with worst-case amplitude * multiplier chain)
+    //
+    // contentScale maps the widget edge to ±contentScale in centered space,
+    // so setting it to maxTotalRadius ensures everything fits.
+
+    float maxContentRadius = 0.35 + ubuf.sensitivity * 0.5;
+    float maxBloomReach = ubuf.bloomIntensity * 1.0;
+    float maxTotalRadius = maxContentRadius + maxBloomReach;
+    float contentScale = max(maxTotalRadius * 1.05, 1.0); // 5% safety margin
+
+    vec2 uv = (qt_TexCoord0 - 0.5) * contentScale + 0.5;
 
     // Convert linear time (0-3600) to smooth oscillation for seamless looping
     // sin() ensures perfect continuity when QML wraps from 3600 back to 0
@@ -507,6 +529,19 @@ void main() {
         color.rgb = min(color.rgb, vec3(1.5));
         color.a = min(color.a, 0.8);
     }
+
+    // ============================================
+    // EDGE FADE - radial falloff that only affects the bloom zone
+    // ============================================
+    // Fade starts just past where main content ends (maxContentRadius)
+    // and reaches zero at the widget edge (contentScale) in centered space.
+    // This catches bloom tails without affecting the main visualization.
+
+    vec2 fromCenter = (qt_TexCoord0 - 0.5) * 2.0; // -1 to 1 in widget space
+    float edgeProximity = max(abs(fromCenter.x), abs(fromCenter.y)); // box distance
+    float fadeStart = maxContentRadius / contentScale; // where content ends in widget space
+    float edgeFade = 1.0 - smoothstep(fadeStart, 1.0, edgeProximity);
+    color *= edgeFade;
 
     // ============================================
     // CORNER MASKING
