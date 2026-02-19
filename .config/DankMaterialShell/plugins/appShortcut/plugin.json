@@ -1,0 +1,14 @@
+{
+  "id": "appShortcut",
+  "name": "Application Shortcut",
+  "description": "Add application shortcuts in your desktop :)",
+  "version": "1.0.0",
+  "author": "Omar (@oabragh)",
+  "type": "desktop",
+  "capabilities": ["desktop-widget"],
+  "component": "./AppShortcut.qml",
+  "icon": "widgets",
+  "settings": "./AppShortcutSettings.qml",
+  "requires_dms": ">=1.2.0",
+  "permissions": ["settings_read", "settings_write"]
+}

@@ -1,0 +1,1021 @@
+2026-01-19T00:09:02.351Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:09:03.905Z info: Backed up config file to /home/jcgomez91/.config/LosslessCut/config.json.backup-v3.67.2-1-1768781342364
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding ShiftLeft+Equal addSegment AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding KeyK togglePlayNoResetSpeed AssertionError [ERR_ASSERTION]: Unknown key: KeyK
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding KeyJ reducePlaybackRate AssertionError [ERR_ASSERTION]: Unknown key: KeyJ
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding ShiftLeft+KeyJ reducePlaybackRateMore AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding KeyL increasePlaybackRate AssertionError [ERR_ASSERTION]: Unknown key: KeyL
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.906Z error: Failed to migrate old keyboard binding ShiftLeft+KeyL increasePlaybackRateMore AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyZ timelineToggleComfortZoom AssertionError [ERR_ASSERTION]: Unknown key: KeyZ
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding ShiftLeft+KeyZ makeCursorTimeZero AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding Comma seekPreviousFrame AssertionError [ERR_ASSERTION]: Unknown key: Comma
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding Period seekNextFrame AssertionError [ERR_ASSERTION]: Unknown key: Period
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyC captureSnapshot AssertionError [ERR_ASSERTION]: Unknown key: KeyC
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding ControlLeft+KeyC copySegmentsToClipboard AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding MetaLeft+KeyC copySegmentsToClipboard AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding ShiftLeft+KeyC captureSnapshotToClipboard AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyI setCutStart AssertionError [ERR_ASSERTION]: Unknown key: KeyI
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyO setCutEnd AssertionError [ERR_ASSERTION]: Unknown key: KeyO
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyD cleanupFilesDialog AssertionError [ERR_ASSERTION]: Unknown key: KeyD
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyB splitCurrentSegment AssertionError [ERR_ASSERTION]: Unknown key: KeyB
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyR increaseRotation AssertionError [ERR_ASSERTION]: Unknown key: KeyR
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyG goToTimecode AssertionError [ERR_ASSERTION]: Unknown key: KeyG
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.907Z error: Failed to migrate old keyboard binding KeyT toggleStripAll AssertionError [ERR_ASSERTION]: Unknown key: KeyT
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+KeyT toggleStripCurrentFilter AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ArrowLeft seekBackwards AssertionError [ERR_ASSERTION]: Unknown key: ArrowLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+ShiftLeft+ArrowLeft seekBackwards2 AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+ArrowLeft seekBackwardsPercent AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding MetaLeft+ArrowLeft seekBackwardsPercent AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding AltLeft+ArrowLeft seekBackwardsKeyframe AssertionError [ERR_ASSERTION]: Unknown key: AltLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+ArrowLeft jumpCutStart AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ArrowRight seekForwards AssertionError [ERR_ASSERTION]: Unknown key: ArrowRight
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+ShiftLeft+ArrowRight seekForwards2 AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+ArrowRight seekForwardsPercent AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding MetaLeft+ArrowRight seekForwardsPercent AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding AltLeft+ArrowRight seekForwardsKeyframe AssertionError [ERR_ASSERTION]: Unknown key: AltLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+ArrowRight jumpCutEnd AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+Home jumpTimelineStart AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+End jumpTimelineEnd AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ArrowUp jumpPrevSegment AssertionError [ERR_ASSERTION]: Unknown key: ArrowUp
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+AltLeft+PageUp jumpSeekFirstSegment AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+AltLeft+ArrowUp jumpSeekPrevSegment AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ControlLeft+ArrowUp timelineZoomIn AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding MetaLeft+ArrowUp timelineZoomIn AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.908Z error: Failed to migrate old keyboard binding ShiftLeft+ArrowUp batchPreviousFile AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ControlLeft+ShiftLeft+ArrowUp batchOpenPreviousFile AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ArrowDown jumpNextSegment AssertionError [ERR_ASSERTION]: Unknown key: ArrowDown
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ShiftLeft+AltLeft+PageDown jumpSeekLastSegment AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ShiftLeft+AltLeft+ArrowDown jumpSeekNextSegment AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ControlLeft+ArrowDown timelineZoomOut AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding MetaLeft+ArrowDown timelineZoomOut AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ShiftLeft+ArrowDown batchNextFile AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ControlLeft+ShiftLeft+ArrowDown batchOpenNextFile AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ShiftLeft+Enter batchOpenSelectedFile AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ControlLeft+KeyZ undo AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding MetaLeft+KeyZ undo AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ControlLeft+ShiftLeft+KeyZ redo AssertionError [ERR_ASSERTION]: Unknown key: ControlLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding MetaLeft+ShiftLeft+KeyZ redo AssertionError [ERR_ASSERTION]: Unknown key: MetaLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding KeyF toggleFullscreenVideo AssertionError [ERR_ASSERTION]: Unknown key: KeyF
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding KeyE export AssertionError [ERR_ASSERTION]: Unknown key: KeyE
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding ShiftLeft+Slash toggleKeyboardShortcuts AssertionError [ERR_ASSERTION]: Unknown key: ShiftLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding AltLeft+ArrowUp increaseVolume AssertionError [ERR_ASSERTION]: Unknown key: AltLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding AltLeft+ArrowDown decreaseVolume AssertionError [ERR_ASSERTION]: Unknown key: AltLeft
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.909Z error: Failed to migrate old keyboard binding KeyM toggleMuted AssertionError [ERR_ASSERTION]: Unknown key: KeyM
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:494:11
+    at Array.map (<anonymous>)
+    at /usr/share/losslesscut/resources/app.asar/out/main/index.js:492:12
+    at Array.map (<anonymous>)
+    at init (/usr/share/losslesscut/resources/app.asar/out/main/index.js:381:37)
+    at async /usr/share/losslesscut/resources/app.asar/out/main/index.js:8772:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+2026-01-19T00:09:03.912Z info: Migrated config to version 2
+2026-01-19T00:09:03.914Z info: Initialized config store
+2026-01-19T00:09:03.914Z info: Waiting for app to become ready
+2026-01-19T00:09:03.923Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46.mp4' ] }
+2026-01-19T00:09:04.296Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:09:04.380Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46.mp4' -hide_banner
+2026-01-19T00:09:04.492Z info: Current version 3.67.2
+2026-01-19T00:09:04.492Z info: Newest version 3.67.2
+2026-01-19T00:13:38.814Z info: ffmpeg -hide_banner -ss '30.15141' -i '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46.mp4' -avoid_negative_ts make_zero -map '0:0' '-c:0' copy -map_metadata 0 -movflags '+faststart' -default_mode infer_no_subs -ignore_unknown -f mp4 -y '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46-00.00.30.151-00.00.40.639.mp4'
+2026-01-19T00:13:44.330Z info: second-instance { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46.mp4' ] }
+2026-01-19T00:13:44.308Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:13:44.328Z info: Initialized config store
+2026-01-19T00:13:44.330Z info: Found running instance, quitting
+2026-01-19T00:13:50.952Z info: second-instance { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.00.46.mp4' ] }
+2026-01-19T00:13:50.931Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:13:50.952Z info: Initialized config store
+2026-01-19T00:13:50.953Z info: Found running instance, quitting
+2026-01-19T00:19:37.787Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:19:37.808Z info: Initialized config store
+2026-01-19T00:19:37.808Z info: Waiting for app to become ready
+2026-01-19T00:19:37.883Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.19.31.mp4' ] }
+2026-01-19T00:19:38.280Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:19:38.334Z info: Current version 3.67.2
+2026-01-19T00:19:38.334Z info: Newest version 3.67.2
+2026-01-19T00:19:38.370Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.19.31.mp4' -hide_banner
+2026-01-19T00:19:51.952Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:19:51.972Z info: Initialized config store
+2026-01-19T00:19:51.972Z info: Waiting for app to become ready
+2026-01-19T00:19:52.035Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.19.31.mp4' ] }
+2026-01-19T00:19:52.414Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:19:52.458Z info: Current version 3.67.2
+2026-01-19T00:19:52.458Z info: Newest version 3.67.2
+2026-01-19T00:19:52.499Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.19.31.mp4' -hide_banner
+2026-01-19T00:21:43.371Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:21:43.391Z info: Initialized config store
+2026-01-19T00:21:43.392Z info: Waiting for app to become ready
+2026-01-19T00:21:43.464Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.21.18.mp4' ] }
+2026-01-19T00:21:43.848Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:21:43.911Z info: Current version 3.67.2
+2026-01-19T00:21:43.911Z info: Newest version 3.67.2
+2026-01-19T00:21:43.932Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.21.18.mp4' -hide_banner
+2026-01-19T00:22:07.030Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:22:07.051Z info: Initialized config store
+2026-01-19T00:22:07.051Z info: Waiting for app to become ready
+2026-01-19T00:22:07.117Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.21.18.mp4' ] }
+2026-01-19T00:22:07.495Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:22:07.573Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.21.18.mp4' -hide_banner
+2026-01-19T00:22:07.821Z info: Current version 3.67.2
+2026-01-19T00:22:07.821Z info: Newest version 3.67.2
+2026-01-19T00:23:54.067Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:23:54.087Z info: Initialized config store
+2026-01-19T00:23:54.088Z info: Waiting for app to become ready
+2026-01-19T00:23:54.164Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T00:23:54.559Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:23:54.640Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -hide_banner
+2026-01-19T00:23:54.834Z info: Current version 3.67.2
+2026-01-19T00:23:54.834Z info: Newest version 3.67.2
+2026-01-19T00:24:30.150Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:24:30.175Z info: Initialized config store
+2026-01-19T00:24:30.176Z info: Waiting for app to become ready
+2026-01-19T00:24:30.244Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T00:24:30.631Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:24:30.648Z info: Current version 3.67.2
+2026-01-19T00:24:30.648Z info: Newest version 3.67.2
+2026-01-19T00:24:30.715Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -hide_banner
+2026-01-19T00:24:39.328Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T00:24:39.349Z info: Initialized config store
+2026-01-19T00:24:39.350Z info: Waiting for app to become ready
+2026-01-19T00:24:39.415Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T00:24:39.796Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T00:24:39.818Z info: Current version 3.67.2
+2026-01-19T00:24:39.818Z info: Newest version 3.67.2
+2026-01-19T00:24:39.882Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -hide_banner
+2026-01-19T01:10:45.818Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:10:45.834Z info: Initialized config store
+2026-01-19T01:10:45.835Z info: Waiting for app to become ready
+2026-01-19T01:10:45.929Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T01:10:46.365Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:10:46.448Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -hide_banner
+2026-01-19T01:10:51.391Z info: Current version 3.67.2
+2026-01-19T01:10:51.391Z info: Newest version 3.67.2
+2026-01-19T01:13:40.734Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:13:40.754Z info: Initialized config store
+2026-01-19T01:13:40.754Z info: Waiting for app to become ready
+2026-01-19T01:13:40.822Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T01:13:41.204Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:13:41.282Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -hide_banner
+2026-01-19T01:13:43.384Z info: Current version 3.67.2
+2026-01-19T01:13:43.384Z info: Newest version 3.67.2
+2026-01-19T01:14:35.072Z info: ffmpeg -hide_banner -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -t '20.74561' -map '0:0' '-c:0' copy -map_metadata 0 -movflags '+faststart' -default_mode infer_no_subs -ignore_unknown -f mp4 -y '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20-00.00.00.000-00.00.20.746-seg1.mp4'
+2026-01-19T01:14:35.118Z info: ffmpeg -hide_banner -ss '20.74561' -i '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' -t '17.43560' -avoid_negative_ts make_zero -map '0:0' '-c:0' copy -map_metadata 0 -movflags '+faststart' -default_mode infer_no_subs -ignore_unknown -f mp4 -y '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20-00.00.20.746-00.00.38.181-seg2.mp4'
+2026-01-19T01:14:37.610Z info: second-instance { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_18.23.20.mp4' ] }
+2026-01-19T01:14:37.589Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:14:37.609Z info: Initialized config store
+2026-01-19T01:14:37.611Z info: Found running instance, quitting
+2026-01-19T01:16:36.633Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:16:36.654Z info: Initialized config store
+2026-01-19T01:16:36.654Z info: Waiting for app to become ready
+2026-01-19T01:16:36.715Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_19.16.21.mp4' ] }
+2026-01-19T01:16:37.086Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:16:37.105Z info: Current version 3.67.2
+2026-01-19T01:16:37.106Z info: Newest version 3.67.2
+2026-01-19T01:16:37.171Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_19.16.21.mp4' -hide_banner
+2026-01-19T01:18:08.720Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:18:08.740Z info: Initialized config store
+2026-01-19T01:18:08.740Z info: Waiting for app to become ready
+2026-01-19T01:18:08.805Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_19.17.26.mp4' ] }
+2026-01-19T01:18:09.186Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:18:09.264Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_19.17.26.mp4' -hide_banner
+2026-01-19T01:18:10.015Z info: Current version 3.67.2
+2026-01-19T01:18:10.015Z info: Newest version 3.67.2
+2026-01-19T01:19:54.046Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:19:54.066Z info: Initialized config store
+2026-01-19T01:19:54.067Z info: Waiting for app to become ready
+2026-01-19T01:19:54.129Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_19.19.30.mp4' ] }
+2026-01-19T01:19:54.500Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:19:54.577Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_19.19.30.mp4' -hide_banner
+2026-01-19T01:19:57.637Z info: Current version 3.67.2
+2026-01-19T01:19:57.637Z info: Newest version 3.67.2
+2026-01-19T01:21:49.248Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:21:49.262Z info: Initialized config store
+2026-01-19T01:21:49.262Z info: Waiting for app to become ready
+2026-01-19T01:21:49.327Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_19.21.31.mp4' ] }
+2026-01-19T01:21:49.703Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-19T01:21:49.780Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-18_19.21.31.mp4' -hide_banner
+2026-01-19T01:21:51.817Z info: Current version 3.67.2
+2026-01-19T01:21:51.818Z info: Newest version 3.67.2
+2026-01-19T01:24:29.104Z info: second-instance { _: [ '/home/jcgomez91/Videos/recording_2026-01-18_19.21.31.mp4' ] }
+2026-01-19T01:24:29.083Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-19T01:24:29.103Z info: Initialized config store
+2026-01-19T01:24:29.105Z info: Found running instance, quitting
+2026-01-22T12:44:16.991Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-22T12:44:17.008Z info: Initialized config store
+2026-01-22T12:44:17.009Z info: Waiting for app to become ready
+2026-01-22T12:44:17.120Z info: CLI arguments { _: [ '/home/jcgomez91/2026-01-22 06-34-12.mp4' ] }
+2026-01-22T12:44:17.596Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-22T12:44:17.686Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/2026-01-22 06-34-12.mp4' -hide_banner
+2026-01-22T12:44:17.982Z info: Current version 3.67.2
+2026-01-22T12:44:17.983Z info: Newest version 3.67.2
+2026-01-22T12:48:27.366Z info: ffmpeg -hide_banner -ss '3.85221' -i '/home/jcgomez91/2026-01-22 06-34-12.mp4' -t '58.63913' -avoid_negative_ts make_zero -map '0:0' '-c:0' copy -map '0:1' '-c:1' copy -map_metadata 0 -movflags '+faststart' -default_mode infer_no_subs -ignore_unknown -f mp4 -y '/home/jcgomez91/2026-01-22 06-34-12-00.00.03.852-00.01.02.491.mp4'
+2026-01-22T12:51:21.543Z info: ffmpeg -hide_banner -ss '5.94952' -i '/home/jcgomez91/2026-01-22 06-34-12.mp4' -t '56.54182' -avoid_negative_ts make_zero -map '0:0' '-c:0' copy -map '0:1' '-c:1' copy -map_metadata 0 -movflags '+faststart' -default_mode infer_no_subs -ignore_unknown -f mp4 -y '/home/jcgomez91/2026-01-22 06-34-12-00.00.05.950-00.01.02.491.mp4'
+2026-01-24T22:36:03.837Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-24T22:36:03.855Z info: Initialized config store
+2026-01-24T22:36:03.856Z info: Waiting for app to become ready
+2026-01-24T22:36:03.950Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-24_16.35.22.mp4' ] }
+2026-01-24T22:36:04.411Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-24T22:36:04.497Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-24_16.35.22.mp4' -hide_banner
+2026-01-24T22:36:05.749Z info: Current version 3.67.2
+2026-01-24T22:36:05.749Z info: Newest version 3.67.2
+2026-01-29T23:52:53.576Z info: LosslessCut version 3.67.2 { isDev: false }
+2026-01-29T23:52:53.591Z info: Initialized config store
+2026-01-29T23:52:53.592Z info: Waiting for app to become ready
+2026-01-29T23:52:54.896Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-01-29_17.51.53.mp4' ] }
+2026-01-29T23:52:55.396Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-01-29T23:52:55.498Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-01-29_17.51.53.mp4' -hide_banner
+2026-01-29T23:52:55.636Z info: Current version 3.67.2
+2026-01-29T23:52:55.636Z info: Newest version 3.68.0
+2026-02-17T23:23:52.903Z info: LosslessCut version 3.68.0 { isDev: false }
+2026-02-17T23:23:52.917Z info: Initialized config store
+2026-02-17T23:23:52.919Z info: Waiting for app to become ready
+2026-02-17T23:23:55.194Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-02-17_17.23.09.mp4' ] }
+2026-02-17T23:23:55.699Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -
+2026-02-17T23:23:55.930Z info: Current version 3.68.0
+2026-02-17T23:23:55.931Z info: Newest version 3.68.0
+2026-02-17T23:23:55.936Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-02-17_17.23.09.mp4' -hide_banner

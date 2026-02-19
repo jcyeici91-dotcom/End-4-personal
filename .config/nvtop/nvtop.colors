@@ -1,0 +1,53 @@
+# NVTOP Color Configuration Template
+# Format: color_name = RGB_HEX_VALUE
+# Colors must be specified as 6-digit hex values without # prefix
+
+# Background colors
+background = #18120e
+selected_bg = #241e1a
+header_bg = #52443a
+
+# Text colors
+text = #ece0d9
+selected_text = #ffb878
+header_text = #d6c3b5
+inactive_text = #9f8e81
+
+# GPU utilization colors (gradient from low to high)
+gpu_util_low = #ffdaa5
+gpu_util_med = #ffeee1
+gpu_util_high = #fe9c5e
+
+# Memory usage colors
+memory_low = #ffdb92
+memory_med = #b3d27e
+memory_high = #ffa2bd
+
+# Temperature colors (cool to hot)
+temp_cool = #ffdaa5
+temp_warm = #ffeee1
+temp_hot = #fe9c5e
+
+# Power usage colors
+power_low = #ffdaa5
+power_med = #ffc18f
+power_high = #f5af83
+
+# Process list colors
+process_normal = #ece0d9
+process_highlight = #ffb878
+process_killed = #fe9c5e
+
+# Border and separator colors
+border = #9f8e81
+separator = #52443a
+
+# Chart and graph colors
+chart_line = #c6cc7a
+chart_fill = #241e1a
+
+# Status indicators
+status_ok = #ffdaa5
+status_warning = #ffeee1
+status_error = #fe9c5e
+status_info = #ffa2bd

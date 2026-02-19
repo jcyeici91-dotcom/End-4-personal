@@ -1,0 +1,14 @@
+{
+  "main": {
+    "ipc_received": "IPC kapcsoló fogadva",
+    "launching_steam": "Steam indítása...",
+    "no_windows_found": "Nem található Steam ablak",
+    "plugin_loaded": "Bővítmény API betöltve",
+    "resolution_detected": "Észlelt felbontás: {width} x {height}",
+    "steam_launched": "A Steam elindult",
+    "toggle_called": "Hívás váltása",
+    "windows_found": "{count} Steam ablakot találtam",
+    "windows_moved": "Ablakok áthelyezve, kilépési kód: {code}",
+    "workspace_toggled": "Munkaterület váltva"
+  }
+}

@@ -1,0 +1,14 @@
+{
+    "bar": {
+        "screenList": ["HDMI-A-1"],
+        "enabled": true
+    },
+    "notch": {
+        "screenList": ["HDMI-A-1"],
+        "enabled": true
+    },
+    "overview": {
+        "screenList": ["HDMI-A-1"],
+        "enabled": true
+    }
+}

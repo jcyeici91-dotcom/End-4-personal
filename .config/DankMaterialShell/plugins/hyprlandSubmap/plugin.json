@@ -1,0 +1,12 @@
+{
+  "id": "hyprlandSubmap",
+  "name": "Hyprland Submap",
+  "description": "Show the current Hyprland Submap if it isn't default",
+  "version": "1.0.0",
+  "author": "Mester",
+  "icon": "keyboard",
+  "type": "widget",
+  "component": "./HyprlandSubmap.qml",
+  "settings": "./HyprlandSubmapSettings.qml",
+  "permissions": ["settings_read", "settings_write"]
+}

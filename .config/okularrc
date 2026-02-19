@@ -1,0 +1,28 @@
+[Desktop Entry]
+FullScreen=false
+
+[General]
+LockSidebar=true
+ShowSidebar=true
+
+[Recent Files]
+File1[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/TANAJ/SEFER SAMUEL/SEFER II SAMUEL.pdf
+File10[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/TANAJ/SEFER KINGS- REYES/II Kings- Reyes.pdf
+File2[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/SEFER MUSSAR/SHAAREI TESHUVAH/SHAARE TESHUVA[1].pdf
+File3[$e]=$HOME/.config/quickshell/ambxst/modules/bar/LayoutSelector.qml
+File4[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/Lets Get Biblical Why Doesnt Judaism Accept the Christian Messiah (Tovia Singer) (z-lib.org).pdf
+File5[$e]=$HOME/.config/hypr/hyprland/general.conf
+File6[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/SEFER MUSSAR/SHAAREI TESHUVAH/SHAAREI TESHUVAH.pdf
+File7[$e]=/mnt/datos/Documentos/Tanaj documentos y etica judia/TANAJ/SEFER KINGS- REYES/I Kings- Reyes.pdf
+File8[$e]=$HOME/.config/quickshell/ii/modules/ii/sidebarPolicies/SidebarPoliciesContent.qml
+File9[$e]=$HOME/.config/quickshell/ii/modules/ii/bar/BarContent.qml
+Name1[$e]=SEFER II SAMUEL.pdf
+Name10[$e]=II Kings- Reyes.pdf
+Name2[$e]=SHAARE TESHUVA[1].pdf
+Name3[$e]=LayoutSelector.qml
+Name4[$e]=Lets Get Biblical Why Doesnt Judaism Accept the Christian Messiah (Tovia Singer) (z-lib.org).pdf
+Name5[$e]=general.conf
+Name6[$e]=SHAAREI TESHUVAH.pdf
+Name7[$e]=I Kings- Reyes.pdf
+Name8[$e]=SidebarPoliciesContent.qml
+Name9[$e]=BarContent.qml

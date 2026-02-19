@@ -1,0 +1,53 @@
+{
+  "dankPomodoroTimer": {
+    "enabled": false
+  },
+  "dankActions": {
+    "enabled": true
+  },
+  "dankDesktopWeather": {
+    "enabled": true
+  },
+  "dankBatteryAlerts": {
+    "enabled": false
+  },
+  "dankHooks": {
+    "enabled": false
+  },
+  "nepaliCalendar": {
+    "enabled": true
+  },
+  "displayManager": {
+    "enabled": true
+  },
+  "wallpaperDiscovery": {
+    "enabled": true
+  },
+  "alarmClock": {
+    "enabled": true
+  },
+  "mediaPlayer": {
+    "enabled": true
+  },
+  "hyprlandSubmap": {
+    "enabled": true
+  },
+  "linuxWallpaperEngine": {
+    "enabled": true
+  },
+  "powerUsagePlugin": {
+    "enabled": true
+  },
+  "appShortcut": {
+    "enabled": true
+  },
+  "easyEffects": {
+    "enabled": true
+  },
+  "dockerManager": {
+    "enabled": true
+  },
+  "emojiLauncher": {
+    "enabled": true
+  }
+}

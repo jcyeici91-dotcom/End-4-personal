@@ -1,0 +1,204 @@
+08:41:47.505: Platform: Wayland
+08:41:47.505: CPU Name: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
+08:41:47.505: CPU Speed: 2473.509MHz
+08:41:47.505: Physical Cores: 8, Logical Cores: 16
+08:41:47.505: Physical Memory: 28888MB Total, 20527MB Free
+08:41:47.505: Kernel Version: Linux 6.18.7-arch1-1
+08:41:47.505: Distribution: "Arch Linux" Unknown
+08:41:47.505: Desktop Environment: Hyprland (Hyprland)
+08:41:47.505: Session Type: wayland
+08:41:47.506: Current Date/Time: 2026-01-31, 08:41:47
+08:41:47.506: Browser Hardware Acceleration: true
+08:41:47.506: Qt Version: 6.10.1 (runtime), 6.10.1 (compiled)
+08:41:47.506: Portable mode: false
+08:41:47.557: OBS 32.0.4 (linux)
+08:41:47.557: ---------------------------------
+08:41:47.558: ---------------------------------
+08:41:47.558: audio settings reset:
+08:41:47.558: 	samples per sec: 48000
+08:41:47.558: 	speakers:        2
+08:41:47.558: 	max buffering:   960 milliseconds
+08:41:47.558: 	buffering type:  dynamically increasing
+08:41:47.559: ---------------------------------
+08:41:47.559: Initializing OpenGL...
+08:41:47.559: Using EGL/Wayland
+08:41:47.566: Initialized EGL 1.5
+08:41:47.576: Loading up OpenGL on adapter AMD AMD Radeon 780M Graphics (radeonsi, phoenix, LLVM 21.1.6, DRM 3.64, 6.18.7-arch1-1)
+08:41:47.576: OpenGL loaded successfully, version 4.6 (Core Profile) Mesa 25.3.4-arch1.1, shading language 4.60
+08:41:47.596: ---------------------------------
+08:41:47.596: video settings reset:
+08:41:47.596: 	base resolution:   3072x1920
+08:41:47.596: 	output resolution: 1536x960
+08:41:47.596: 	downscale filter:  Bicubic
+08:41:47.596: 	fps:               60/1
+08:41:47.596: 	format:            NV12
+08:41:47.596: 	YUV mode:          Rec. 709/Partial
+08:41:47.596: NV12 texture support enabled
+08:41:47.596: P010 texture support not available
+08:41:47.600: Audio monitoring device:
+08:41:47.600: 	name: Por defecto
+08:41:47.600: 	id: default
+08:41:47.602: ---------------------------------
+08:41:47.604: Failed to load 'en-US' text for module: 'decklink-captions.so'
+08:41:47.605: Failed to load 'en-US' text for module: 'decklink-output-ui.so'
+08:41:47.606: A DeckLink iterator could not be created.  The DeckLink drivers may not be installed
+08:41:47.606: Failed to initialize module 'decklink.so'
+08:41:47.698: [pipewire] Available capture sources:
+08:41:47.698: [pipewire]     - Monitor source
+08:41:47.698: [pipewire]     - Window source
+08:41:47.708: v4l2loopback not installed, virtual camera not registered
+08:41:47.737: Failed to load 'es-ES' text for module: 'obs-backgroundremoval.so'
+08:41:47.737: [obs-backgroundremoval] Plugin loaded successfully (version 1.3.6)
+08:41:47.737: [obs-backgroundremoval] Failed to open config file /home/jcgomez91/.config/obs-studio/plugin_config/obs-backgroundremoval/config.ini
+08:41:47.737: [obs-backgroundremoval] Failed to open config file /home/jcgomez91/.config/obs-studio/plugin_config/obs-backgroundremoval/config.ini
+08:41:48.062: [obs-backgroundremoval] Latest release is 
+08:41:48.100: VAAPI: API version 1.22
+08:41:48.100: FFmpeg VAAPI H264 encoding supported
+08:41:48.104: FFmpeg VAAPI AV1 encoding supported
+08:41:48.107: FFmpeg VAAPI HEVC encoding supported
+08:41:48.118: [obs-gstreamer] build: b60942f, gst-runtime: 1.26.10
+08:41:48.195: os_dlopen(libnvidia-encode.so.1->libnvidia-encode.so.1): libnvidia-encode.so.1: no se puede abrir el fichero del objeto compartido: No existe el fichero o el directorio
+08:41:48.195: 
+08:41:48.195: NVENC not supported
+08:41:48.195: Failed to initialize module 'obs-nvenc.so'
+08:41:48.225: [obs-websocket] [obs_module_load] you can haz websockets (Version: 5.6.3 | RPC Version: 1)
+08:41:48.225: [obs-websocket] [obs_module_load] Qt version (compile-time): 6.10.1 | Qt version (run-time): 6.10.1
+08:41:48.225: [obs-websocket] [obs_module_load] Linked ASIO Version: 103600
+08:41:48.233: [obs-websocket] [obs_module_load] Module loaded.
+08:41:48.237: ---------------------------------
+08:41:48.237:   Loaded Modules:
+08:41:48.237:     text-freetype2.so
+08:41:48.237:     rtmp-services.so
+08:41:48.237:     obs-x264.so
+08:41:48.237:     obs-websocket.so
+08:41:48.237:     obs-webrtc.so
+08:41:48.237:     obs-vst.so
+08:41:48.237:     obs-transitions.so
+08:41:48.237:     obs-qsv11.so
+08:41:48.237:     obs-outputs.so
+08:41:48.237:     obs-libfdk.so
+08:41:48.237:     obs-gstreamer.so
+08:41:48.237:     obs-filters.so
+08:41:48.237:     obs-ffmpeg.so
+08:41:48.237:     obs-backgroundremoval.so
+08:41:48.237:     linux-v4l2.so
+08:41:48.237:     linux-pulseaudio.so
+08:41:48.237:     linux-pipewire.so
+08:41:48.237:     linux-jack.so
+08:41:48.237:     linux-capture.so
+08:41:48.237:     linux-alsa.so
+08:41:48.237:     image-source.so
+08:41:48.237:     frontend-tools.so
+08:41:48.237:     decklink-output-ui.so
+08:41:48.237:     decklink-captions.so
+08:41:48.237: ---------------------------------
+08:41:48.237: ---------------------------------
+08:41:48.237: Available Encoders:
+08:41:48.237:   Video Encoders:
+08:41:48.237: 	- ffmpeg_svt_av1 (SVT-AV1)
+08:41:48.237: 	- ffmpeg_aom_av1 (AOM AV1)
+08:41:48.237: 	- ffmpeg_vaapi_tex (FFmpeg VAAPI H.264)
+08:41:48.237: 	- av1_ffmpeg_vaapi_tex (FFmpeg VAAPI AV1)
+08:41:48.237: 	- hevc_ffmpeg_vaapi_tex (FFmpeg VAAPI HEVC)
+08:41:48.237: 	- obs_x264 (x264)
+08:41:48.237:   Audio Encoders:
+08:41:48.237: 	- ffmpeg_aac (FFmpeg AAC)
+08:41:48.237: 	- ffmpeg_opus (FFmpeg Opus)
+08:41:48.237: 	- ffmpeg_pcm_s16le (FFmpeg PCM (16-bit))
+08:41:48.237: 	- ffmpeg_pcm_s24le (FFmpeg PCM (24-bit))
+08:41:48.237: 	- ffmpeg_pcm_f32le (FFmpeg PCM (32-bit flotante))
+08:41:48.237: 	- ffmpeg_alac (FFmpeg ALAC (24-bit))
+08:41:48.237: 	- ffmpeg_flac (FFmpeg FLAC (16-bit))
+08:41:48.237: 	- libfdk_aac (libfdk AAC)
+08:41:48.237: ==== Startup complete ===============================================
+08:41:48.263: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: Connection already associated with an application ID")
+08:41:48.263: All scene data cleared
+08:41:48.263: ------------------------------------------------
+08:41:48.264: PipeWire initialized
+08:41:48.265: Switched to scene 'Escena'
+08:41:48.265: ------------------------------------------------
+08:41:48.265: Loaded scenes:
+08:41:48.265: - scene 'Escena':
+08:41:48.265:     - source: 'Captura de pantalla (PipeWire)' (pipewire-screen-capture-source)
+08:41:48.265: ------------------------------------------------
+08:41:48.323: [pipewire] Screencast session created
+08:41:52.368: [pipewire] Asking for monitor and window
+08:41:52.377: [pipewire] source selected, setting up screencast
+08:41:52.382: [pipewire] Server version: 1.4.10
+08:41:52.382: [pipewire] Library version: 1.4.10
+08:41:52.382: [pipewire] Header version: 1.4.9
+08:41:52.382: [pipewire] Created stream 0x55b7961425a0
+08:41:52.382: [pipewire] Stream 0x55b7961425a0 state: "connecting" (error: none)
+08:41:52.383: [pipewire] Playing stream 0x55b7961425a0
+08:41:52.383: [pipewire] Stream 0x55b7961425a0 state: "paused" (error: none)
+08:41:52.385: [pipewire] Negotiated format:
+08:41:52.385: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+08:41:52.385: [pipewire]     Modifier: 0x0
+08:41:52.385: [pipewire]     Size: 3072x1920
+08:41:52.385: [pipewire]     Framerate: 0/1
+08:41:52.386: [pipewire] Negotiated format:
+08:41:52.386: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+08:41:52.386: [pipewire]     Modifier: 0x200000010437b04
+08:41:52.386: [pipewire]     Size: 3072x1920
+08:41:52.386: [pipewire]     Framerate: 0/1
+08:41:52.387: [pipewire] Stream 0x55b7961425a0 state: "streaming" (error: none)
+08:41:52.406: Cannot create EGLImage: Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface).
+08:41:52.406: [pipewire] Renegotiating stream
+08:41:52.406: [pipewire] Stream 0x55b7961425a0 state: "paused" (error: none)
+08:41:52.406: [pipewire] Negotiated format:
+08:41:52.406: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+08:41:52.406: [pipewire]     Modifier: 0x200000010437b04
+08:41:52.406: [pipewire]     Size: 3072x1920
+08:41:52.406: [pipewire]     Framerate: 0/1
+08:41:52.407: [pipewire] Negotiated format:
+08:41:52.407: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+08:41:52.407: [pipewire]     Modifier: 0x200000010401b04
+08:41:52.407: [pipewire]     Size: 3072x1920
+08:41:52.407: [pipewire]     Framerate: 0/1
+08:41:52.407: [pipewire] Stream 0x55b7961425a0 state: "streaming" (error: none)
+08:42:10.184: ---------------------------------
+08:42:10.184: video settings reset:
+08:42:10.184: 	base resolution:   3072x1920
+08:42:10.184: 	output resolution: 2456x1536
+08:42:10.184: 	downscale filter:  Bicubic
+08:42:10.184: 	fps:               60/1
+08:42:10.184: 	format:            NV12
+08:42:10.184: 	YUV mode:          Rec. 709/Partial
+08:42:10.184: NV12 texture support enabled
+08:42:10.184: P010 texture support not available
+08:42:10.190: Settings changed (video)
+08:42:10.190: ------------------------------------------------
+09:29:36.396: ---------------------------------
+09:29:36.396: [x264 encoder: 'simple_video_recording'] preset: veryfast
+09:29:36.396: [x264 encoder: 'simple_video_recording'] profile: high
+09:29:36.398: [x264 encoder: 'simple_video_recording'] settings:
+09:29:36.398: 	rate_control: CRF
+09:29:36.398: 	bitrate:      0
+09:29:36.398: 	buffer size:  0
+09:29:36.398: 	crf:          23
+09:29:36.398: 	fps_num:      60
+09:29:36.398: 	fps_den:      1
+09:29:36.398: 	width:        2456
+09:29:36.398: 	height:       1536
+09:29:36.398: 	keyint:       250
+09:29:36.398: 
+09:29:36.413: libfdk_aac encoder created
+09:29:36.413: libfdk_aac bitrate: 192, channels: 2
+09:29:36.433: ==== Recording Start ===============================================
+09:29:36.433: [mp4 output: 'simple_file_output'] Writing Hybrid MP4/MOV file '/home/jcgomez91/2026-01-31 09-29-36.mp4'...
+09:29:50.524: [mp4 muxer: 'simple_file_output'] Flushing final fragment...
+09:29:50.526: [mp4 muxer: 'simple_file_output'] Number of fragments: 5
+09:29:50.526: [mp4 muxer: 'simple_file_output'] Full moov size: 13 KiB
+09:29:50.526: [mp4 muxer: 'simple_file_output'] Final mdat size: 2452 KiB
+09:29:50.526: Output 'simple_file_output': stopping
+09:29:50.526: Output 'simple_file_output': Total frames output: 808
+09:29:50.526: Output 'simple_file_output': Total drawn frames: 846
+09:29:50.526: [mp4 output: 'simple_file_output'] Waiting for file writer to finish...
+09:29:50.526: [mp4 output: 'simple_file_output'] File output complete. Finalization took 2 ms.
+09:29:50.527: ==== Recording Stop ================================================
+09:29:50.545: libfdk_aac encoder destroyed
+09:29:58.441: ==== Shutting down ==================================================
+09:29:58.444: [pipewire] Stream 0x55b7961425a0 state: "paused" (error: none)
+09:29:58.444: [pipewire] Stream 0x55b7961425a0 state: "unconnected" (error: none)
+09:29:58.465: All scene data cleared
+09:29:58.465: ------------------------------------------------

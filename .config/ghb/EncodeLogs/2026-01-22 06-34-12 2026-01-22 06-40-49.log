@@ -1,0 +1,231 @@
+Handbrake Version: 20250906052339-dddf75f75-makepkg (2025092401)
+[06:40:49] gtkgui: Preset: /General/Fast 1080p30
+[06:40:49] Starting work at: Thu Jan 22 06:40:49 2026
+
+[06:40:49] 1 job(s) to process
+[06:40:49] json job:
+{
+    "Audio": {
+        "AudioList": [],
+        "CopyMask": [
+            "copy:aac"
+        ],
+        "FallbackEncoder": "av_aac"
+    },
+    "Destination": {
+        "AlignAVStart": true,
+        "ChapterList": [
+            {
+                "Duration": {
+                    "Hours": 0,
+                    "Minutes": 1,
+                    "Seconds": 5,
+                    "Ticks": 5851500
+                },
+                "Name": ""
+            }
+        ],
+        "ChapterMarkers": false,
+        "File": "/home/jcgomez91/Videos/2026-01-22 06-34-12.mp4",
+        "InlineParameterSets": false,
+        "Mux": "m4v",
+        "Options": {
+            "IpodAtom": false,
+            "Optimize": false
+        }
+    },
+    "Filters": {
+        "FilterList": [
+            {
+                "ID": 4,
+                "Settings": {
+                    "block-height": "16",
+                    "block-thresh": "40",
+                    "block-width": "16",
+                    "filter-mode": "2",
+                    "mode": "3",
+                    "motion-thresh": "1",
+                    "spatial-metric": "2",
+                    "spatial-thresh": "1"
+                }
+            },
+            {
+                "ID": 6,
+                "Settings": {
+                    "mode": "7"
+                }
+            },
+            {
+                "ID": 11,
+                "Settings": {
+                    "mode": 2,
+                    "rate": "27000000/900000"
+                }
+            },
+            {
+                "ID": 20,
+                "Settings": {
+                    "crop-bottom": 82,
+                    "crop-left": 150,
+                    "crop-right": 58,
+                    "crop-top": 48,
+                    "height": 1080,
+                    "width": 1840
+                }
+            }
+        ]
+    },
+    "Metadata": {
+        "CreationTime": "2026-01-22T12:34:12.000000Z"
+    },
+    "PAR": {
+        "Den": 115,
+        "Num": 108
+    },
+    "SequenceID": 0,
+    "Source": {
+        "Angle": 0,
+        "HWDecode": 0,
+        "KeepDuplicateTitles": false,
+        "Path": "/home/jcgomez91/2026-01-22 06-34-12.mp4",
+        "Range": {
+            "End": 1,
+            "Start": 1,
+            "Type": "chapter"
+        },
+        "Title": 1
+    },
+    "Subtitle": {
+        "Search": {
+            "Burn": true,
+            "Default": false,
+            "Enable": false,
+            "Forced": false
+        },
+        "SubtitleList": []
+    },
+    "Video": {
+        "AdapterIndex": -1,
+        "AsyncDepth": 0,
+        "ChromaLocation": 1,
+        "ColorInputFormat": 0,
+        "ColorMatrix": 1,
+        "ColorOutputFormat": 0,
+        "ColorPrimaries": 1,
+        "ColorRange": 1,
+        "ColorTransfer": 1,
+        "Encoder": "x264",
+        "HardwareDecode": 0,
+        "Level": "4.0",
+        "MultiPass": false,
+        "Options": "",
+        "PasshtruHDRDynamicMetadata": 6,
+        "Preset": "fast",
+        "Profile": "main",
+        "Quality": 22.0,
+        "Tune": "",
+        "Turbo": false
+    }
+}
+[06:40:49] CPU: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
+[06:40:49]  - logical processor count: 16
+[06:40:49] Intel Quick Sync Video support: no
+[06:40:49] hb_scan: path=/home/jcgomez91/2026-01-22 06-34-12.mp4, title_index=1
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/home/jcgomez91/2026-01-22 06-34-12.mp4':
+  Metadata:
+    major_brand     : iso4
+    minor_version   : 0
+    compatible_brands: iso4isomobs1iso2avc1mp41
+    creation_time   : 2026-01-22T12:34:12.000000Z
+    encoder         : OBS Studio (32.0.4)
+  Duration: 00:01:05.02, start: 0.000000, bitrate: 1440 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 2048x1280 [SAR 1:1 DAR 8:5], 1235 kb/s, 60 fps, 60 tbr, 60 tbn (default)
+      Metadata:
+        creation_time   : 2026-01-22T12:34:12.000000Z
+        handler_name    : OBS Video Handler
+        vendor_id       : [0][0][0][0]
+        encoder         : obs_x264
+        title           : simple_video_recording
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, stereo, fltp, 192 kb/s (default)
+      Metadata:
+        creation_time   : 2026-01-22T12:34:12.000000Z
+        handler_name    : OBS Audio Handler
+        vendor_id       : [0][0][0][0]
+        title           : simple_aac_recording0
+[06:40:49] scan: decoding previews for title 1
+[06:40:49] scan: audio 0x1: aac, rate=48000Hz, bitrate=192000 Unknown (AAC LC, 2.0 ch, 192 kbps)
+[06:40:49] using container PAR 1:1
+[06:40:49] scan: 10 previews, 2048x1280, 60,000 fps, autocrop = 48/82/150/58, aspect 1,60:1, PAR 1:1, color profile: 1-1-1, chroma location: left
+[06:40:49] libhb: scan thread found 1 valid title(s)
+[06:40:49] Starting Task: Encoding Pass
+[06:40:49] job configuration:
+[06:40:49]  * source
+[06:40:49]    + /home/jcgomez91/2026-01-22 06-34-12.mp4
+[06:40:49]    + title 1, chapter(s) 1 to 1
+[06:40:49]    + container: mov,mp4,m4a,3gp,3g2,mj2
+[06:40:49]    + data rate: 1440 kbps
+[06:40:49]  * destination
+[06:40:49]    + /home/jcgomez91/Videos/2026-01-22 06-34-12.mp4
+[06:40:49]    + container: MPEG-4 (libavformat)
+[06:40:49]      + align initial A/V stream timestamps
+[06:40:49]  * video track
+[06:40:49]    + decoder: h264 8-bit (yuv420p)
+[06:40:49]      + bitrate 1235 kbps
+[06:40:49]    + filters
+[06:40:49]      + Comb Detect (mode=3:spatial-metric=2:motion-thresh=1:spatial-thresh=1:filter-mode=2:block-thresh=40:block-width=16:block-height=16)
+[06:40:49]      + Decomb (mode=39)
+[06:40:49]      + Framerate Shaper (mode=2:rate=27000000/900000)
+[06:40:49]        + frame rate: 60,000 fps -> peak rate limited to 30,000 fps
+[06:40:49]      + Crop and Scale (width=1840:height=1080:crop-top=48:crop-bottom=82:crop-left=150:crop-right=58)
+[06:40:49]        + source: 2048 * 1280, crop (48/82/150/58): 1840 * 1150, scale: 1840 * 1080
+[06:40:49]    + Output geometry
+[06:40:49]      + storage dimensions: 1840 x 1080
+[06:40:49]      + pixel aspect ratio: 108 : 115
+[06:40:49]      + display dimensions: 1728 x 1080
+[06:40:49]    + encoder: H.264 (libx264)
+[06:40:49]      + preset:  fast
+[06:40:49]      + profile: main
+[06:40:49]      + level:   4.0
+[06:40:49]      + quality: 22,00 (RF)
+[06:40:49]      + color profile: 1-1-1
+[06:40:49]      + color range: tv
+[06:40:49]      + chroma location: left
+[06:40:49] sync: expecting 3901 video frames
+[06:40:49] encx264: min-keyint: 30, keyint: 300
+[06:40:49] encx264: encoding at constant RF 22,000000
+[06:40:49] encx264: unparsed options: level=4.0:ref=2:8x8dct=0:weightp=1:subme=6:vbv-bufsize=25000:vbv-maxrate=20000:rc-lookahead=30
+x264 [info]: using SAR=108/115
+x264 [info]: using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2 AVX512
+x264 [info]: profile Main, level 4.0, 4:2:0, 8-bit
+[06:40:49] sync: first pts video is 0
+[06:40:49] sync: Chapter 1 at frame 1 time 0
+[06:41:07] reader: done. 1 scr changes
+[06:41:08] work: average encoding speed for job is 210,550278 fps
+[06:41:08] comb detect: heavy 13 | light 81 | uncombed 3807 | total 3901
+[06:41:08] decomb: deinterlaced 13 | blended 81 | unfiltered 3807 | total 3901
+[06:41:08] vfr: 1951 frames output, 1950 dropped and 0 duped for CFR/PFR
+[06:41:08] vfr: lost time: 0 (0 frames)
+[06:41:08] vfr: gained time: 0 (0 frames) (0 not accounted for)
+[06:41:08] h264-decoder done: 3901 frames, 0 decoder errors
+[06:41:08] sync: got 3901 frames, 3901 expected
+[06:41:08] sync: framerate min 60,000 fps, max 60,000 fps, avg 60,000 fps
+x264 [info]: frame I:16    Avg QP:14,02  size: 67884
+x264 [info]: frame P:614   Avg QP:20,16  size: 12688
+x264 [info]: frame B:1321  Avg QP:24,09  size:  1820
+x264 [info]: consecutive B-frames:  6,4%  8,1%  6,0% 79,5%
+x264 [info]: mb I  I16..4: 75,8%  0,0% 24,2%
+x264 [info]: mb P  I16..4: 10,0%  0,0%  2,6%  P16..4:  6,6%  1,8%  1,0%  0,0%  0,0%    skip:78,0%
+x264 [info]: mb B  I16..4:  0,8%  0,0%  0,1%  B16..8:  3,2%  1,0%  0,1%  direct: 1,0%  skip:93,7%  L0:40,8% L1:51,4% BI: 7,8%
+x264 [info]: coded y,uvDC,uvAC intra: 16,3% 19,0% 9,4% inter: 1,5% 1,9% 0,2%
+x264 [info]: i16 v,h,dc,p: 67% 30%  2%  2%
+x264 [info]: i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 29% 28% 21%  5%  4%  4%  4%  3%  3%
+x264 [info]: i8c dc,h,v,p: 73% 15% 10%  1%
+x264 [info]: Weighted P-Frames: Y:3,6% UV:2,6%
+x264 [info]: ref P L0: 80,7% 19,3%
+x264 [info]: ref B L0: 87,4% 12,6%
+x264 [info]: ref B L1: 96,1%  3,9%
+x264 [info]: kb/s:1387,59
+[06:41:08] mux: track 0, 1951 frames, 11279232 bytes, 1386,79 kbps, fifo 2048
+[06:41:08] Finished work at: Thu Jan 22 06:41:08 2026
+
+[06:41:08] libhb: work result = 0

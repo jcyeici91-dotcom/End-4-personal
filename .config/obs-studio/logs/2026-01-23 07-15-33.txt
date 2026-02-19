@@ -1,0 +1,189 @@
+07:15:33.912: Platform: Wayland
+07:15:33.912: CPU Name: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
+07:15:33.912: CPU Speed: 2331.360MHz
+07:15:33.912: Physical Cores: 8, Logical Cores: 16
+07:15:33.912: Physical Memory: 28888MB Total, 21291MB Free
+07:15:33.912: Kernel Version: Linux 6.18.6-arch1-1
+07:15:33.912: Distribution: "Arch Linux" Unknown
+07:15:33.912: Desktop Environment: Hyprland (Hyprland)
+07:15:33.912: Session Type: wayland
+07:15:33.914: Current Date/Time: 2026-01-23, 07:15:33
+07:15:33.914: Browser Hardware Acceleration: true
+07:15:33.914: Qt Version: 6.10.1 (runtime), 6.10.1 (compiled)
+07:15:33.914: Portable mode: false
+07:15:33.968: OBS 32.0.4 (linux)
+07:15:33.968: ---------------------------------
+07:15:33.970: ---------------------------------
+07:15:33.970: audio settings reset:
+07:15:33.970: 	samples per sec: 48000
+07:15:33.970: 	speakers:        2
+07:15:33.970: 	max buffering:   960 milliseconds
+07:15:33.970: 	buffering type:  dynamically increasing
+07:15:33.971: ---------------------------------
+07:15:33.971: Initializing OpenGL...
+07:15:33.971: Using EGL/Wayland
+07:15:33.977: Initialized EGL 1.5
+07:15:33.987: Loading up OpenGL on adapter AMD AMD Radeon 780M Graphics (radeonsi, phoenix, LLVM 21.1.6, DRM 3.64, 6.18.6-arch1-1)
+07:15:33.987: OpenGL loaded successfully, version 4.6 (Core Profile) Mesa 25.3.3-arch1.3, shading language 4.60
+07:15:34.008: ---------------------------------
+07:15:34.008: video settings reset:
+07:15:34.008: 	base resolution:   3072x1920
+07:15:34.008: 	output resolution: 1536x960
+07:15:34.008: 	downscale filter:  Bicubic
+07:15:34.008: 	fps:               60/1
+07:15:34.008: 	format:            NV12
+07:15:34.008: 	YUV mode:          Rec. 709/Partial
+07:15:34.009: NV12 texture support enabled
+07:15:34.009: P010 texture support not available
+07:15:34.012: Audio monitoring device:
+07:15:34.012: 	name: Por defecto
+07:15:34.012: 	id: default
+07:15:34.014: ---------------------------------
+07:15:34.015: Failed to load 'en-US' text for module: 'decklink-captions.so'
+07:15:34.017: Failed to load 'en-US' text for module: 'decklink-output-ui.so'
+07:15:34.019: A DeckLink iterator could not be created.  The DeckLink drivers may not be installed
+07:15:34.019: Failed to initialize module 'decklink.so'
+07:15:34.110: [pipewire] Available capture sources:
+07:15:34.110: [pipewire]     - Monitor source
+07:15:34.110: [pipewire]     - Window source
+07:15:34.118: v4l2loopback not installed, virtual camera not registered
+07:15:34.119: os_dlopen(/usr/lib/obs-plugins/obs-backgroundremoval.so->/usr/lib/obs-plugins/obs-backgroundremoval.so): libopencv_core.so.412: no se puede abrir el fichero del objeto compartido: No existe el fichero o el directorio
+07:15:34.119: 
+07:15:34.119: Module '/usr/lib/obs-plugins/obs-backgroundremoval.so' not loaded
+07:15:34.144: VAAPI: API version 1.22
+07:15:34.145: FFmpeg VAAPI H264 encoding supported
+07:15:34.148: FFmpeg VAAPI AV1 encoding supported
+07:15:34.152: FFmpeg VAAPI HEVC encoding supported
+07:15:34.162: [obs-gstreamer] build: b60942f, gst-runtime: 1.26.10
+07:15:34.219: os_dlopen(libnvidia-encode.so.1->libnvidia-encode.so.1): libnvidia-encode.so.1: no se puede abrir el fichero del objeto compartido: No existe el fichero o el directorio
+07:15:34.219: 
+07:15:34.219: NVENC not supported
+07:15:34.219: Failed to initialize module 'obs-nvenc.so'
+07:15:34.247: [obs-websocket] [obs_module_load] you can haz websockets (Version: 5.6.3 | RPC Version: 1)
+07:15:34.247: [obs-websocket] [obs_module_load] Qt version (compile-time): 6.10.1 | Qt version (run-time): 6.10.1
+07:15:34.247: [obs-websocket] [obs_module_load] Linked ASIO Version: 103600
+07:15:34.254: [obs-websocket] [obs_module_load] Module loaded.
+07:15:34.258: ---------------------------------
+07:15:34.258:   Loaded Modules:
+07:15:34.258:     text-freetype2.so
+07:15:34.258:     rtmp-services.so
+07:15:34.258:     obs-x264.so
+07:15:34.258:     obs-websocket.so
+07:15:34.258:     obs-webrtc.so
+07:15:34.258:     obs-vst.so
+07:15:34.258:     obs-transitions.so
+07:15:34.258:     obs-qsv11.so
+07:15:34.258:     obs-outputs.so
+07:15:34.258:     obs-libfdk.so
+07:15:34.258:     obs-gstreamer.so
+07:15:34.258:     obs-filters.so
+07:15:34.258:     obs-ffmpeg.so
+07:15:34.258:     linux-v4l2.so
+07:15:34.258:     linux-pulseaudio.so
+07:15:34.258:     linux-pipewire.so
+07:15:34.258:     linux-jack.so
+07:15:34.258:     linux-capture.so
+07:15:34.258:     linux-alsa.so
+07:15:34.258:     image-source.so
+07:15:34.258:     frontend-tools.so
+07:15:34.258:     decklink-output-ui.so
+07:15:34.258:     decklink-captions.so
+07:15:34.258: ---------------------------------
+07:15:34.258: ---------------------------------
+07:15:34.258: Available Encoders:
+07:15:34.258:   Video Encoders:
+07:15:34.258: 	- ffmpeg_svt_av1 (SVT-AV1)
+07:15:34.258: 	- ffmpeg_aom_av1 (AOM AV1)
+07:15:34.258: 	- ffmpeg_vaapi_tex (FFmpeg VAAPI H.264)
+07:15:34.258: 	- av1_ffmpeg_vaapi_tex (FFmpeg VAAPI AV1)
+07:15:34.258: 	- hevc_ffmpeg_vaapi_tex (FFmpeg VAAPI HEVC)
+07:15:34.258: 	- obs_x264 (x264)
+07:15:34.258:   Audio Encoders:
+07:15:34.258: 	- ffmpeg_aac (FFmpeg AAC)
+07:15:34.258: 	- ffmpeg_opus (FFmpeg Opus)
+07:15:34.258: 	- ffmpeg_pcm_s16le (FFmpeg PCM (16-bit))
+07:15:34.258: 	- ffmpeg_pcm_s24le (FFmpeg PCM (24-bit))
+07:15:34.258: 	- ffmpeg_pcm_f32le (FFmpeg PCM (32-bit flotante))
+07:15:34.258: 	- ffmpeg_alac (FFmpeg ALAC (24-bit))
+07:15:34.258: 	- ffmpeg_flac (FFmpeg FLAC (16-bit))
+07:15:34.258: 	- libfdk_aac (libfdk AAC)
+07:15:34.258: ==== Startup complete ===============================================
+07:15:34.291: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: Connection already associated with an application ID")
+07:15:34.291: All scene data cleared
+07:15:34.291: ------------------------------------------------
+07:15:34.292: PipeWire initialized
+07:15:34.293: Switched to scene 'Escena'
+07:15:34.293: ------------------------------------------------
+07:15:34.293: Loaded scenes:
+07:15:34.293: - scene 'Escena':
+07:15:34.293:     - source: 'Captura de pantalla (PipeWire)' (pipewire-screen-capture-source)
+07:15:34.293: ------------------------------------------------
+07:15:34.354: [pipewire] Screencast session created
+07:15:35.959: [pipewire] Asking for monitor and window
+07:15:35.968: [pipewire] source selected, setting up screencast
+07:15:35.973: [pipewire] Server version: 1.4.10
+07:15:35.973: [pipewire] Library version: 1.4.10
+07:15:35.973: [pipewire] Header version: 1.4.9
+07:15:35.973: [pipewire] Created stream 0x55d1f656c1f0
+07:15:35.973: [pipewire] Stream 0x55d1f656c1f0 state: "connecting" (error: none)
+07:15:35.973: [pipewire] Playing stream 0x55d1f656c1f0
+07:15:35.974: [pipewire] Stream 0x55d1f656c1f0 state: "paused" (error: none)
+07:15:35.977: [pipewire] Negotiated format:
+07:15:35.977: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+07:15:35.977: [pipewire]     Modifier: 0x0
+07:15:35.977: [pipewire]     Size: 3072x1920
+07:15:35.977: [pipewire]     Framerate: 0/1
+07:15:35.978: [pipewire] Negotiated format:
+07:15:35.978: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+07:15:35.978: [pipewire]     Modifier: 0x200000010437b04
+07:15:35.978: [pipewire]     Size: 3072x1920
+07:15:35.978: [pipewire]     Framerate: 0/1
+07:15:35.979: [pipewire] Stream 0x55d1f656c1f0 state: "streaming" (error: none)
+07:15:36.006: Cannot create EGLImage: Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface).
+07:15:36.007: [pipewire] Renegotiating stream
+07:15:36.007: [pipewire] Stream 0x55d1f656c1f0 state: "paused" (error: none)
+07:15:36.007: [pipewire] Negotiated format:
+07:15:36.007: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+07:15:36.007: [pipewire]     Modifier: 0x200000010437b04
+07:15:36.007: [pipewire]     Size: 3072x1920
+07:15:36.007: [pipewire]     Framerate: 0/1
+07:15:36.008: [pipewire] Negotiated format:
+07:15:36.008: [pipewire]     Format: 8 (Spa:Enum:VideoFormat:BGRx)
+07:15:36.008: [pipewire]     Modifier: 0x200000010401b04
+07:15:36.008: [pipewire]     Size: 3072x1920
+07:15:36.008: [pipewire]     Framerate: 0/1
+07:15:36.008: [pipewire] Stream 0x55d1f656c1f0 state: "streaming" (error: none)
+07:15:38.995: ---------------------------------
+07:15:38.995: [x264 encoder: 'simple_video_recording'] preset: veryfast
+07:15:38.995: [x264 encoder: 'simple_video_recording'] profile: high
+07:15:39.005: [x264 encoder: 'simple_video_recording'] settings:
+07:15:39.005: 	rate_control: CRF
+07:15:39.005: 	bitrate:      0
+07:15:39.005: 	buffer size:  0
+07:15:39.005: 	crf:          23
+07:15:39.005: 	fps_num:      60
+07:15:39.005: 	fps_den:      1
+07:15:39.005: 	width:        1536
+07:15:39.005: 	height:       960
+07:15:39.005: 	keyint:       250
+07:15:39.005: 
+07:15:39.015: libfdk_aac encoder created
+07:15:39.016: libfdk_aac bitrate: 192, channels: 2
+07:15:39.031: ==== Recording Start ===============================================
+07:15:39.031: [mp4 output: 'simple_file_output'] Writing Hybrid MP4/MOV file '/home/jcgomez91/2026-01-23 07-15-38.mp4'...
+07:16:01.346: [mp4 muxer: 'simple_file_output'] Flushing final fragment...
+07:16:01.347: [mp4 muxer: 'simple_file_output'] Number of fragments: 7
+07:16:01.347: [mp4 muxer: 'simple_file_output'] Full moov size: 20 KiB
+07:16:01.347: [mp4 muxer: 'simple_file_output'] Final mdat size: 2775 KiB
+07:16:01.347: Output 'simple_file_output': stopping
+07:16:01.347: Output 'simple_file_output': Total frames output: 1301
+07:16:01.347: Output 'simple_file_output': Total drawn frames: 1339
+07:16:01.347: [mp4 output: 'simple_file_output'] Waiting for file writer to finish...
+07:16:01.347: [mp4 output: 'simple_file_output'] File output complete. Finalization took 0 ms.
+07:16:01.348: ==== Recording Stop ================================================
+07:16:01.353: libfdk_aac encoder destroyed
+07:17:40.389: ==== Shutting down ==================================================
+07:17:40.391: [pipewire] Stream 0x55d1f656c1f0 state: "paused" (error: none)
+07:17:40.392: [pipewire] Stream 0x55d1f656c1f0 state: "unconnected" (error: none)
+07:17:40.417: All scene data cleared
+07:17:40.417: ------------------------------------------------

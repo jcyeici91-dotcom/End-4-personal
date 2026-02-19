@@ -1,0 +1,12 @@
+[Unit]
+Description=Update CPU temperature for Quickshell (2s)
+
+[Timer]
+OnBootSec=2s
+OnUnitActiveSec=2s
+AccuracySec=1s
+Unit=qs-cpu-temp.service
+
+[Install]
+WantedBy=timers.target
+

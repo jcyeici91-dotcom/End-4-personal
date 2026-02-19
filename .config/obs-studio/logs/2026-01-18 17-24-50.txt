@@ -1,0 +1,126 @@
+17:24:50.358: Platform: Wayland
+17:24:50.358: CPU Name: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
+17:24:50.358: CPU Speed: 3069.767MHz
+17:24:50.359: Physical Cores: 8, Logical Cores: 16
+17:24:50.359: Physical Memory: 28888MB Total, 13819MB Free
+17:24:50.359: Kernel Version: Linux 6.18.5-arch1-1
+17:24:50.359: Distribution: "Arch Linux" Unknown
+17:24:50.359: Desktop Environment: Hyprland (Hyprland)
+17:24:50.359: Session Type: wayland
+17:24:50.360: Current Date/Time: 2026-01-18, 17:24:50
+17:24:50.360: Browser Hardware Acceleration: true
+17:24:50.360: Qt Version: 6.10.1 (runtime), 6.10.1 (compiled)
+17:24:50.360: Portable mode: false
+17:24:50.406: OBS 32.0.4 (linux)
+17:24:50.406: ---------------------------------
+17:24:50.407: ---------------------------------
+17:24:50.407: audio settings reset:
+17:24:50.407: 	samples per sec: 48000
+17:24:50.407: 	speakers:        2
+17:24:50.407: 	max buffering:   960 milliseconds
+17:24:50.407: 	buffering type:  dynamically increasing
+17:24:50.408: ---------------------------------
+17:24:50.408: Initializing OpenGL...
+17:24:50.408: Using EGL/Wayland
+17:24:50.414: Initialized EGL 1.5
+17:24:50.423: Loading up OpenGL on adapter AMD AMD Radeon 780M Graphics (radeonsi, phoenix, LLVM 21.1.6, DRM 3.64, 6.18.5-arch1-1)
+17:24:50.423: OpenGL loaded successfully, version 4.6 (Core Profile) Mesa 25.3.3-arch1.2, shading language 4.60
+17:24:50.443: ---------------------------------
+17:24:50.443: video settings reset:
+17:24:50.443: 	base resolution:   3072x1920
+17:24:50.443: 	output resolution: 2048x1280
+17:24:50.443: 	downscale filter:  Bicubic
+17:24:50.443: 	fps:               60/1
+17:24:50.443: 	format:            NV12
+17:24:50.443: 	YUV mode:          Rec. 709/Partial
+17:24:50.443: NV12 texture support enabled
+17:24:50.443: P010 texture support not available
+17:24:50.447: Audio monitoring device:
+17:24:50.447: 	name: Por defecto
+17:24:50.447: 	id: default
+17:24:50.448: ---------------------------------
+17:24:50.449: Failed to load 'en-US' text for module: 'decklink-captions.so'
+17:24:50.449: Failed to load 'en-US' text for module: 'decklink-output-ui.so'
+17:24:50.450: A DeckLink iterator could not be created.  The DeckLink drivers may not be installed
+17:24:50.450: Failed to initialize module 'decklink.so'
+17:24:50.533: [pipewire] Available capture sources:
+17:24:50.533: [pipewire]     - Monitor source
+17:24:50.533: [pipewire]     - Window source
+17:24:50.540: v4l2loopback not installed, virtual camera not registered
+17:24:50.541: os_dlopen(/usr/lib/obs-plugins/obs-backgroundremoval.so->/usr/lib/obs-plugins/obs-backgroundremoval.so): libopencv_core.so.412: no se puede abrir el fichero del objeto compartido: No existe el fichero o el directorio
+17:24:50.541: 
+17:24:50.541: Module '/usr/lib/obs-plugins/obs-backgroundremoval.so' not loaded
+17:24:50.561: VAAPI: API version 1.22
+17:24:50.562: FFmpeg VAAPI H264 encoding supported
+17:24:50.566: FFmpeg VAAPI AV1 encoding supported
+17:24:50.569: FFmpeg VAAPI HEVC encoding supported
+17:24:50.578: [obs-gstreamer] build: b60942f, gst-runtime: 1.26.10
+17:24:50.775: os_dlopen(libnvidia-encode.so.1->libnvidia-encode.so.1): libnvidia-encode.so.1: no se puede abrir el fichero del objeto compartido: No existe el fichero o el directorio
+17:24:50.775: 
+17:24:50.775: NVENC not supported
+17:24:50.775: Failed to initialize module 'obs-nvenc.so'
+17:24:50.800: [obs-websocket] [obs_module_load] you can haz websockets (Version: 5.6.3 | RPC Version: 1)
+17:24:50.800: [obs-websocket] [obs_module_load] Qt version (compile-time): 6.10.1 | Qt version (run-time): 6.10.1
+17:24:50.800: [obs-websocket] [obs_module_load] Linked ASIO Version: 103600
+17:24:50.805: [obs-websocket] [obs_module_load] Module loaded.
+17:24:50.807: ---------------------------------
+17:24:50.807:   Loaded Modules:
+17:24:50.807:     text-freetype2.so
+17:24:50.807:     rtmp-services.so
+17:24:50.807:     obs-x264.so
+17:24:50.807:     obs-websocket.so
+17:24:50.807:     obs-webrtc.so
+17:24:50.807:     obs-vst.so
+17:24:50.807:     obs-transitions.so
+17:24:50.807:     obs-qsv11.so
+17:24:50.807:     obs-outputs.so
+17:24:50.807:     obs-libfdk.so
+17:24:50.807:     obs-gstreamer.so
+17:24:50.807:     obs-filters.so
+17:24:50.807:     obs-ffmpeg.so
+17:24:50.807:     linux-v4l2.so
+17:24:50.807:     linux-pulseaudio.so
+17:24:50.807:     linux-pipewire.so
+17:24:50.807:     linux-jack.so
+17:24:50.807:     linux-capture.so
+17:24:50.807:     linux-alsa.so
+17:24:50.807:     image-source.so
+17:24:50.807:     frontend-tools.so
+17:24:50.807:     decklink-output-ui.so
+17:24:50.807:     decklink-captions.so
+17:24:50.807: ---------------------------------
+17:24:50.807: ---------------------------------
+17:24:50.807: Available Encoders:
+17:24:50.807:   Video Encoders:
+17:24:50.807: 	- ffmpeg_svt_av1 (SVT-AV1)
+17:24:50.807: 	- ffmpeg_aom_av1 (AOM AV1)
+17:24:50.807: 	- ffmpeg_vaapi_tex (FFmpeg VAAPI H.264)
+17:24:50.807: 	- av1_ffmpeg_vaapi_tex (FFmpeg VAAPI AV1)
+17:24:50.807: 	- hevc_ffmpeg_vaapi_tex (FFmpeg VAAPI HEVC)
+17:24:50.807: 	- obs_x264 (x264)
+17:24:50.807:   Audio Encoders:
+17:24:50.807: 	- ffmpeg_aac (FFmpeg AAC)
+17:24:50.807: 	- ffmpeg_opus (FFmpeg Opus)
+17:24:50.807: 	- ffmpeg_pcm_s16le (FFmpeg PCM (16-bit))
+17:24:50.807: 	- ffmpeg_pcm_s24le (FFmpeg PCM (24-bit))
+17:24:50.807: 	- ffmpeg_pcm_f32le (FFmpeg PCM (32-bit flotante))
+17:24:50.807: 	- ffmpeg_alac (FFmpeg ALAC (24-bit))
+17:24:50.807: 	- ffmpeg_flac (FFmpeg FLAC (16-bit))
+17:24:50.808: 	- libfdk_aac (libfdk AAC)
+17:24:50.808: ==== Startup complete ===============================================
+17:24:50.836: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: Connection already associated with an application ID")
+17:24:50.836: All scene data cleared
+17:24:50.836: ------------------------------------------------
+17:24:50.836: PipeWire initialized
+17:24:50.837: Switched to scene 'Escena'
+17:24:50.837: ------------------------------------------------
+17:24:50.837: Loaded scenes:
+17:24:50.837: - scene 'Escena':
+17:24:50.837:     - source: 'Captura de pantalla (PipeWire)' (pipewire-screen-capture-source)
+17:24:50.837: ------------------------------------------------
+17:24:50.896: [pipewire] Screencast session created
+17:24:53.895: KDE platform plugin is loaded but SNI unavailable
+17:24:56.729: [pipewire] Failed to select source, denied or cancelled by user
+17:24:59.171: ==== Shutting down ==================================================
+17:24:59.201: All scene data cleared
+17:24:59.201: ------------------------------------------------

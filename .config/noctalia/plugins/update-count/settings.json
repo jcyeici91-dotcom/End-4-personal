@@ -1,0 +1,11 @@
+{
+  "updateInterval": 300000,
+  "configuredTerminal": "foot -e",
+  "configuredIcon": "world-download",
+  "hideOnZero": false,
+  "updateIntervalMinutes": 30,
+  "updateTerminalCommand": "foot -e",
+  "currentIconName": "alien",
+  "customCmdGetNumUpdates": "",
+  "customCmdDoSystemUpdate": ""
+}

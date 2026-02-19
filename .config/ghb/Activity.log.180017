@@ -1,0 +1,42 @@
+HandBrake 20250906052339-dddf75f75-makepkg (2025092401)
+OS: Arch Linux
+Kernel: Linux 6.18.9-arch1-2 (x86_64)
+CPU: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics x 16
+Install Dir: /usr/bin
+Config Dir:  /home/jcgomez91/.config/ghb
+_______________________________
+
+[06:56:52] Compile-time hardening features are enabled
+Cannot load libnvidia-encode.so.1
+[06:56:52] vcn: not available on this system
+[06:56:52] qsv: not available on this system
+[06:56:52] hb_init: starting libhb thread
+[06:56:52] hb_init: starting libhb thread
+[06:56:52] hb_init: starting libhb thread
+
+(fr.handbrake.ghb:180017): Gtk-CRITICAL **: 06:56:52.424: gtk_adjustment_configure: assertion 'lower + page_size <= upper' failed
+[06:56:52] gtkgui: Excluded extension jpg
+[06:56:52] gtkgui: Excluded extension png
+[06:56:52] gtkgui: Excluded extension srt
+[06:56:52] gtkgui: Excluded extension ssa
+[06:56:52] gtkgui: Excluded extension ass
+[06:56:52] gtkgui: Excluded extension txt
+[06:56:52] CPU: AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
+[06:56:52]  - logical processor count: 16
+[06:56:52] Intel Quick Sync Video support: no
+[06:56:52] hb_scan: path=/home/jcgomez91/Videos/recording_2026-02-19_06.56.12.mp4, title_index=0
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/home/jcgomez91/Videos/recording_2026-02-19_06.56.12.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf62.3.100
+  Duration: 00:00:24.19, start: 0.000000, bitrate: 1652 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuvj420p(pc, progressive), 3070x1918 [SAR 1:1 DAR 1535:959], 1646 kb/s, 59,82 fps, 60 tbr, 90k tbn (default)
+      Metadata:
+        handler_name    : VideoHandler
+        vendor_id       : [0][0][0][0]
+[06:56:52] scan: decoding previews for title 1
+[06:56:53] using container PAR 1:1
+[06:56:53] scan: 10 previews, 3070x1918, 59,822 fps, autocrop = 0/0/0/0, aspect 1,60:1, PAR 1:1, color profile: 1-1-1, chroma location: left
+[06:56:53] libhb: scan thread found 1 valid title(s)

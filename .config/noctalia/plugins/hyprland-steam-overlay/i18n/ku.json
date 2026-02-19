@@ -1,0 +1,14 @@
+{
+  "main": {
+    "ipc_received": "Guhestina IPC hat wergirtin",
+    "launching_steam": "Destpêkirina Steamê...",
+    "no_windows_found": "Tu tune pencereyên Steamê hatin dîtin",
+    "plugin_loaded": "API ya pluginê barkirî",
+    "resolution_detected": "Çareserkirina hatî kifşkirin: {width} x {height}",
+    "steam_launched": "Steam dest pê kir",
+    "toggle_called": "Guhestina bi navkirî",
+    "windows_found": "Me dît {count} pencereyên Steamê",
+    "windows_moved": "Pencerî hatin guhestin, koda derketinê: {code}",
+    "workspace_toggled": "Cihê kar hat guhertin"
+  }
+}

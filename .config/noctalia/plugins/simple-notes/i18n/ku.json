@@ -1,0 +1,32 @@
+{
+  "bar_widget": {
+    "tooltip": "Nîşeyên Sade"
+  },
+  "panel": {
+    "confirm": {
+      "delete_message": "Ma tu bawer î tu dixwazî vê notê jê bibî?",
+      "delete_title": "Noteyê Jê Bibe?"
+    },
+    "editor": {
+      "cancel_button": "Betal",
+      "content_placeholder": "Fikrên xwe li vir binivîse...",
+      "delete_button": "Jêbirin",
+      "save_button": "Xilas bike",
+      "title_placeholder": "Sernavê Têbînî"
+    },
+    "header": {
+      "add_button": "Nûçeya Nû",
+      "title": "Têbînî"
+    },
+    "list": {
+      "empty_message": "Hîn tu not nînin. Yekî çêke!",
+      "last_modified": "Dawiya hatî guherandin:"
+    }
+  },
+  "settings": {
+    "show_count": {
+      "description": "Hejmara notayan di widgeta barê de nîşan bide",
+      "label": "Jimara jimaran nîşan bide"
+    }
+  }
+}

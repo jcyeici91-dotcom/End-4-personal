@@ -1,0 +1,142 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "kitty",
+    "source": "/home/jcgomez91/.config/fastfetch/logo/2.png",
+    "width": 30,
+    "height": 14,
+    "padding": {
+      "top": 2,
+      "left": 2,
+      "right": 4
+    }
+  },
+  "display": {
+      "separator": " ➜  "
+  },
+  "modules": [
+    // --- MENSAJE DE BIENVENIDA (Dorado/Café) ---
+    {
+        "type": "custom",
+        "format": " \u001b[1;33m¡HaKadosh Baruj Hu! ✡️\u001b[0m" 
+    },
+    {
+        "type": "title",
+        "format": "{@1}@{2}", 
+        "keyColor": "red"
+    },
+    "break",
+
+    // --- SECCIÓN HARDWARE (Color Café/Amarillo) ---
+    {
+        "type": "custom",
+        "format": "\u001b[33m─────────── 󰌢 Hardware ───────────\u001b[0m"
+    },
+    {
+        "type": "host",
+        "key": "  󰌢 PC ",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "cpu",
+        "key": "   CPU",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "gpu",
+        "key": "  󰍛 GPU",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "display",
+        "key": "   Res",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "memory",
+        "key": "   RAM",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "disk",
+        "key": "   SSD",
+        "keyColor": "yellow",
+        "folders": "/"
+    },
+   
+    {
+        "type": "battery",
+        "key": "   Bat",
+        "keyColor": "yellow"
+    },
+
+    // --- SECCIÓN SOFTWARE (Color Crema/Blanco) ---
+    {
+        "type": "custom",
+        "format": "\u001b[37m─────────── 󰇄 Software ───────────\u001b[0m"
+    },
+    {
+        "type": "os",
+        "key": "   OS ",
+        "keyColor": "white"
+    },
+    {
+        "type": "kernel",
+        "key": "   Ker",
+        "keyColor": "white"
+    },
+    {
+        "type": "packages",
+        "key": "  󰏖 Pkg",
+        "keyColor": "white"
+    },
+    {
+        "type": "shell",
+        "key": "   Sh ",
+        "keyColor": "white"
+    },
+    {
+        "type": "wm",
+        "key": "   WM ",
+        "keyColor": "white"
+    },
+    {
+        "type": "terminal",
+        "key": "   Ter",
+        "keyColor": "white"
+    },
+
+       {
+        "type": "theme",
+        "key": "  󰉼 Thm",
+        "keyColor": "red"
+    },
+    {
+        "type": "icons",
+        "key": "  󰀻 Ico",
+        "keyColor": "red"
+    },
+    {
+        "type": "cursor",
+        "key": "   Cur",
+        "keyColor": "red"
+    },
+    {
+        "type": "font",
+        "key": "   Fnt",
+        "keyColor": "red"
+    },
+
+       {
+        "type": "uptime",
+        "key": "  󰅐 Up ",
+        "keyColor": "yellow"
+    },
+    {
+        "type": "localip",
+        "key": "  󰩟 Net",
+        "keyColor": "yellow",
+        "showIpv6": false
+    }
+  ]
+}

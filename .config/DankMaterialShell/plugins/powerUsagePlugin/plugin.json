@@ -1,0 +1,14 @@
+{
+	"id": "powerUsagePlugin",
+	"name": "Power Usage Monitor",
+	"description": "Display real-time power consumption from your device",
+	"version": "0.0.1",
+	"author": "Daniel-42-z",
+	"icon": "bolt",
+	"component": "./PowerWidget.qml",
+	"settings": "./PowerSettings.qml",
+	"permissions": [
+		"settings_read",
+		"settings_write"
+	]
+}

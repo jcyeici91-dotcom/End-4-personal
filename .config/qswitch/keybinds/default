@@ -1,0 +1,7 @@
+##binds bienvnidos ###############
+# Apagar el cerebro de DMS para ahorrar recursos
+exec = systemctl --user stop dms.service
+# Debe tener esto al principio:
+exec = pkill dms
+exec = ~/.local/bin/smart_overview
+bind=Super+Alt, P, exec, qswitch --panel

@@ -1,0 +1,184 @@
+[ColorEffects:Disabled]
+ChangeSelectionColor=
+Color=#1d1d23
+ColorAmount=0.5
+ColorEffect=3
+ContrastAmount=0
+ContrastEffect=0
+Enable=
+IntensityAmount=0
+IntensityEffect=0
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=#0d0e13
+ColorAmount=0.025
+ColorEffect=0
+ContrastAmount=0.1
+ContrastEffect=0
+Enable=true
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundAlternate=#46464f
+BackgroundNormal=#27272d
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#e3e1e9
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:Complementary]
+BackgroundAlternate=#101116
+BackgroundNormal=#1d1d23
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#c6c5d0
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:Header]
+BackgroundAlternate=#1d1d23
+BackgroundNormal=#1d1d23
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#c6c5d0
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:Header][Inactive]
+BackgroundAlternate=#1d1d23
+BackgroundNormal=#1d1d23
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#c6c5d0
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:Selection]
+BackgroundAlternate=#bac3ff
+BackgroundNormal=#bac3ff
+DecorationFocus=#bac3ff
+DecorationHover=#c3c5dd
+ForegroundActive=#222c61
+ForegroundInactive=#222c61
+ForegroundLink=#004b73
+ForegroundNegative=#920023
+ForegroundNeutral=#753400
+ForegroundNormal=#222c61
+ForegroundPositive=#005228
+ForegroundVisited=#74009f
+
+[Colors:Tooltip]
+BackgroundAlternate=#46464f
+BackgroundNormal=#1d1d23
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#e3e1e9
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:View]
+BackgroundAlternate=#1d1d23
+BackgroundNormal=#101116
+DecorationFocus=#bac3ff
+DecorationHover=#515b92
+ForegroundActive=#e3e1e9
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#e3e1e9
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[Colors:Window]
+BackgroundAlternate=#46464f
+BackgroundNormal=#1d1d23
+DecorationFocus=#bac3ff
+DecorationHover=#bac3ff
+ForegroundActive=#8fc9fc
+ForegroundInactive=#90909a
+ForegroundLink=#8fc9fc
+ForegroundNegative=#ffb3b4
+ForegroundNeutral=#fcb38a
+ForegroundNormal=#c6c5d0
+ForegroundPositive=#00e479
+ForegroundVisited=#ebb2ff
+
+[General]
+ColorScheme=MaterialYouDark
+ColorSchemeHash=8805de3b9e1f2e44e8e3232f1af4a7bb056771fb
+LastUsedCustomAccentColor=184,117,220
+TerminalApplication=kitty -1
+XftHintStyle=hintslight
+XftSubPixel=none
+fixed=FantasqueSansM Nerd Font Mono,10,-1,5,50,0,0,0,0,0
+font=JF Flat,11,-1,5,50,0,0,0,0,0
+menuFont=JF Flat,11,-1,5,50,0,0,0,0,0
+smallestReadableFont=JF Flat,9,-1,5,75,0,0,0,0,0
+toolBarFont=JF Flat,10,-1,5,75,0,0,0,0,0
+
+[Icons]
+Theme=breeze-plus-dark
+
+[KDE]
+contrast=4
+frameContrast=0.2
+widgetStyle=Darkly
+
+[KFileDialog Settings]
+Allow Expansion=false
+Automatically select filename extension=true
+Breadcrumb Navigation=true
+Decoration position=2
+Show Full Path=false
+Show Inline Previews=true
+Show Preview=false
+Show Speedbar=true
+Show hidden files=false
+Sort by=Name
+Sort directories first=true
+Sort hidden files last=false
+Sort reversed=false
+Speedbar Width=168
+View Style=Simple
+
+[Sounds]
+Theme=freedesktop
+
+[WM]
+activeBackground=50,50,56
+activeBlend=252,252,252
+activeFont=JF Flat,11,-1,5,75,0,0,0,0,0
+activeForeground=227,225,233
+inactiveBackground=69,72,92
+inactiveBlend=161,169,177
+inactiveForeground=223,225,249
+

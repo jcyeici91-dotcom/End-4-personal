@@ -1,0 +1,32 @@
+{
+  "bar_widget": {
+    "tooltip": "Proste notatki"
+  },
+  "panel": {
+    "confirm": {
+      "delete_message": "Czy na pewno chcesz usunąć tę notatkę?",
+      "delete_title": "Usunąć notatkę?"
+    },
+    "editor": {
+      "cancel_button": "Anuluj",
+      "content_placeholder": "Zapisz tutaj swoje przemyślenia...",
+      "delete_button": "Usuń",
+      "save_button": "Zapisz",
+      "title_placeholder": "Tytuł notatki"
+    },
+    "header": {
+      "add_button": "Nowa notatka",
+      "title": "Notatki"
+    },
+    "list": {
+      "empty_message": "Brak notatek. Utwórz nową!",
+      "last_modified": "Ostatnio zmodyfikowano:"
+    }
+  },
+  "settings": {
+    "show_count": {
+      "description": "Pokaż liczbę notatek na widżecie paska",
+      "label": "Pokaż liczbę notatek"
+    }
+  }
+}

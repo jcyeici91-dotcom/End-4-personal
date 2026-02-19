@@ -1,0 +1,14 @@
+{
+  "main": {
+    "plugin_loaded": "Plugin-API geladen",
+    "resolution_detected": "Auflösung erkannt: {width} x {height}",
+    "windows_found": "{count} Steam-Fenster gefunden",
+    "windows_moved": "Fenster verschoben, Exit-Code: {code}",
+    "workspace_toggled": "Arbeitsbereich umgeschaltet",
+    "toggle_called": "Umschaltung aufgerufen",
+    "launching_steam": "Steam wird gestartet...",
+    "steam_launched": "Steam gestartet",
+    "no_windows_found": "Keine Steam-Fenster gefunden",
+    "ipc_received": "IPC-Umschaltung empfangen"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "fromCurrency": "USD",
+  "toCurrency": "COP",
+  "updateInterval": 30,
+  "displayMode": "icon"
+}

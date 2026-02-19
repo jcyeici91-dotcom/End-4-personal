@@ -1,0 +1,11 @@
+[Desktop Entry]
+DefaultProfile=pinky.profile
+
+[General]
+ConfigVersion=1
+
+[KonsoleWindow]
+UseSingleInstance=true
+
+[UiSettings]
+ColorScheme=

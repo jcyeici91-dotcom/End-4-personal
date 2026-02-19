@@ -1,0 +1,50 @@
+#!/bin/bash
+
+power_supply_root="/sys/class/power_supply"
+total_microwatts=0
+battery_found=false
+has_reading=false
+
+# Sum power usage across all detected batteries (BAT0, BAT1, ...)
+for bat_path in "${power_supply_root}"/BAT*; do
+	[ -d "${bat_path}" ] || continue
+
+	if [ -f "${bat_path}/type" ]; then
+		bat_type=$(tr -d '[:space:]' <"${bat_path}/type")
+		[ "${bat_type}" = "Battery" ] || continue
+	fi
+
+	battery_found=true
+
+	# Use direct power reading if available
+	if [ -f "${bat_path}/power_now" ]; then
+		value=$(tr -d '[:space:]' <"${bat_path}/power_now")
+		if [[ "${value}" =~ ^-?[0-9]+$ ]]; then
+			total_microwatts=$((total_microwatts + value))
+			has_reading=true
+			continue
+		fi
+	fi
+
+	# Fallback: calculate power from voltage and current
+	if [ -f "${bat_path}/voltage_now" ] && [ -f "${bat_path}/current_now" ]; then
+		voltage_microvolts=$(tr -d '[:space:]' <"${bat_path}/voltage_now")
+		current_microamps=$(tr -d '[:space:]' <"${bat_path}/current_now")
+
+		if [[ "${voltage_microvolts}" =~ ^-?[0-9]+$ ]] && [[ "${current_microamps}" =~ ^-?[0-9]+$ ]]; then
+			microwatts=$(((voltage_microvolts * current_microamps) / 1000000))
+			total_microwatts=$((total_microwatts + microwatts))
+			has_reading=true
+		fi
+	fi
+done
+
+if [ "${battery_found}" != true ] || [ "${has_reading}" != true ]; then
+	echo "N/A"
+	exit 1
+fi
+
+# Convert microwatts to watts
+power_watts=$(awk -v total="${total_microwatts}" 'BEGIN { printf "%.2f", total/1e6 }')
+echo "${power_watts}W"
+exit 0

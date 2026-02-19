@@ -1,0 +1,26 @@
+{
+  "id": "simple-notes",
+  "name": "Simple Notes",
+  "version": "1.0.3",
+  "minNoctaliaVersion": "3.7.1",
+  "author": "fusuyfusuy",
+  "license": "MIT",
+  "repository": "https://github.com/noctalia-dev/noctalia-plugins",
+  "description": "A simple note taking plugin for Noctalia Shell.",
+  "tags": ["Bar", "Panel", "Productivity"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "notes": [],
+      "showCountInBar": true
+    }
+  }
+}

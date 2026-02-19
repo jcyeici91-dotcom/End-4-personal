@@ -1,0 +1,35 @@
+{
+  "id": "github-feed",
+  "name": "GitHub Feed",
+  "version": "1.1.0",
+  "minNoctaliaVersion": "3.6.0",
+  "author": "linuxmobile",
+  "license": "MIT",
+  "repository": "https://github.com/linuxmobile/github-feed-noctalia",
+  "description": "Display GitHub activity from users you follow and activity on your repos",
+  "tags": ["Bar", "Panel", "Development", "Network"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "username": "",
+      "token": "",
+      "refreshInterval": 1800,
+      "maxEvents": 50,
+      "showStars": true,
+      "showForks": true,
+      "showPRs": true,
+      "showRepoCreations": true,
+      "showMyRepoStars": true,
+      "showMyRepoForks": true,
+      "openInBrowser": true
+    }
+  }
+}

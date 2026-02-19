@@ -1,0 +1,71 @@
+{
+  "settings": {
+    "title": "Paramètres du Convertisseur de Devises",
+    "from-currency": {
+      "label": "Devise Source",
+      "description": "Sélectionnez la devise source pour la conversion"
+    },
+    "to-currency": {
+      "label": "Devise Cible",
+      "description": "Sélectionnez la devise cible pour la conversion"
+    },
+    "update-interval": {
+      "label": "Intervalle de Mise à Jour",
+      "description": "Intervalle en minutes pour mettre à jour les taux de change"
+    },
+    "display-mode": {
+      "label": "Mode d'Affichage",
+      "description": "Comment afficher le widget dans la barre",
+      "both": "Icône et Texte",
+      "icon": "Icône Seule",
+      "text": "Texte Seul"
+    }
+  },
+  "currency-converter": {
+    "title": "Convertisseur de Devises",
+    "from": "De",
+    "to": "Vers",
+    "swap": "Échanger les devises",
+    "refresh": "Actualiser les taux",
+    "no-data": "Aucune donnée disponible"
+  },
+  "settings.title": "Paramètres du Convertisseur de Devises",
+  "settings.from-currency.label": "Devise Source",
+  "settings.from-currency.description": "Sélectionnez la devise source pour la conversion",
+  "settings.to-currency.label": "Devise Cible",
+  "settings.to-currency.description": "Sélectionnez la devise cible pour la conversion",
+  "settings.update-interval.label": "Intervalle de Mise à Jour",
+  "settings.update-interval.description": "Intervalle en minutes pour actualiser les taux de change",
+  "settings.display-mode.label": "Mode d'Affichage",
+  "settings.display-mode.description": "Comment afficher le widget dans la barre",
+  "settings.display-mode.both": "Icône et Texte",
+  "settings.display-mode.icon": "Icône Seule",
+  "settings.display-mode.text": "Texte Seul",
+  "bar.widget-settings.currency-converter.from-currency.label": "Devise Source",
+  "bar.widget-settings.currency-converter.from-currency.description": "Sélectionnez la devise source pour la conversion",
+  "bar.widget-settings.currency-converter.to-currency.label": "Devise Cible",
+  "bar.widget-settings.currency-converter.to-currency.description": "Sélectionnez la devise cible pour la conversion",
+  "bar.widget-settings.currency-converter.update-interval.label": "Intervalle de Mise à Jour",
+  "bar.widget-settings.currency-converter.update-interval.description": "Intervalle en minutes pour mettre à jour les taux de change",
+  "bar.widget-settings.currency-converter.display-mode.label": "Mode d'Affichage",
+  "bar.widget-settings.currency-converter.display-mode.description": "Comment afficher le widget dans la barre",
+  "bar.widget-settings.currency-converter.display-mode.both": "Icône et Texte",
+  "bar.widget-settings.currency-converter.display-mode.icon": "Icône Uniquement",
+  "bar.widget-settings.currency-converter.display-mode.text": "Texte Uniquement",
+  "currency-converter.title": "Convertisseur de Devises",
+  "currency-converter.settings.title": "Paramètres du Convertisseur de Devises",
+  "currency-converter.from": "De",
+  "currency-converter.to": "À",
+  "currency-converter.swap": "Échanger les devises",
+  "currency-converter.refresh": "Actualiser les taux",
+  "currency-converter.no-data": "Aucune donnée disponible",
+  "currency-converter.loading": "Chargement...",
+  "currency-converter.error": "Erreur",
+  "currency-converter.error.network": "Erreur réseau",
+  "currency-converter.error.parse": "Erreur d'analyse",
+  "currency-converter.error.invalid-currency": "Devise invalide",
+  "currency-converter.tooltip.waiting": "En attente de données...",
+  "currency-converter.tooltip.click": "Cliquez pour ouvrir le convertisseur",
+  "tooltips.close": "Fermer",
+  "context-menu.widget-settings": "Paramètres du Widget"
+}

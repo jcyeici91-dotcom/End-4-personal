@@ -1,0 +1,36 @@
+[
+    {
+        "display_name": "",
+        "enabled": true,
+        "encoders": [],
+        "id": "",
+        "module_name": "obs-backgroundremoval",
+        "outputs": [],
+        "services": [],
+        "sources": [
+            "background_removal",
+            "enhanceportrait"
+        ],
+        "version": ""
+    },
+    {
+        "display_name": "",
+        "enabled": true,
+        "encoders": [
+            "gstreamer-encoder-h264",
+            "gstreamer-encoder-h265"
+        ],
+        "id": "",
+        "module_name": "obs-gstreamer",
+        "outputs": [
+            "gstreamer-output"
+        ],
+        "services": [],
+        "sources": [
+            "gstreamer-source",
+            "gstreamer-filter-video",
+            "gstreamer-filter-audio"
+        ],
+        "version": ""
+    }
+]

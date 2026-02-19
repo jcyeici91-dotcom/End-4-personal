@@ -1,0 +1,14 @@
+{
+  "main": {
+    "plugin_loaded": "API del plugin cargada",
+    "resolution_detected": "Resolución detectada: {width} x {height}",
+    "windows_found": "Se encontraron {count} ventanas de Steam",
+    "windows_moved": "Ventanas movidas, código de salida: {code}",
+    "workspace_toggled": "Espacio de trabajo alternado",
+    "toggle_called": "Alternancia llamada",
+    "launching_steam": "Iniciando Steam...",
+    "steam_launched": "Steam iniciado",
+    "no_windows_found": "No se encontraron ventanas de Steam",
+    "ipc_received": "Alternancia IPC recibida"
+  }
+}

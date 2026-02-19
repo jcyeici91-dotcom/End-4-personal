@@ -1,0 +1,13 @@
+{
+  "files": [
+    "discord_krisp.node",
+    "krisp-vad-o-v2.kef",
+    "krisp-nc-o-nb-v2.kef",
+    "krisp-nc-o-lite-v1.kef",
+    "krisp-nc-o-med-v7.kef",
+    "krisp-bvc-o-pro-v3.kef",
+    "package.json",
+    "index.js",
+    "manifest.json"
+  ]
+}
