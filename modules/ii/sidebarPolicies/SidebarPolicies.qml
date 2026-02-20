@@ -8,7 +8,11 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
-Scope { // Scope
+// Importamos el estado UI y la carpeta Bar (para los cristales)
+import qs.modules.ii.ui 1.0
+import "../bar" as Bar
+
+Scope {
     id: root
     property bool detach: false
     property bool pin: false
@@ -20,11 +24,70 @@ Scope { // Scope
         return pos === "default" || pos === "left"; 
     }
 
+    // ==========================================
+    // LÓGICA DE CRISTAL (Traída del panel derecho)
+    // ==========================================
+    readonly property bool safeNoEffects: false
+    readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
+    readonly property var _opts: ((typeof Config !== "undefined") && Config) ? Config.options : null
+
+    readonly property bool followGlobalSidebarStyle: (_opts?.sidebar?.followGlobalSidebarStyle ?? false)
+
+    readonly property int styleIntFromConfig: {
+        const o = _opts
+        if (o?.sidebar?.dashboardRightBackgroundStyle !== undefined) return o.sidebar.dashboardRightBackgroundStyle
+        if (o?.sidebar?.rightBackgroundStyle !== undefined) return o.sidebar.rightBackgroundStyle
+        if (o?.sidebar?.sidebarBackgroundStyle !== undefined) return o.sidebar.sidebarBackgroundStyle
+        if (o?.sidebar?.backgroundStyle !== undefined) return o.sidebar.backgroundStyle
+        if (o?.bar?.barBackgroundStyle !== undefined) return o.bar.barBackgroundStyle
+        return 1
+    }
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _normalizeStyle(v) {
+        if (typeof v === "number") return _styleFromConfig(v)
+        if (typeof v !== "string") return "solid"
+        const s = v.toLowerCase().trim()
+        if (s === "visible") return "solid"
+        if (s === "transparent") return "glass"
+        return s
+    }
+
+    function _effectiveSidebarStyle(requested) {
+        const s = _normalizeStyle(requested)
+        if (s === "solid" || s === "glass") return "visible"
+        if (s === "crystal") return "crystal"
+
+        if (s === "adaptive") {
+            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined) ? UIState.hasWindows : false
+            return hw ? "visible" : "crystal"
+        }
+        return "visible"
+    }
+
+    readonly property var requestedStyle: followGlobalSidebarStyle
+        ? ((typeof UIState !== "undefined" && UIState) ? UIState.surfaceStyle : "solid")
+        : _styleFromConfig(styleIntFromConfig)
+
+    readonly property string sidebarStyle: _effectiveSidebarStyle(requestedStyle)
+    readonly property bool bgIsVisible: sidebarStyle === "visible"
+    readonly property bool bgIsCrystal: sidebarStyle === "crystal"
+
+
     function toggleDetach() {
         root.detach = !root.detach;
     }
 
-    Process { // Dodge cursor away, pin, move cursor back
+    Process { 
         id: pinWithFunnyHyprlandWorkaroundProc
         property var hook: null
         property int cursorX;
@@ -72,14 +135,14 @@ Scope { // Scope
 
     onDetachChanged: {
         if (root.detach) {
-            sidebarContent.parent = null; // Detach content from sidebar
-            sidebarLoader.active = false; // Unload sidebar
-            detachedSidebarLoader.active = true; // Load detached window
+            sidebarContent.parent = null; 
+            sidebarLoader.active = false; 
+            detachedSidebarLoader.active = true; 
             detachedSidebarLoader.item.contentParent.children = [sidebarContent];
         } else {
-            sidebarContent.parent = null; // Detach content from window
-            detachedSidebarLoader.active = false; // Unload detached window
-            sidebarLoader.active = true; // Load sidebar
+            sidebarContent.parent = null; 
+            detachedSidebarLoader.active = false; 
+            sidebarLoader.active = true; 
             sidebarLoader.item.contentParent.children = [sidebarContent];
         }
     }
@@ -101,7 +164,8 @@ Scope { // Scope
                 return allFeatures ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
             }
             
-            property var contentParent: sidebarLeftBackground
+            // Apuntamos al contenedor interno para no sobreescribir el cristal
+            property var contentParent: sidebarLeftContentContainer
 
             function hide() {
                 GlobalStates.sidebarLeftOpen = false
@@ -111,7 +175,6 @@ Scope { // Scope
             exclusiveZone: root.pin ? sidebarWidth : 0
             implicitWidth: Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
             WlrLayershell.namespace: root.isOnLeft ? "quickshell:sidebarLeft" : "quickshell:sidebarRight"
-            // Hyprland 0.49: OnDemand is Exclusive, Exclusive just breaks click-outside-to-close
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             color: "transparent"
 
@@ -148,10 +211,16 @@ Scope { // Scope
 
             Rectangle {
                 id: sidebarLeftBackground
-                color: Appearance.colors.colLayer0
-                border.width: 1
+                
+                // Fondo Dinámico para Efecto Cristal
+                color: root.bgIsVisible 
+                    ? Appearance.colors.colLayer0 
+                    : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
+
+                border.width: root.bgIsVisible ? 1 : 0
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+                clip: true // Recorta el cristal a las esquinas redondas
                 
                 height: parent.height - (Appearance.sizes.hyprlandGapsOut * 2)
                 y: Appearance.sizes.hyprlandGapsOut
@@ -159,6 +228,38 @@ Scope { // Scope
 
                 Behavior on width {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                }
+
+                // ==========================================
+                // CAPAS DE CRISTAL iOS
+                // ==========================================
+                Bar.BarBgOverlayGlassBlur {
+                    anchors.fill: parent
+                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    
+                    useGlassMode: root.bgIsCrystal
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+                    cornerStyle: 0
+                    
+                    enableRealBlur: false 
+                    enableMask: false
+                }
+
+                Bar.BarBgCrystalOverlay {
+                    anchors.fill: parent
+                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    
+                    useGlassMode: root.bgIsCrystal
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+                    cornerStyle: 0
+                }
+
+                // CONTENEDOR INTERNO PARA EL CONTENIDO
+                Item {
+                    id: sidebarLeftContentContainer
+                    anchors.fill: parent
                 }
 
                 state: root.isOnLeft ? "left" : "right"
@@ -216,7 +317,7 @@ Scope { // Scope
 
         sourceComponent: FloatingWindow {
             id: detachedSidebarRoot
-            property var contentParent: detachedSidebarBackground
+            property var contentParent: detachedSidebarContentContainer
             color: "transparent"
 
             visible: GlobalStates.sidebarLeftOpen
@@ -227,7 +328,39 @@ Scope { // Scope
             Rectangle {
                 id: detachedSidebarBackground
                 anchors.fill: parent
-                color: Appearance.colors.colLayer0
+                color: root.bgIsVisible 
+                    ? Appearance.colors.colLayer0 
+                    : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
+                
+                border.width: root.bgIsVisible ? 1 : 0
+                border.color: Appearance.colors.colLayer0Border
+                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+                clip: true
+
+                Bar.BarBgOverlayGlassBlur {
+                    anchors.fill: parent
+                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    useGlassMode: root.bgIsCrystal
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+                    cornerStyle: 0
+                    enableRealBlur: false 
+                    enableMask: false
+                }
+
+                Bar.BarBgCrystalOverlay {
+                    anchors.fill: parent
+                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    useGlassMode: root.bgIsCrystal
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+                    cornerStyle: 0
+                }
+
+                Item {
+                    id: detachedSidebarContentContainer
+                    anchors.fill: parent
+                }
 
                 Keys.onPressed: (event) => {
                     if (event.modifiers === Qt.ControlModifier) {
@@ -243,54 +376,32 @@ Scope { // Scope
 
     IpcHandler {
         target: "sidebarLeft"
-
-        function toggle(): void {
-            GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen
-        }
-
-        function close(): void {
-            GlobalStates.sidebarLeftOpen = false
-        }
-
-        function open(): void {
-            GlobalStates.sidebarLeftOpen = true
-        }
+        function toggle(): void { GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen }
+        function close(): void { GlobalStates.sidebarLeftOpen = false }
+        function open(): void { GlobalStates.sidebarLeftOpen = true }
     }
 
     GlobalShortcut {
         name: "sidebarLeftToggle"
         description: "Toggles left sidebar on press"
-
-        onPressed: {
-            GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
-        }
+        onPressed: { GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen; }
     }
 
     GlobalShortcut {
         name: "sidebarLeftOpen"
         description: "Opens left sidebar on press"
-
-        onPressed: {
-            GlobalStates.sidebarLeftOpen = true;
-        }
+        onPressed: { GlobalStates.sidebarLeftOpen = true; }
     }
 
     GlobalShortcut {
         name: "sidebarLeftClose"
         description: "Closes left sidebar on press"
-
-        onPressed: {
-            GlobalStates.sidebarLeftOpen = false;
-        }
+        onPressed: { GlobalStates.sidebarLeftOpen = false; }
     }
 
     GlobalShortcut {
         name: "sidebarLeftToggleDetach"
         description: "Detach left sidebar into a window/Attach it back"
-
-        onPressed: {
-            root.detach = !root.detach;
-        }
+        onPressed: { root.detach = !root.detach; }
     }
-
 }

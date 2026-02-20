@@ -261,14 +261,18 @@ Singleton {
                 }
 
                 property bool bottom: false // Instead of top
-                
+
                 // 0: Hug | 1: Float | 2: Rect | 3: Hybrid (Notch)
-                property int cornerStyle: 0 
-                
+                property int cornerStyle: 0
+
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
                 property bool borderless: false // true for no grouping of items
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
-                property int barBackgroundStyle: 1 // 0: Transparent | 1: Visible | 2: Adaptive
+
+                // IMPORTANT: actualizado para Crystal
+                // 0: Transparent | 1: Visible | 2: Adaptive | 3: Crystal
+                property int barBackgroundStyle: 1
+
                 property bool verbose: true
                 property bool vertical: false
 
@@ -773,3 +777,4 @@ Singleton {
         }
     }
 }
+

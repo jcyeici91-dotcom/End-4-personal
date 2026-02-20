@@ -1,4 +1,5 @@
 import qs.modules.ii.bar.weather
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -9,6 +10,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
+
+import qs.modules.ii.ui 1.0
 
 import "." as Bar
 
@@ -24,16 +27,64 @@ Item {
     }
 
     property bool hasActiveWindows: false
-    readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
-    readonly property bool bgIsGlass: barBackgroundStyle === 0
-    readonly property bool bgIsSolid: barBackgroundStyle === 1
-    readonly property bool bgIsAdaptive: barBackgroundStyle === 2
+    // ----------------------------------------------------------
+    // Style resolution
+    // ----------------------------------------------------------
+    // IMPORTANT FIX:
+    // Antes: UIState.surfaceStyle SIEMPRE tenía prioridad, entonces aunque en Settings
+    // cambiaras Visible/Transparente/Adaptive, el bar seguía en "crystal" si UIState quedaba en crystal.
+    //
+    // Ahora:
+    // - Por defecto el BAR obedece *su setting* (Config.options.bar.barBackgroundStyle).
+    // - Si quieres que el bar siga el estilo global (UIState), activa followGlobalBarStyle.
+    //
+    // Si no tienes esa opción en tu config, quedará en false y por fin funcionarán los 3 modos del setting.
+    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
 
+    // Config legacy (0/1/2/3)
+    // 0: Transparent (Glass) | 1: Visible (Solid) | 2: Adaptive | 3: Crystal
+    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _styleFromUIState() {
+        const s = UIState.surfaceStyle
+        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
+    }
+
+    // Resolved style:
+    // - If followGlobalBarStyle = true -> UIState.surfaceStyle (si es válido)
+    // - Else -> Config.options.bar.barBackgroundStyle
+    readonly property string resolvedStyle: {
+        if (followGlobalBarStyle) {
+            const s = _styleFromUIState()
+            if (s !== "") return s
+        }
+        return _styleFromConfig(barBackgroundStyleFromConfig)
+    }
+
+    readonly property bool bgIsGlass: resolvedStyle === "glass"
+    readonly property bool bgIsSolid: resolvedStyle === "solid"
+    readonly property bool bgIsAdaptive: resolvedStyle === "adaptive"
+    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
+
+    // Adaptive behavior:
+    // - With windows => solid
+    // - No windows => glass
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
-    readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
+    readonly property bool useGlassMode: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
 
-    readonly property bool useOverlayBg: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
+    // Overlay for glass, crystal and adaptive(no-windows)
+    readonly property bool useOverlayBg: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
 
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
     readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0) // 0 Hug | 1 Float | 2 Rect
@@ -43,7 +94,7 @@ Item {
     readonly property bool shouldDrawBackground: (!useHybridGroups) || allowFullBarBackgroundInHybrid
 
     // ----------------------------------------------------------
-    // Hybrid resize: rápido y natural (SIN propiedad "delay")
+    // Hybrid resize
     // ----------------------------------------------------------
     readonly property int hybridResizeMs: 85
 
@@ -288,11 +339,21 @@ Item {
         }
     }
 
+    // ==========================================================
+    // Overlay background:
+    // - Glass + Adaptive(no windows): BarBgOverlay
+    // - Crystal: BarBgOverlayGlassBlur + BarBgCrystalOverlay
+    // ==========================================================
     Component {
         id: overlayBgComponent
 
         Item {
             anchors.fill: parent
+
+            Item {
+                id: overlayBg
+                anchors.fill: parent
+            }
 
             Bar.BarBgShadowOverlay {
                 targetItem: overlayBg
@@ -302,22 +363,67 @@ Item {
                     && (root.showSolidBackground || root.useGlassMode)
             }
 
-            Bar.BarBgOverlay {
-                id: overlayBg
-                anchors.fill: parent
+            Loader {
+                id: overlayBase
+                anchors.fill: overlayBg
+                active: true
+                sourceComponent: root.bgIsCrystal ? crystalBaseComponent : normalBaseComponent
+            }
 
-                position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
-                cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+            Component {
+                id: normalBaseComponent
+                Bar.BarBgOverlay {
+                    anchors.fill: parent
 
-                useGlassMode: root.useGlassMode
-                showSolidBackground: root.showSolidBackground
-                backgroundColor: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
+                    position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
+                    cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+
+                    useGlassMode: root.useGlassMode
+                    showSolidBackground: root.showSolidBackground
+                    backgroundColor: root.showSolidBackground ? Appearance.colors.colLayer0 : root.glassTint
+                }
+            }
+
+            Component {
+                id: crystalBaseComponent
+                Bar.BarBgOverlayGlassBlur {
+                    anchors.fill: parent
+
+                    position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
+                    cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+
+                    useGlassMode: root.useGlassMode
+                    showSolidBackground: root.showSolidBackground
+                    backgroundColor: root.glassTint
+                }
+            }
+
+            Loader {
+                id: crystalTop
+                anchors.fill: overlayBg
+                active: root.bgIsCrystal
+                visible: root.bgIsCrystal
+                sourceComponent: crystalTopComponent
+            }
+
+            Component {
+                id: crystalTopComponent
+                Bar.BarBgCrystalOverlay {
+                    anchors.fill: parent
+
+                    position: (Config?.options?.bar?.bottom ?? false) ? "bottom" : "top"
+                    cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+
+                    useGlassMode: root.useGlassMode
+                    showSolidBackground: root.showSolidBackground
+                    backgroundColor: root.glassTint
+                }
             }
         }
     }
 
     // ==========================================================
-    // Puentes (Hybrid + Hug/Float) — (tu versión actual)
+    // Bridges (Hybrid + Hug/Float)
     // ==========================================================
     readonly property bool bridgeEnabled: (useHybridGroups
         && (cornerStyle === 0 || cornerStyle === 1)
@@ -466,7 +572,6 @@ Item {
             edgeInset: 2
             attachScreenLeft: true
 
-            // --- resize suave (Hybrid) ---
             width: implicitWidth
             Behavior on width {
                 NumberAnimation {
@@ -566,7 +671,6 @@ Item {
                         padding: 6
                         edgeInset: 2
 
-                        // --- resize suave (Hybrid) ---
                         width: implicitWidth
                         Behavior on width {
                             NumberAnimation {
@@ -599,7 +703,6 @@ Item {
                     padding: 6
                     edgeInset: 2
 
-                    // --- resize suave (Hybrid) ---
                     width: implicitWidth
                     Behavior on width {
                         NumberAnimation {
@@ -633,7 +736,6 @@ Item {
                         padding: 6
                         edgeInset: 2
 
-                        // --- resize suave (Hybrid) ---
                         width: implicitWidth
                         Behavior on width {
                             NumberAnimation {
@@ -696,7 +798,6 @@ Item {
             edgeInset: 2
             attachScreenRight: true
 
-            // --- resize suave (Hybrid) ---
             width: implicitWidth
             Behavior on width {
                 NumberAnimation {

@@ -185,3 +185,93 @@
   serviceName: 'audio.mojom.AudioService',
   name: 'Audio Service'
 }
+2/19/2026, 10:09:19 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 10:09:19 PM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/19/2026, 10:09:19 PM CST 2: ✅ webContents.created web1 ""
+2/19/2026, 10:09:19 PM CST 3: ✅ window.created win1 "discord"
+2/19/2026, 10:09:19 PM CST 4: ✅ webContents.did-finish-load web1
+2/19/2026, 10:09:20 PM CST 5: ✅ webContents.created web2 ""
+2/19/2026, 10:09:20 PM CST 6: ✅ window.created win2 "Discord"
+2/19/2026, 10:09:20 PM CST 7: ✅ webContents.did-finish-load web2
+2/19/2026, 10:09:21 PM CST 8: window.close win1
+2/19/2026, 10:09:21 PM CST 9: webContents.destroyed web1
+2/19/2026, 10:09:21 PM CST 10: window.closed win1
+2/19/2026, 10:10:35 PM CST 11: window.close win2
+2/19/2026, 10:13:11 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 10:13:40 PM CST 12: window.close win2
+2/19/2026, 10:26:03 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 10:26:03 PM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/19/2026, 10:26:21 PM CST 13: window.close win2
+2/19/2026, 11:01:46 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 11:01:46 PM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/19/2026, 11:06:39 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 11:19:58 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 11:19:58 PM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/19/2026, 11:30:27 PM CST 14: before-quit
+2/19/2026, 11:30:27 PM CST 15: window.close win2
+2/20/2026, 8:18:37 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 8:18:37 AM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/20/2026, 8:18:37 AM CST 2: ✅ webContents.created web1 ""
+2/20/2026, 8:18:37 AM CST 3: ✅ window.created win1 "discord"
+2/20/2026, 8:18:37 AM CST 4: ✅ webContents.did-finish-load web1
+2/20/2026, 8:18:38 AM CST 5: ✅ webContents.created web2 ""
+2/20/2026, 8:18:38 AM CST 6: ✅ window.created win2 "Discord"
+2/20/2026, 8:18:38 AM CST 7: ✅ webContents.did-finish-load web2
+2/20/2026, 8:18:39 AM CST 8: window.close win1
+2/20/2026, 8:18:39 AM CST 9: webContents.destroyed web1
+2/20/2026, 8:18:39 AM CST 10: window.closed win1
+2/20/2026, 8:20:05 AM CST 11: window.close win2
+2/20/2026, 10:27:59 AM CST 12: before-quit
+2/20/2026, 10:27:59 AM CST 13: window.close win2
+2/20/2026, 10:27:59 AM CST 14: ❌ child-process-gone {
+  type: 'Utility',
+  reason: 'killed',
+  exitCode: 15,
+  serviceName: 'network.mojom.NetworkService',
+  name: 'Network Service'
+}
+2/20/2026, 10:47:13 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 10:47:13 AM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/20/2026, 10:47:13 AM CST 2: ✅ webContents.created web1 ""
+2/20/2026, 10:47:13 AM CST 3: ✅ window.created win1 "discord"
+2/20/2026, 10:47:13 AM CST 4: ✅ webContents.did-finish-load web1
+2/20/2026, 10:47:14 AM CST 5: ✅ webContents.created web2 ""
+2/20/2026, 10:47:14 AM CST 6: ✅ window.created win2 "Discord"
+2/20/2026, 10:47:14 AM CST 7: ✅ webContents.did-finish-load web2
+2/20/2026, 10:47:15 AM CST 8: window.close win1
+2/20/2026, 10:47:15 AM CST 9: webContents.destroyed web1
+2/20/2026, 10:47:15 AM CST 10: window.closed win1
+2/20/2026, 10:47:22 AM CST 11: window.close win2
+2/20/2026, 10:54:02 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 10:55:50 AM CST 12: window.close win2
+2/20/2026, 11:00:11 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 11:04:17 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 11:04:59 AM CST 13: window.close win2
+2/20/2026, 11:35:52 AM CST 0: 
+
+----------------------------------------------
+2/20/2026, 11:49:38 AM CST 0: 
+
+----------------------------------------------

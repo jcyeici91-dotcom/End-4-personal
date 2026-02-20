@@ -4,19 +4,19 @@
 */
 
 @media (prefers-color-scheme: light) {
-    @define-color accent_color #000107;
+    @define-color accent_color #6b538c;
     @define-color accent_fg_color #ffffff;
-    @define-color accent_bg_color #000107;
-    @define-color window_bg_color #fcf8fa;
-    @define-color window_fg_color #1b1b1d;
-    @define-color headerbar_bg_color #dcd9db;
-    @define-color headerbar_fg_color #1b1b1d;
-    @define-color popover_bg_color #dcd9db;
-    @define-color popover_fg_color #1b1b1d;
-    @define-color view_bg_color #fcf8fa;
-    @define-color view_fg_color #1b1b1d;
-    @define-color card_bg_color #fcf8fa;
-    @define-color card_fg_color #1b1b1d;
+    @define-color accent_bg_color #6b538c;
+    @define-color window_bg_color #fff7ff;
+    @define-color window_fg_color #1d1a20;
+    @define-color headerbar_bg_color #dfd8e0;
+    @define-color headerbar_fg_color #1d1a20;
+    @define-color popover_bg_color #dfd8e0;
+    @define-color popover_fg_color #1d1a20;
+    @define-color view_bg_color #fff7ff;
+    @define-color view_fg_color #1d1a20;
+    @define-color card_bg_color #fff7ff;
+    @define-color card_fg_color #1d1a20;
     @define-color sidebar_bg_color @window_bg_color;
     @define-color sidebar_fg_color @window_fg_color;
     @define-color sidebar_border_color @window_bg_color;
@@ -24,19 +24,19 @@
 }
 
 @media (prefers-color-scheme: dark) {
-    @define-color accent_color #c0c6da;
-    @define-color accent_fg_color #2a3040;
-    @define-color accent_bg_color #c0c6da;
-    @define-color window_bg_color #131314;
-    @define-color window_fg_color #e5e2e3;
-    @define-color headerbar_bg_color #131314;
-    @define-color headerbar_fg_color #e5e2e3;
-    @define-color popover_bg_color #131314;
-    @define-color popover_fg_color #e5e2e3;
-    @define-color view_bg_color #131314;
-    @define-color view_fg_color #e5e2e3;
-    @define-color card_bg_color #131314;
-    @define-color card_fg_color #e5e2e3;
+    @define-color accent_color #d7bafb;
+    @define-color accent_fg_color #3b255a;
+    @define-color accent_bg_color #d7bafb;
+    @define-color window_bg_color #151218;
+    @define-color window_fg_color #e7e0e8;
+    @define-color headerbar_bg_color #151218;
+    @define-color headerbar_fg_color #e7e0e8;
+    @define-color popover_bg_color #151218;
+    @define-color popover_fg_color #e7e0e8;
+    @define-color view_bg_color #151218;
+    @define-color view_fg_color #e7e0e8;
+    @define-color card_bg_color #151218;
+    @define-color card_fg_color #e7e0e8;
     @define-color sidebar_bg_color @window_bg_color;
     @define-color sidebar_fg_color @window_fg_color;
     @define-color sidebar_border_color @window_bg_color;

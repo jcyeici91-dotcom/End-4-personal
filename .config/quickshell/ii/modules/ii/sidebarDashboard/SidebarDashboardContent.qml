@@ -2,12 +2,18 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Hyprland
+
+import qs.modules.ii.ui 1.0
+
+import "../bar" as Bar
 
 import qs.modules.ii.sidebarDashboard.quickToggles
 import qs.modules.ii.sidebarDashboard.quickToggles.classicStyle
@@ -19,9 +25,10 @@ import qs.modules.ii.sidebarDashboard.wifiNetworks
 
 Item {
     id: root
-    property int sidebarWidth: Appearance.sizes.sidebarWidth
+    property int sidebarWidth: Appearance.sizes ? (Appearance.sizes.sidebarWidth || 350) : 350
     property int sidebarPadding: 10
     property string settingsQmlPath: Quickshell.shellPath("settings.qml")
+    
     property bool showAudioOutputDialog: false
     property bool showAudioInputDialog: false
     property bool showBluetoothDialog: false
@@ -29,7 +36,61 @@ Item {
     property bool showWifiDialog: false
     property bool editMode: false
 
-    // 2x2 “pills” sizing
+    readonly property bool safeNoEffects: false
+    readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
+    readonly property var _opts: ((typeof Config !== "undefined") && Config) ? Config.options : null
+
+    readonly property bool followGlobalSidebarStyle: (_opts?.sidebar?.followGlobalSidebarStyle ?? false)
+
+    readonly property int styleIntFromConfig: {
+        const o = _opts
+        if (o?.sidebar?.dashboardRightBackgroundStyle !== undefined) return o.sidebar.dashboardRightBackgroundStyle
+        if (o?.sidebar?.rightBackgroundStyle !== undefined) return o.sidebar.rightBackgroundStyle
+        if (o?.sidebar?.sidebarBackgroundStyle !== undefined) return o.sidebar.sidebarBackgroundStyle
+        if (o?.sidebar?.backgroundStyle !== undefined) return o.sidebar.backgroundStyle
+        if (o?.bar?.barBackgroundStyle !== undefined) return o.bar.barBackgroundStyle
+        return 1
+    }
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _normalizeStyle(v) {
+        if (typeof v === "number") return _styleFromConfig(v)
+        if (typeof v !== "string") return "solid"
+        const s = v.toLowerCase().trim()
+        if (s === "visible") return "solid"
+        if (s === "transparent") return "glass"
+        return s
+    }
+
+    function _effectiveSidebarStyle(requested) {
+        const s = _normalizeStyle(requested)
+        if (s === "solid" || s === "glass") return "visible"
+        if (s === "crystal") return "crystal"
+
+        if (s === "adaptive") {
+            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined) ? UIState.hasWindows : false
+            return hw ? "visible" : "crystal"
+        }
+        return "visible"
+    }
+
+    readonly property var requestedStyle: followGlobalSidebarStyle
+        ? ((typeof UIState !== "undefined" && UIState) ? UIState.surfaceStyle : "solid")
+        : _styleFromConfig(styleIntFromConfig)
+
+    readonly property string sidebarStyle: _effectiveSidebarStyle(requestedStyle)
+    readonly property bool bgIsVisible: sidebarStyle === "visible"
+    readonly property bool bgIsCrystal: sidebarStyle === "crystal"
+
     property real pillSpacing: sidebarPadding
     readonly property real pillsRowWidth: sidebarRightBackground.width - sidebarPadding * 2
     readonly property real twoUpPillWidth: Math.floor((pillsRowWidth - pillSpacing) / 2)
@@ -42,7 +103,7 @@ Item {
                 root.showBluetoothDialog = false;
                 root.showAudioOutputDialog = false;
                 root.showAudioInputDialog = false;
-                // root.showNightLightDialog = false; // opcional
+                root.showNightLightDialog = false;
             }
         }
     }
@@ -57,12 +118,43 @@ Item {
     Rectangle {
         id: sidebarRightBackground
         anchors.fill: parent
-        implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
-        implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
-        color: Appearance.colors.colLayer0
-        border.width: 1
+        implicitHeight: parent.height - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) * 2
+        implicitWidth: sidebarWidth - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) * 2
+
+        radius: (Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18) - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) + 1
+        antialiasing: true
+        clip: true
+
+        color: root.bgIsVisible 
+            ? Appearance.colors.colLayer0 
+            : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
+
+        border.width: root.bgIsVisible ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
-        radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+
+        Bar.BarBgOverlayGlassBlur {
+            anchors.fill: parent
+            visible: root.bgIsCrystal && !root.safeNoEffects
+            
+            useGlassMode: root.bgIsCrystal
+            showSolidBackground: root.bgIsVisible
+            backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+            cornerStyle: 0
+            
+            // Protección anti-crash para el Sidebar
+            enableRealBlur: false 
+            enableMask: false
+        }
+
+        Bar.BarBgCrystalOverlay {
+            anchors.fill: parent
+            visible: root.bgIsCrystal && !root.safeNoEffects
+            
+            useGlassMode: root.bgIsCrystal
+            showSolidBackground: root.bgIsVisible
+            backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
+            cornerStyle: 0
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -75,17 +167,10 @@ Item {
                 Layout.bottomMargin: 0
             }
 
-            /* =========================
-               PÍLDORAS EN 2x2
-               Arriba: Brillo | Luz Noche
-               Abajo : Volumen | Mic
-               ========================= */
-
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: root.pillSpacing
 
-                // ---- Row 1: Brightness + Night Light ----
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: root.pillSpacing
@@ -93,19 +178,17 @@ Item {
                     Loader {
                         id: brightnessLoader
                         visible: active
-                        active: {
-                            const s = Config.options.sidebar.quickSliders
-                            return !!(Config.ready && s.enable && s.showBrightness)
-                        }
-
+                        active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showBrightness)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
                         Layout.minimumWidth: 160
-
-                        sourceComponent: QuickSliders {
-                            showBrightness: true
-                            showVolume: false
-                            showMic: false
+                        
+                        sourceComponent: Component {
+                            QuickSliders { 
+                                showBrightness: true
+                                showVolume: false
+                                showMic: false 
+                            }
                         }
                     }
 
@@ -113,16 +196,16 @@ Item {
                         id: nightLightPillLoader
                         visible: active
                         active: true
-
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
                         Layout.minimumWidth: 160
-
-                        sourceComponent: NightLightPill {}
+                        
+                        sourceComponent: Component { 
+                            NightLightPill {} 
+                        }
                     }
                 }
 
-                // ---- Row 2: Volume + Mic ----
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: root.pillSpacing
@@ -130,62 +213,71 @@ Item {
                     Loader {
                         id: volumeLoader
                         visible: active
-                        active: {
-                            const s = Config.options.sidebar.quickSliders
-                            return !!(Config.ready && s.enable && s.showVolume)
-                        }
-
+                        active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showVolume)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
                         Layout.minimumWidth: 160
-
-                        sourceComponent: QuickSliders {
-                            showBrightness: false
-                            showVolume: true
-                            showMic: false
+                        
+                        sourceComponent: Component {
+                            QuickSliders { 
+                                showBrightness: false
+                                showVolume: true
+                                showMic: false 
+                            }
                         }
                     }
 
                     Loader {
                         id: micLoader
                         visible: active
-                        active: {
-                            const s = Config.options.sidebar.quickSliders
-                            return !!(Config.ready && s.enable && s.showMic)
-                        }
-
+                        active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showMic)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
                         Layout.minimumWidth: 160
-
-                        sourceComponent: QuickSliders {
-                            showBrightness: false
-                            showVolume: false
-                            showMic: true
+                        
+                        sourceComponent: Component {
+                            QuickSliders { 
+                                showBrightness: false
+                                showVolume: false
+                                showMic: true 
+                            }
                         }
                     }
                 }
             }
 
-            /* =========================
-               QUICK TOGGLES (centro)
-               ========================= */
-
-            LoaderedQuickPanelImplementation {
-                styleName: "classic"
-                sourceComponent: ClassicQuickPanel {}
-            }
-
-            LoaderedQuickPanelImplementation {
-                styleName: "android"
-                sourceComponent: AndroidQuickPanel {
-                    editMode: root.editMode
+            Loader {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
+                visible: active
+                active: (root._opts?.sidebar?.quickToggles?.style === "classic")
+                sourceComponent: Component {
+                    ClassicQuickPanel {
+                        onOpenAudioOutputDialog: root.showAudioOutputDialog = true
+                        onOpenAudioInputDialog: root.showAudioInputDialog = true
+                        onOpenBluetoothDialog: root.showBluetoothDialog = true
+                        onOpenNightLightDialog: root.showNightLightDialog = true
+                        onOpenWifiDialog: root.showWifiDialog = true
+                    }
                 }
             }
 
-            /* =========================
-               Widgets (resto)
-               ========================= */
+            Loader {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
+                visible: active
+                active: (root._opts?.sidebar?.quickToggles?.style === "android")
+                sourceComponent: Component {
+                    AndroidQuickPanel {
+                        editMode: root.editMode
+                        onOpenAudioOutputDialog: root.showAudioOutputDialog = true
+                        onOpenAudioInputDialog: root.showAudioInputDialog = true
+                        onOpenBluetoothDialog: root.showBluetoothDialog = true
+                        onOpenNightLightDialog: root.showNightLightDialog = true
+                        onOpenWifiDialog: root.showWifiDialog = true
+                    }
+                }
+            }
 
             CenterWidgetGroup {
                 Layout.alignment: Qt.AlignHCenter
@@ -202,90 +294,74 @@ Item {
         }
     }
 
-    /* ===== Dialogs ===== */
-
-    ToggleDialog {
-        shownPropertyString: "showAudioOutputDialog"
-        dialog: VolumeDialog { isSink: true }
-    }
-
-    ToggleDialog {
-        shownPropertyString: "showAudioInputDialog"
-        dialog: VolumeDialog { isSink: false }
-    }
-
-    ToggleDialog {
-        shownPropertyString: "showBluetoothDialog"
-        dialog: BluetoothDialog {}
-        onShownChanged: {
-            if (!shown) {
-                Bluetooth.defaultAdapter.discovering = false;
-            } else {
-                Bluetooth.defaultAdapter.enabled = true;
-                Bluetooth.defaultAdapter.discovering = true;
-            }
-        }
-    }
-
-    ToggleDialog {
-        shownPropertyString: "showNightLightDialog"
-        dialog: NightLightDialog {}
-    }
-
-    ToggleDialog {
-        shownPropertyString: "showWifiDialog"
-        dialog: WifiDialog {}
-        onShownChanged: {
-            if (!shown) return;
-            Network.enableWifi();
-            Network.rescanWifi();
-        }
-    }
-
-    /* ===== Components ===== */
-
-    component ToggleDialog: Loader {
-        id: toggleDialogLoader
-        required property string shownPropertyString
-        property alias dialog: toggleDialogLoader.sourceComponent
-        readonly property bool shown: root[shownPropertyString]
+    Loader {
         anchors.fill: parent
-
-        onShownChanged: if (shown) toggleDialogLoader.active = true;
-        active: shown
-        onActiveChanged: {
-            if (active) {
-                item.show = true;
-                item.forceActiveFocus();
-            }
-        }
-        Connections {
-            target: toggleDialogLoader.item
-            function onDismiss() {
-                toggleDialogLoader.item.show = false
-                root[toggleDialogLoader.shownPropertyString] = false;
-            }
-            function onVisibleChanged() {
-                if (!toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString])
-                    toggleDialogLoader.active = false;
+        active: root.showAudioOutputDialog
+        sourceComponent: Component {
+            VolumeDialog {
+                isSink: true
+                show: true
+                Component.onCompleted: forceActiveFocus()
+                onDismiss: root.showAudioOutputDialog = false
             }
         }
     }
 
-    component LoaderedQuickPanelImplementation: Loader {
-        id: quickPanelImplLoader
-        required property string styleName
-        Layout.alignment: item?.Layout.alignment ?? Qt.AlignHCenter
-        Layout.fillWidth: item?.Layout.fillWidth ?? false
-        visible: active
-        active: Config.options.sidebar.quickToggles.style === styleName
-        Connections {
-            target: quickPanelImplLoader.item
-            function onOpenAudioOutputDialog() { root.showAudioOutputDialog = true; }
-            function onOpenAudioInputDialog() { root.showAudioInputDialog = true; }
-            function onOpenBluetoothDialog() { root.showBluetoothDialog = true; }
-            function onOpenNightLightDialog() { root.showNightLightDialog = true; }
-            function onOpenWifiDialog() { root.showWifiDialog = true; }
+    Loader {
+        anchors.fill: parent
+        active: root.showAudioInputDialog
+        sourceComponent: Component {
+            VolumeDialog {
+                isSink: false
+                show: true
+                Component.onCompleted: forceActiveFocus()
+                onDismiss: root.showAudioInputDialog = false
+            }
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: root.showBluetoothDialog
+        sourceComponent: Component {
+            BluetoothDialog {
+                show: true
+                Component.onCompleted: {
+                    forceActiveFocus()
+                    Bluetooth.defaultAdapter.enabled = true
+                    Bluetooth.defaultAdapter.discovering = true
+                }
+                Component.onDestruction: Bluetooth.defaultAdapter.discovering = false
+                onDismiss: root.showBluetoothDialog = false
+            }
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: root.showNightLightDialog
+        sourceComponent: Component {
+            NightLightDialog {
+                show: true
+                Component.onCompleted: forceActiveFocus()
+                onDismiss: root.showNightLightDialog = false
+            }
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: root.showWifiDialog
+        sourceComponent: Component {
+            WifiDialog {
+                show: true
+                Component.onCompleted: {
+                    forceActiveFocus()
+                    Network.enableWifi()
+                    Network.rescanWifi()
+                }
+                onDismiss: root.showWifiDialog = false
+            }
         }
     }
 
@@ -293,6 +369,7 @@ Item {
         id: s
         required property string materialSymbol
         property string tooltipText: ""
+        implicitWidth: 100 
 
         configuration: StyledSlider.Configuration.M
         stopIndicatorValues: []
@@ -307,14 +384,14 @@ Item {
             color: nearFull ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
             text: s.materialSymbol
 
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+            Behavior on color { 
+                ColorAnimation { duration: 150 } 
             }
-            Behavior on anchors.rightMargin {
-                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            Behavior on anchors.rightMargin { 
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic } 
             }
         }
-
+        
         StyledToolTip { text: s.tooltipText }
     }
 
@@ -324,7 +401,6 @@ Item {
         color: Appearance.colors.colLayer1
         clip: true
 
-        // compacta
         property real verticalPadding: 3
         property real horizontalPadding: 8
 
@@ -334,7 +410,9 @@ Item {
         readonly property real kMin: 1200
         readonly property real kMax: 6500
 
-        function clamp(x, a, b) { return Math.max(a, Math.min(b, x)) }
+        function clamp(x, a, b) { 
+            return Math.max(a, Math.min(b, x)) 
+        }
         function kelvinTo01(k) {
             const kk = clamp(k, kMin, kMax)
             return (kMax - kk) / (kMax - kMin)
@@ -353,15 +431,15 @@ Item {
             anchors.bottomMargin: nl.verticalPadding
             spacing: 6
 
-            // (QUITADO) Botón con icono de foco/círculo a la izquierda
-
             NightLightQuickSlider {
                 Layout.fillWidth: true
                 materialSymbol: "nightlight"
-                value: nl.kelvinTo01(Config.options.light.night.colorTemperature)
-                tooltipText: `${Math.round(Config.options.light.night.colorTemperature)}K`
+                value: nl.kelvinTo01(root._opts?.light?.night?.colorTemperature ?? 6500)
+                tooltipText: `${Math.round(root._opts?.light?.night?.colorTemperature ?? 6500)}K`
+                
                 onMoved: {
-                    Config.options.light.night.colorTemperature = nl.v01ToKelvin(value)
+                    if (!root._opts?.light?.night) return
+                    root._opts.light.night.colorTemperature = nl.v01ToKelvin(value)
                 }
             }
 
@@ -390,6 +468,7 @@ Item {
                 id: uptimeRow
                 anchors.centerIn: parent
                 spacing: 8
+                
                 CustomIcon {
                     id: distroIcon
                     anchors.verticalCenter: parent.verticalCenter
@@ -399,6 +478,7 @@ Item {
                     colorize: true
                     color: Appearance.colors.colOnLayer0
                 }
+                
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     font.pixelSize: Appearance.font.pixelSize.normal
@@ -417,19 +497,21 @@ Item {
 
             QuickToggleButton {
                 toggled: root.editMode
-                visible: Config.options.sidebar.quickToggles.style === "android"
+                visible: (root._opts?.sidebar?.quickToggles?.style === "android")
                 buttonIcon: "edit"
                 onClicked: root.editMode = !root.editMode
                 StyledToolTip {
                     text: Translation.tr("Edit quick toggles") + (root.editMode ? Translation.tr("\nLMB to enable/disable\nRMB to toggle size\nScroll to swap position") : "")
                 }
             }
+            
             QuickToggleButton {
                 toggled: false
                 buttonIcon: "restart_alt"
                 onClicked: { Hyprland.dispatch("reload"); Quickshell.reload(true); }
                 StyledToolTip { text: Translation.tr("Reload Hyprland & Quickshell") }
             }
+            
             QuickToggleButton {
                 toggled: false
                 buttonIcon: "settings"
@@ -439,29 +521,33 @@ Item {
                 }
                 StyledToolTip { text: Translation.tr("Settings") }
             }
+            
             QuickToggleButton {
                 id: updateButton
                 toggled: confirm
                 property bool confirm: false
                 buttonIcon: confirm ? "check" : "download"
+                
                 Timer {
                     id: confirmTimer
                     interval: 2000
                     onTriggered: { confirmTimer.stop(); updateButton.confirm = false }
                 }
+                
                 onClicked: {
                     if (confirm) {
                         GlobalStates.sidebarRightOpen = false;
-                        Quickshell.execDetached(["bash", "-c", Config.options.update.scriptPath + " " + Config.options.update.scriptFlags ]);
+                        const sp = root._opts?.update?.scriptPath ?? ""
+                        const sf = root._opts?.update?.scriptFlags ?? ""
+                        if (sp.length > 0) Quickshell.execDetached(["bash", "-c", sp + " " + sf ]);
                     } else {
                         confirm = true
                         confirmTimer.start()
                     }
                 }
-                StyledToolTip {
-                    text: Translation.tr("Update the ii-vynx, make sure to set script path in settings")
-                }
+                StyledToolTip { text: Translation.tr("Update the ii-vynx") }
             }
+            
             QuickToggleButton {
                 toggled: false
                 buttonIcon: "power_settings_new"
@@ -471,4 +557,3 @@ Item {
         }
     }
 }
-

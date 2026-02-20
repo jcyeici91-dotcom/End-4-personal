@@ -189,7 +189,6 @@ Item {
                 flickableDirection: Flickable.HorizontalFlick
                 boundsBehavior: Flickable.StopAtBounds
 
-                // ---- CLAMP para que al final NO deje hueco ----
                 function clampTabsContentX() {
                     const maxX = Math.max(0, tabsListView.contentWidth - tabsListView.width)
                     if (tabsListView.contentX < 0) tabsListView.contentX = 0
@@ -199,15 +198,12 @@ Item {
                 onWidthChanged: clampTabsContentX()
                 onContentWidthChanged: clampTabsContentX()
 
-                // Rueda del mouse => scroll horizontal (SIN dejar espacio al final)
-                // No bloquea arrastre/clicks porque acceptedButtons = Qt.NoButton
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
                     acceptedButtons: Qt.NoButton
                     propagateComposedEvents: true
 
-                    // Sensibilidad: más alto = más rápido
                     property real wheelScale: 1.2
 
                     onWheel: (wheel) => {
@@ -296,7 +292,8 @@ Item {
             Layout.fillHeight: true
             radius: 28
 
-            color: Qt.rgba(theme.colBase.r, theme.colBase.g, theme.colBase.b, 0.55)
+            // ¡MAGIA! Bajamos opacidad de 0.55 a 0.20 para que se vea el cristal
+            color: Qt.rgba(theme.colBase.r, theme.colBase.g, theme.colBase.b, 0.20)
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.08)
             clip: false
@@ -335,4 +332,3 @@ Item {
         Component { id: anime; Anime { } }
     }
 }
-

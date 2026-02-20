@@ -120,7 +120,6 @@ ContentPage {
                         Config.options.bar.vertical = (newValue & 2) !== 0;
                     }
 
-                    // Orden: los más comunes primero (Top/Bottom), luego laterales
                     options: [
                         { displayName: Translation.tr("Top"),    icon: "arrow_upward",   value: 0 },
                         { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
@@ -202,7 +201,6 @@ ContentPage {
                         }
                     }
 
-                    // Textos cortos “seguidos”; el que suele ser más explicativo al final
                     options: [
                         { displayName: Translation.tr("Pills"),  icon: "location_chip",      value: "pills" },
                         { displayName: Translation.tr("Rect"),   icon: "crop_square",        value: "rect" },
@@ -224,10 +222,11 @@ ContentPage {
                     Config.options.bar.barBackgroundStyle = newValue;
                 }
 
-                // Orden: corto primero, largo al final
+                // 0: Transparent | 1: Visible | 2: Adaptive | 3: Crystal
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
                     { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 },
+                    { displayName: Translation.tr("Crystal"),     icon: "auto_awesome",        value: 3 },
                     { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 }
                 ]
             }
@@ -274,7 +273,6 @@ ContentPage {
     // 5) COMPONENTES
     // =========================================================
 
-    // --- Workspaces (normalmente lo más importante en barra)
     ContentSection {
         id: workspaces
         icon: "workspaces"
@@ -369,29 +367,15 @@ ContentPage {
                     Config.options.bar.workspaces.numberMap = JSON.parse(newValue)
                 }
 
-                // Orden: el más común primero; los “exóticos” después
                 options: [
-                    {
-                        displayName: Translation.tr("Normal"),
-                        icon: "timer_10",
-                        value: "[]"
-                    },
-                    {
-                        displayName: Translation.tr("Roman"),
-                        icon: "account_balance",
-                        value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]'
-                    },
-                    {
-                        displayName: Translation.tr("Han chars"),
-                        icon: "square_dot",
-                        value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]'
-                    }
+                    { displayName: Translation.tr("Normal"),   icon: "timer_10",         value: "[]" },
+                    { displayName: Translation.tr("Roman"),    icon: "account_balance",  value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]' },
+                    { displayName: Translation.tr("Han chars"),icon: "square_dot",       value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]' }
                 ]
             }
         }
     }
 
-    // --- Active window
     ContentSection {
         id: activeWindow
         icon: "ad"
@@ -407,7 +391,6 @@ ContentPage {
         }
     }
 
-    // --- Media player
     ContentSection {
         id: musicPlayer
         icon: "music_cast"
@@ -421,9 +404,7 @@ ContentPage {
             onCheckedChanged: {
                 Config.options.bar.mediaPlayer.useCustomSize = checked;
             }
-            StyledToolTip {
-                text: Translation.tr("Only available in horizontal mode")
-            }
+            StyledToolTip { text: Translation.tr("Only available in horizontal mode") }
         }
 
         ConfigRow {
@@ -437,9 +418,7 @@ ContentPage {
                 from: 100
                 to: 500
                 stepSize: 25
-                onValueChanged: {
-                    Config.options.bar.mediaPlayer.customSize = value;
-                }
+                onValueChanged: { Config.options.bar.mediaPlayer.customSize = value; }
             }
 
             ConfigSpinBox {
@@ -450,9 +429,7 @@ ContentPage {
                 from: 100
                 to: 750
                 stepSize: 25
-                onValueChanged: {
-                    Config.options.bar.mediaPlayer.lyrics.customSize = value;
-                }
+                onValueChanged: { Config.options.bar.mediaPlayer.lyrics.customSize = value; }
             }
         }
 
@@ -467,20 +444,14 @@ ContentPage {
                     text: Translation.tr("Enable")
                     Layout.fillWidth: false
                     checked: Config.options.bar.mediaPlayer.lyrics.enable
-                    onCheckedChanged: {
-                        Config.options.bar.mediaPlayer.lyrics.enable = checked;
-                    }
-                    StyledToolTip {
-                        text: Translation.tr("Lyrics will be visible when they are fetched with API")
-                    }
+                    onCheckedChanged: { Config.options.bar.mediaPlayer.lyrics.enable = checked; }
+                    StyledToolTip { text: Translation.tr("Lyrics will be visible when they are fetched with API") }
                 }
 
                 ConfigSelectionArray {
                     Layout.fillWidth: true
                     currentValue: Config.options.bar.mediaPlayer.lyrics.style
-                    onSelected: newValue => {
-                        Config.options.bar.mediaPlayer.lyrics.style = newValue
-                    }
+                    onSelected: newValue => { Config.options.bar.mediaPlayer.lyrics.style = newValue }
                     options: [
                         { displayName: Translation.tr("Static"),    icon: "text_fields", value: "static" },
                         { displayName: Translation.tr("Scrolling"), icon: "swap_vert",  value: "scrolling" }
@@ -496,9 +467,7 @@ ContentPage {
                     buttonIcon: "gradient"
                     text: Translation.tr("Gradient mask")
                     checked: Config.options.bar.mediaPlayer.lyrics.useGradientMask
-                    onCheckedChanged: {
-                        Config.options.bar.mediaPlayer.lyrics.useGradientMask = checked;
-                    }
+                    onCheckedChanged: { Config.options.bar.mediaPlayer.lyrics.useGradientMask = checked; }
                 }
 
                 ConfigSwitch {
@@ -506,18 +475,13 @@ ContentPage {
                     buttonIcon: "clock_loader_60"
                     text: Translation.tr("Loading indicator")
                     checked: Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator
-                    onCheckedChanged: {
-                        Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator = checked;
-                    }
-                    StyledToolTip {
-                        text: Translation.tr("Show an indicator while lyrics are being fetched")
-                    }
+                    onCheckedChanged: { Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator = checked; }
+                    StyledToolTip { text: Translation.tr("Show an indicator while lyrics are being fetched") }
                 }
             }
         }
     }
 
-    // --- Tray
     ContentSection {
         id: systemTray
         icon: "shelf_auto_hide"
@@ -530,23 +494,18 @@ ContentPage {
                 buttonIcon: "keep"
                 text: Translation.tr("Pin icons by default")
                 checked: Config.options.tray.invertPinnedItems
-                onCheckedChanged: {
-                    Config.options.tray.invertPinnedItems = checked;
-                }
+                onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
             }
 
             ConfigSwitch {
                 buttonIcon: "colors"
                 text: Translation.tr("Tint icons")
                 checked: Config.options.tray.monochromeIcons
-                onCheckedChanged: {
-                    Config.options.tray.monochromeIcons = checked;
-                }
+                onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
             }
         }
     }
 
-    // --- Utility buttons
     ContentSection {
         id: utilityButtons
         icon: "widgets"
@@ -558,17 +517,13 @@ ContentPage {
                 buttonIcon: "content_cut"
                 text: Translation.tr("Screen snip")
                 checked: Config.options.bar.utilButtons.showScreenSnip
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenSnip = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked; }
             }
             ConfigSwitch {
                 buttonIcon: "colorize"
                 text: Translation.tr("Color picker")
                 checked: Config.options.bar.utilButtons.showColorPicker
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showColorPicker = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showColorPicker = checked; }
             }
         }
 
@@ -578,17 +533,13 @@ ContentPage {
                 buttonIcon: "keyboard"
                 text: Translation.tr("Keyboard")
                 checked: Config.options.bar.utilButtons.showKeyboardToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showKeyboardToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showKeyboardToggle = checked; }
             }
             ConfigSwitch {
                 buttonIcon: "mic"
                 text: Translation.tr("Mic")
                 checked: Config.options.bar.utilButtons.showMicToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showMicToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showMicToggle = checked; }
             }
         }
 
@@ -598,17 +549,13 @@ ContentPage {
                 buttonIcon: "dark_mode"
                 text: Translation.tr("Dark/Light")
                 checked: Config.options.bar.utilButtons.showDarkModeToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showDarkModeToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showDarkModeToggle = checked; }
             }
             ConfigSwitch {
                 buttonIcon: "speed"
                 text: Translation.tr("Performance")
                 checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showPerformanceProfileToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showPerformanceProfileToggle = checked; }
             }
         }
 
@@ -618,14 +565,11 @@ ContentPage {
                 buttonIcon: "videocam"
                 text: Translation.tr("Record")
                 checked: Config.options.bar.utilButtons.showScreenRecord
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenRecord = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked; }
             }
         }
     }
 
-    // --- Timer & Pomodoro
     ContentSection {
         id: timerAndPomodoro
         icon: "timer_play"
@@ -637,22 +581,17 @@ ContentPage {
                 buttonIcon: "timer"
                 text: Translation.tr("Stopwatch")
                 checked: Config.options.bar.timers.showStopwatch
-                onCheckedChanged: {
-                    Config.options.bar.timers.showStopwatch = checked;
-                }
+                onCheckedChanged: { Config.options.bar.timers.showStopwatch = checked; }
             }
             ConfigSwitch {
                 buttonIcon: "search_activity"
                 text: Translation.tr("Pomodoro")
                 checked: Config.options.bar.timers.showPomodoro
-                onCheckedChanged: {
-                    Config.options.bar.timers.showPomodoro = checked;
-                }
+                onCheckedChanged: { Config.options.bar.timers.showPomodoro = checked; }
             }
         }
     }
 
-    // --- Notifications
     ContentSection {
         icon: "notifications"
         title: Translation.tr("Notifications")
@@ -661,13 +600,10 @@ ContentPage {
             buttonIcon: "counter_2"
             text: Translation.tr("Unread count")
             checked: Config.options.bar.indicators.notifications.showUnreadCount
-            onCheckedChanged: {
-                Config.options.bar.indicators.notifications.showUnreadCount = checked;
-            }
+            onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
         }
     }
 
-    // --- Tooltips
     ContentSection {
         icon: "tooltip"
         title: Translation.tr("Tooltips")
@@ -676,9 +612,7 @@ ContentPage {
             buttonIcon: "ads_click"
             text: Translation.tr("Click to show")
             checked: Config.options.bar.tooltips.clickToShow
-            onCheckedChanged: {
-                Config.options.bar.tooltips.clickToShow = checked;
-            }
+            onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
         }
     }
 }
