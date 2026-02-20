@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "saffron_latte"
+            "type": "chamomile_dune"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/aesthetic_deer.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/0085.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 2862.4896584535245,
-                "y": 220.94921875
+                "x": 2711.2435647035245,
+                "y": 212.82421875
             },
             "media": {
                 "enable": true,
@@ -184,8 +184,8 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2809.21875,
-                "y": 1607.375
+                "x": 2766.19140625,
+                "y": 1600.3046875
             },
             "weather": {
                 "enable": true,
@@ -339,7 +339,7 @@
         ],
         "sizes": {
             "height": 45,
-            "width": 45
+            "width": 40
         },
         "timers": {
             "showPomodoro": true,
@@ -462,7 +462,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 4678,
+            "colorTemperature": 3878,
             "from": "19:00",
             "to": "06:30"
         }

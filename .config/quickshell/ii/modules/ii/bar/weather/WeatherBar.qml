@@ -34,6 +34,20 @@ MouseArea {
     cursorShape: Qt.PointingHandCursor
 
     // =====================================================
+    // CHIP LAYOUT Y DIMENSIONES
+    // =====================================================
+    property int padX: 12
+    property int padY: 7
+    property int gap: 8
+    property int radius: 12
+
+    // SOLUCIÓN: Definimos las dimensiones aquí en la raíz.
+    // fillHeight asegura que tome todo el espacio vertical disponible (entre 30 y 50).
+    Layout.fillHeight: true
+    implicitWidth: row.implicitWidth + padX * 2
+    implicitHeight: Math.max(30, row.implicitHeight + padY * 2)
+
+    // =====================================================
     // THEME
     // =====================================================
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
@@ -193,17 +207,6 @@ MouseArea {
         }
     }
 
-    // =====================================================
-    // CHIP LAYOUT
-    // =====================================================
-    property int padX: 12
-    property int padY: 7
-    property int gap: 8
-    property int radius: 12
-
-    implicitWidth: chip.implicitWidth
-    implicitHeight: chip.implicitHeight
-
     // Aura animation phase
     property real auraPhase: 0.0
     NumberAnimation on auraPhase {
@@ -247,8 +250,8 @@ MouseArea {
 
     Item {
         id: chip
-        implicitWidth: row.implicitWidth + root.padX * 2
-        implicitHeight: Math.max(24, row.implicitHeight + root.padY * 2)
+        // SOLUCIÓN: Con esto el chip ocupa todo el espacio que la barra le cede al widget
+        anchors.fill: parent
 
         transformOrigin: Item.Center
         transform: [
@@ -296,8 +299,6 @@ MouseArea {
 
             // =================================================
             // SWEEP EFFECT (pasa por todo el widget)
-            //   - No es “brillo” ligado al latido
-            //   - Es un barrido suave constante
             // =================================================
             Item {
                 anchors.fill: parent
@@ -326,8 +327,6 @@ MouseArea {
 
             // =================================================
             // PIXEL GRID
-            //   FIX: quitada la “línea” cerca del icono:
-            //   - ya NO dibuja una línea en x=0
             // =================================================
             Item {
                 anchors.fill: parent
@@ -336,12 +335,11 @@ MouseArea {
                 clip: true
 
                 Repeater {
-                    // antes: floor(width/10) empezaba en 0 => línea pegada al icono/borde
                     model: Math.max(0, Math.floor((plate.width - 10) / 10))
                     delegate: Rectangle {
                         width: 1
                         height: plate.height
-                        x: 10 + index * 10   // <-- empieza en 10, no en 0
+                        x: 10 + index * 10
                         y: 0
                         color: Qt.rgba(1,1,1, root.themeIsDark ? 0.10 : 0.08)
                         opacity: 0.35
@@ -349,20 +347,21 @@ MouseArea {
                 }
 
                 Repeater {
-                    // también evitamos y=0 por simetría (opcional, se ve más limpio)
                     model: Math.max(0, Math.floor((plate.height - 10) / 10))
                     delegate: Rectangle {
                         width: plate.width
                         height: 1
                         x: 0
-                        y: 10 + index * 10   // <-- empieza en 10
+                        y: 10 + index * 10
                         color: Qt.rgba(0,0,0, root.themeIsDark ? 0.14 : 0.10)
                         opacity: 0.28
                     }
                 }
             }
 
-            // Weather aura (tu efecto existente)
+            // =================================================
+            // WEATHER AURA
+            // =================================================
             Item {
                 anchors.fill: parent
                 visible: root.enableWeatherAura
@@ -462,9 +461,6 @@ MouseArea {
                 renderType: Text.NativeRendering
             }
 
-            // FIX: quitado el “punto” al lado de la ciudad (se eliminó el separador)
-            // (No hay Rectangle separador aquí)
-
             StyledText {
                 Layout.alignment: Qt.AlignVCenter
                 visible: root.cityText !== ""
@@ -487,4 +483,3 @@ MouseArea {
         // NO z: StyledPopup no es Item
     }
 }
-

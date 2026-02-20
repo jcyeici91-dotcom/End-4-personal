@@ -147,3 +147,41 @@
 2/19/2026, 11:43:51 AM CST 9: webContents.destroyed web1
 2/19/2026, 11:43:51 AM CST 10: window.closed win1
 2/19/2026, 11:44:04 AM CST 11: window.close win2
+2/19/2026, 4:33:00 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 4:33:00 PM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/19/2026, 4:33:00 PM CST 2: ✅ webContents.created web1 ""
+2/19/2026, 4:33:00 PM CST 3: ✅ window.created win1 "discord"
+2/19/2026, 4:33:00 PM CST 4: ✅ webContents.did-finish-load web1
+2/19/2026, 4:33:01 PM CST 5: ✅ webContents.created web2 ""
+2/19/2026, 4:33:01 PM CST 6: ✅ window.created win2 "Discord"
+2/19/2026, 4:33:01 PM CST 7: ✅ webContents.did-finish-load web2
+2/19/2026, 4:33:02 PM CST 8: window.close win1
+2/19/2026, 4:33:02 PM CST 9: webContents.destroyed web1
+2/19/2026, 4:33:02 PM CST 10: window.closed win1
+2/19/2026, 4:46:32 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 4:47:03 PM CST 11: window.close win2
+2/19/2026, 5:08:18 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 5:12:23 PM CST 12: window.close win2
+2/19/2026, 5:14:14 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 5:55:23 PM CST 13: window.close win2
+2/19/2026, 6:21:27 PM CST 0: 
+
+----------------------------------------------
+2/19/2026, 6:23:14 PM CST 14: window.close win2
+2/19/2026, 6:24:26 PM CST 15: before-quit
+2/19/2026, 6:24:26 PM CST 16: window.close win2
+2/19/2026, 6:24:26 PM CST 17: ❌ child-process-gone {
+  type: 'Utility',
+  reason: 'killed',
+  exitCode: 15,
+  serviceName: 'audio.mojom.AudioService',
+  name: 'Audio Service'
+}
