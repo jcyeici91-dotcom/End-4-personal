@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "midnight_plum"
+            "type": "honey_cream"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/Luffy_from_One_Piece_5160x2160.jpeg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/07.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 2544.938877203525,
-                "y": 271.3359375
+                "x": 2862.5091897035254,
+                "y": 154.03125
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 1668.05078125,
-                "y": 1431.03125
+                "x": 2725.60546875,
+                "y": 1626.3515625
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 366.26953125,
-                "y": 986.5703125
+                "x": 273.38671875,
+                "y": 1431.8984375
             }
         }
     },
@@ -208,7 +208,7 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
@@ -462,7 +462,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 5145,
+            "colorTemperature": 4854,
             "from": "19:00",
             "to": "06:30"
         }

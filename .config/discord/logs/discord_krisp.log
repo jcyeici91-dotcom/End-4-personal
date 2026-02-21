@@ -1268,3 +1268,27 @@
 [2026-Feb-20 10:47:16.029 -06:00][56746:56746][info ] Initializing Krisp SDK in PID 56746, addr 0x7f4dfd0ad0e0
 [2026-Feb-20 10:47:16.029 -06:00][56746:56746][info ] Initialized Krisp SDK successfully
 [2026-Feb-20 10:47:16.029 -06:00][56746:56746][info ] Krisp SDK initialized
+[2026-Feb-20 12:38:23.344 -06:00][92444:92444][info ] Logging initialized
+[2026-Feb-20 12:38:23.344 -06:00][92444:92444][info ] Initializing krisp SDK...
+[2026-Feb-20 12:38:23.344 -06:00][92444:92444][info ] DoKrispInitialize
+[2026-Feb-20 12:38:23.660 -06:00][92444:92444][info ] LoadDynamicKrisp
+[2026-Feb-20 12:38:23.660 -06:00][92444:92444][info ] Did not find KRISP_DYLIB_PATH, skipping dynamic loading
+[2026-Feb-20 12:38:23.660 -06:00][92444:92444][info ] Initializing Krisp SDK in PID 92444, addr 0x7e4e1a0ad0e0
+[2026-Feb-20 12:38:23.661 -06:00][92444:92444][info ] Initialized Krisp SDK successfully
+[2026-Feb-20 12:38:23.661 -06:00][92444:92444][info ] Krisp SDK initialized
+[2026-Feb-20 17:00:24.241 -06:00][56402:56402][info ] Logging initialized
+[2026-Feb-20 17:00:24.241 -06:00][56402:56402][info ] Initializing krisp SDK...
+[2026-Feb-20 17:00:24.241 -06:00][56402:56402][info ] DoKrispInitialize
+[2026-Feb-20 17:00:24.552 -06:00][56402:56402][info ] LoadDynamicKrisp
+[2026-Feb-20 17:00:24.552 -06:00][56402:56402][info ] Did not find KRISP_DYLIB_PATH, skipping dynamic loading
+[2026-Feb-20 17:00:24.552 -06:00][56402:56402][info ] Initializing Krisp SDK in PID 56402, addr 0x7f278916d0e0
+[2026-Feb-20 17:00:24.553 -06:00][56402:56402][info ] Initialized Krisp SDK successfully
+[2026-Feb-20 17:00:24.553 -06:00][56402:56402][info ] Krisp SDK initialized
+[2026-Feb-20 17:55:52.711 -06:00][36324:36324][info ] Logging initialized
+[2026-Feb-20 17:55:52.711 -06:00][36324:36324][info ] Initializing krisp SDK...
+[2026-Feb-20 17:55:52.711 -06:00][36324:36324][info ] DoKrispInitialize
+[2026-Feb-20 17:55:53.035 -06:00][36324:36324][info ] LoadDynamicKrisp
+[2026-Feb-20 17:55:53.035 -06:00][36324:36324][info ] Did not find KRISP_DYLIB_PATH, skipping dynamic loading
+[2026-Feb-20 17:55:53.035 -06:00][36324:36324][info ] Initializing Krisp SDK in PID 36324, addr 0x7f815346d0e0
+[2026-Feb-20 17:55:53.036 -06:00][36324:36324][info ] Initialized Krisp SDK successfully
+[2026-Feb-20 17:55:53.036 -06:00][36324:36324][info ] Krisp SDK initialized

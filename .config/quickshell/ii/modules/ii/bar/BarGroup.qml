@@ -46,14 +46,14 @@ Item {
     // =========================
     // NUEVO: Animación de tamaño (FIX “relentizado”)
     // =========================
-    // El “relentizado” venía de estas líneas:
-    //   Behavior on implicitWidth/implicitHeight { duration: 150; InOutQuad }
-    // Eso hace que el layout recalcule en muchos frames y se siente pesado.
-    //
-    // Aquí lo dejamos MÁS CORTO y con easing más “snappy”.
-    // Si lo quieres instantáneo: pon enableSizeAnimation: false
     property bool enableSizeAnimation: false // prueba relentizado 
     property int sizeAnimDuration: 85
+
+    // =========================
+    // NUEVO: Detección de Cristal
+    // =========================
+    readonly property int styleIntFromConfig: Config.options?.bar?.barBackgroundStyle ?? 1
+    readonly property bool bgIsCrystal: styleIntFromConfig === 3
 
     // =========================
     // Lógica Interna y Selector de Estilo
@@ -63,6 +63,7 @@ Item {
     readonly property string groupBackgroundStyle: (Config.options?.bar?.groupBackgroundStyle ?? "rounded")
     readonly property bool useRectBg: groupBackgroundStyle === "rect"
     readonly property bool useHybridBg: groupBackgroundStyle === "hybrid"
+    readonly property bool useLineBg: groupBackgroundStyle === "line" // Soporte para Line agregado
 
     // Barra arriba/abajo (para Hybrid notch)
     readonly property bool isBottom: (Config.options?.bar?.bottom ?? false)
@@ -84,7 +85,9 @@ Item {
     readonly property real pillRadius: Math.max(0, bgSize / 2)
 
     readonly property real baseRadius: {
-        if (useRectBg) return startRadius;
+        // CORRECCIÓN: Para el modo Rect usamos radio 4 (esquinas apenas redondeadas)
+        if (useRectBg) return 4; 
+        if (useLineBg) return 0;
         if (isBorderless) return startRadius;
         return pillRadius;
     }
@@ -95,25 +98,25 @@ Item {
 
     // Radios finales por esquina
     readonly property real finalRTL: {
-        if (useRectBg) return startRadius;
+        if (useRectBg) return baseRadius;
         if (!useHybridBg) return baseRadius;
         if (flattenTop || attachScreenLeft) return 0;
         return baseRadius;
     }
     readonly property real finalRTR: {
-        if (useRectBg) return startRadius;
+        if (useRectBg) return baseRadius;
         if (!useHybridBg) return baseRadius;
         if (flattenTop || attachScreenRight) return 0;
         return baseRadius;
     }
     readonly property real finalRBL: {
-        if (useRectBg) return startRadius;
+        if (useRectBg) return baseRadius;
         if (!useHybridBg) return baseRadius;
         if (flattenBottom || attachScreenLeft) return 0;
         return baseRadius;
     }
     readonly property real finalRBR: {
-        if (useRectBg) return startRadius;
+        if (useRectBg) return baseRadius;
         if (!useHybridBg) return baseRadius;
         if (flattenBottom || attachScreenRight) return 0;
         return baseRadius;
@@ -126,9 +129,6 @@ Item {
     opacity: shouldBeVisible ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.InOutQuad } }
 
-    // IMPORTANTE:
-    // En QML Layouts, el tamaño que “manda” casi siempre es implicitWidth/implicitHeight.
-    // Animar implicitWidth/implicitHeight con duraciones altas se siente “arrastrado”.
     implicitWidth: shouldBeVisible
         ? (vertical
             ? (Appearance.sizes.baseVerticalBarWidth + effectiveEdgeInset * 2)
@@ -141,7 +141,6 @@ Item {
             : (Appearance.sizes.baseBarHeight + effectiveEdgeInset * 2))
         : 0
 
-    // FIX: animación corta + easing natural (tipo “isla”, sin pereza)
     Behavior on implicitWidth {
         enabled: root.enableSizeAnimation
         NumberAnimation { duration: root.sizeAnimDuration; easing.type: Easing.OutCubic }
@@ -170,7 +169,11 @@ Item {
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
 
-        sourceComponent: root.useRectBg ? rectBackgroundComponent : roundedBackgroundComponent
+        // Selección dinámica de los 3 componentes
+        sourceComponent: {
+            if (root.useLineBg) return lineBackgroundComponent;
+            return root.useRectBg ? rectBackgroundComponent : roundedBackgroundComponent;
+        }
     }
 
     Component {
@@ -182,10 +185,15 @@ Item {
             renderTarget: Canvas.Image
             renderStrategy: Canvas.Cooperative
 
-            property color bgColor: (!root.isContainer || root.isBorderless) ? "transparent" : root.colBackground
+            property color bgColor: {
+                if (!root.isContainer || root.isBorderless) return "transparent"
+                // MAGIA CRISTAL: Si el cristal está activo, hacemos el color semi-transparente
+                if (root.bgIsCrystal) return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, 0.25)
+                return root.colBackground
+            }
             property color borderColor: {
-                if (!root.isContainer) return "transparent"
-                if (root.isBorderless || !root.effectiveShowBorder) return "transparent"
+                if (!root.isContainer || root.isBorderless || !root.effectiveShowBorder) return "transparent"
+                if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.05)
                 return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14)
             }
             property real borderWidth: (root.isContainer && !root.isBorderless && root.effectiveShowBorder) ? 1 : 0
@@ -205,7 +213,7 @@ Item {
                 ctx.clearRect(0, 0, w, h);
                 ctx.beginPath();
 
-                var r = root.startRadius;
+                var r = root.baseRadius; // Usamos el baseRadius corregido
 
                 ctx.moveTo(0, r);
                 if (r > 0) ctx.arc(r, r, r, Math.PI, 1.5 * Math.PI); else ctx.lineTo(0, 0);
@@ -234,7 +242,7 @@ Item {
                 anchors.fill: parent
                 visible: root.isContainer && root.effectiveShowHighlight && !root.isBorderless
                 color: "transparent"
-                radius: root.startRadius
+                radius: root.baseRadius
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? root.highlightOpacity : root.highlightOpacity * 0.6) }
                     GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.0) }
@@ -251,12 +259,17 @@ Item {
             // En bridgeMode desactivamos AA para evitar hairlines al recortar
             antialiasing: !root.bridgeMode
 
-            color: (!root.isContainer || root.isBorderless) ? "transparent" : root.colBackground
+            color: {
+                if (!root.isContainer || root.isBorderless) return "transparent"
+                // MAGIA CRISTAL
+                if (root.bgIsCrystal) return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, 0.25)
+                return root.colBackground
+            }
 
             border.width: (root.isContainer && !root.isBorderless && root.effectiveShowBorder) ? 1 : 0
             border.color: {
-                if (!root.isContainer) return "transparent"
-                if (root.isBorderless || !root.effectiveShowBorder) return "transparent"
+                if (!root.isContainer || root.isBorderless || !root.effectiveShowBorder) return "transparent"
+                if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.05)
                 return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14)
             }
 
@@ -281,6 +294,28 @@ Item {
         }
     }
 
+    // Componente Agregado para soportar modo Line sin romper lo demás
+    Component {
+        id: lineBackgroundComponent
+        
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent" 
+            
+            Rectangle {
+                width: parent.width
+                height: 2
+                anchors.bottom: root.isBottom ? undefined : parent.bottom
+                anchors.top: root.isBottom ? parent.top : undefined
+                color: {
+                    if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0, 0, 0, 0.3)
+                    return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity * 2) : Qt.rgba(0, 0, 0, 0.2)
+                }
+                visible: root.effectiveShowBorder && root.isContainer
+            }
+        }
+    }
+
     // =========================
     // Contenido
     // =========================
@@ -301,4 +336,3 @@ Item {
         }
     }
 }
-

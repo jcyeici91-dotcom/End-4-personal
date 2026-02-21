@@ -30,7 +30,7 @@ Item {
         color: "transparent"
         clip: true
 
-        // 1. LUZ VOLUMÉTRICA (Difusión superior suave para el efecto 3D)
+        // Difusión superior suave 
         Rectangle {
             anchors.fill: parent
             radius: shell.radius
@@ -43,8 +43,7 @@ Item {
             opacity: root.overlayStrength
         }
 
-        // 2. SOMBRA INFERIOR CORREGIDA (Casi transparente para evitar la línea gruesa)
-        // Redujimos la opacidad negra de 0.45 a 0.15 para que no manche la barra superior.
+        // SOMBRA INFERIOR 
         Rectangle {
             anchors.fill: parent
             radius: shell.radius
@@ -57,7 +56,7 @@ Item {
             opacity: root.overlayStrength
         }
 
-        // 3. BORDE EXTERIOR (Más suave y elegante)
+        // BORDE EXTERIOR 
         Rectangle {
             anchors.fill: parent
             radius: shell.radius
@@ -67,7 +66,7 @@ Item {
             border.color: themeIsDark ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(0, 0, 0, 0.15)
         }
 
-        // 4. REFLEJO INTERNO PRINCIPAL (Bisel de iOS)
+        // Bisel de iOS
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
@@ -78,7 +77,7 @@ Item {
             border.color: Qt.rgba(1, 1, 1, themeIsDark ? 0.25 : 0.50)
         }
 
-        // 5. HIGHLIGHT SUPERIOR (El filo de luz brillante de Apple)
+        // El filo de luz brillante de Apple
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left

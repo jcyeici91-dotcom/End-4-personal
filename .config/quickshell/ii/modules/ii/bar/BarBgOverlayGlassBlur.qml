@@ -21,15 +21,14 @@ Item {
     function _isDark(c) { return _lin(c) < 0.65 }
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
-    // Valores de Blur calibrados para "Frosted Glass"
+    // Valores de Blur 
     property real blurRadius: 64 
     property real blurSaturation: themeIsDark ? 1.40 : 1.60
     property real blurContrast: 1.05
     property real blurBrightness: themeIsDark ? 1.05 : 1.10
     property int blurDownsampleFactor: 2 
 
-    // TINTE DEL CRISTAL ESMERILADO
-    // Ligeramente más opaco para dar ese look "premium" y mejorar el contraste del texto
+    // Ligeramente más opaco 
     property color iosTint: themeIsDark ? Qt.rgba(0.08, 0.08, 0.10, 0.45) : Qt.rgba(0.96, 0.96, 0.98, 0.50)
 
     readonly property int outerMargin: (cornerStyle === 1) ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0)) : 0

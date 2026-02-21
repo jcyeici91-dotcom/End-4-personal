@@ -125,35 +125,52 @@ Item {
         antialiasing: true
         clip: true
 
+        // ¡AQUÍ ESTÁ LA CLAVE! 100% transparente para que el fondo brille sin neblina gris.
         color: root.bgIsVisible 
             ? Appearance.colors.colLayer0 
-            : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
+            : "transparent"
 
         border.width: root.bgIsVisible ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        Bar.BarBgOverlayGlassBlur {
+        // ==============================================================
+        // CRISTAL INVISIBLE 100% PURO: Cero colores de relleno.
+        // Solo dibujamos los bordes brillantes del vidrio.
+        // ==============================================================
+        Item {
             anchors.fill: parent
             visible: root.bgIsCrystal && !root.safeNoEffects
-            
-            useGlassMode: root.bgIsCrystal
-            showSolidBackground: root.bgIsVisible
-            backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-            cornerStyle: 0
-            
-            // Protección anti-crash para el Sidebar
-            enableRealBlur: false 
-            enableMask: false
-        }
 
-        Bar.BarBgCrystalOverlay {
-            anchors.fill: parent
-            visible: root.bgIsCrystal && !root.safeNoEffects
-            
-            useGlassMode: root.bgIsCrystal
-            showSolidBackground: root.bgIsVisible
-            backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-            cornerStyle: 0
+            // 1. Borde Exterior (Corte limpio)
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: "transparent" // CERO RELLENO
+                border.width: 1
+                border.color: Appearance.colors.isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.15)
+            }
+
+            // 2. Bisel Interno Apple (El grosor 3D del vidrio)
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, parent.radius - 1)
+                color: "transparent" // CERO RELLENO
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
+            }
+
+            // 3. Highlight Superior (Destello sutil en el techo del panel)
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                anchors.topMargin: 1
+                height: 1
+                color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.35 : 0.70)
+            }
         }
 
         ColumnLayout {
@@ -184,11 +201,7 @@ Item {
                         Layout.minimumWidth: 160
                         
                         sourceComponent: Component {
-                            QuickSliders { 
-                                showBrightness: true
-                                showVolume: false
-                                showMic: false 
-                            }
+                            QuickSliders { showBrightness: true; showVolume: false; showMic: false }
                         }
                     }
 
@@ -200,9 +213,7 @@ Item {
                         Layout.preferredWidth: root.twoUpPillWidth
                         Layout.minimumWidth: 160
                         
-                        sourceComponent: Component { 
-                            NightLightPill {} 
-                        }
+                        sourceComponent: Component { NightLightPill {} }
                     }
                 }
 
@@ -219,11 +230,7 @@ Item {
                         Layout.minimumWidth: 160
                         
                         sourceComponent: Component {
-                            QuickSliders { 
-                                showBrightness: false
-                                showVolume: true
-                                showMic: false 
-                            }
+                            QuickSliders { showBrightness: false; showVolume: true; showMic: false }
                         }
                     }
 
@@ -236,11 +243,7 @@ Item {
                         Layout.minimumWidth: 160
                         
                         sourceComponent: Component {
-                            QuickSliders { 
-                                showBrightness: false
-                                showVolume: false
-                                showMic: true 
-                            }
+                            QuickSliders { showBrightness: false; showVolume: false; showMic: true }
                         }
                     }
                 }
@@ -384,12 +387,8 @@ Item {
             color: nearFull ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
             text: s.materialSymbol
 
-            Behavior on color { 
-                ColorAnimation { duration: 150 } 
-            }
-            Behavior on anchors.rightMargin { 
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic } 
-            }
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on anchors.rightMargin { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
         }
         
         StyledToolTip { text: s.tooltipText }
@@ -410,9 +409,7 @@ Item {
         readonly property real kMin: 1200
         readonly property real kMax: 6500
 
-        function clamp(x, a, b) { 
-            return Math.max(a, Math.min(b, x)) 
-        }
+        function clamp(x, a, b) { return Math.max(a, Math.min(b, x)) }
         function kelvinTo01(k) {
             const kk = clamp(k, kMin, kMax)
             return (kMax - kk) / (kMax - kMin)
@@ -436,7 +433,6 @@ Item {
                 materialSymbol: "nightlight"
                 value: nl.kelvinTo01(root._opts?.light?.night?.colorTemperature ?? 6500)
                 tooltipText: `${Math.round(root._opts?.light?.night?.colorTemperature ?? 6500)}K`
-                
                 onMoved: {
                     if (!root._opts?.light?.night) return
                     root._opts.light.night.colorTemperature = nl.v01ToKelvin(value)

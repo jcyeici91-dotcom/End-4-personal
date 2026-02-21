@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
-import "../../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.Compositor
@@ -102,6 +101,11 @@ SmartPanel {
     "reboot": {
       "icon": "reboot",
       "title": I18n.tr("common.reboot"),
+      "isShutdown": false
+    },
+    "rebootToUefi": {
+      "icon": "reboot",
+      "title": I18n.tr("common.reboot-to-uefi"),
       "isShutdown": false
     },
     "logout": {
@@ -230,6 +234,9 @@ SmartPanel {
       break;
     case "reboot":
       CompositorService.reboot();
+      break;
+    case "rebootToUefi":
+      CompositorService.rebootToUefi();
       break;
     case "logout":
       CompositorService.logout();
@@ -724,59 +731,6 @@ SmartPanel {
   // Custom power button component
   component PowerButton: Rectangle {
     id: buttonRoot
-    // Keybind indicator and countdown text at far right
-    Item {
-      id: indicatorGroup
-      width: (countdownText.visible ? countdownText.width + Style.marginXS : 0) + numberIndicatorRect.width
-      height: numberIndicatorRect.height
-      anchors.verticalCenter: parent.verticalCenter
-      anchors.right: parent.right
-      anchors.rightMargin: Style.marginM
-      z: 20
-
-      // Countdown as plain text (left of keybind)
-      NText {
-        id: countdownText
-        visible: !Settings.data.sessionMenu.showHeader && buttonRoot.pending && timerActive && pendingAction === modelData.action
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        text: Math.ceil(timeRemaining / 1000)
-        pointSize: Style.fontSizeS
-        color: Color.mPrimary
-        font.weight: Style.fontWeightBold
-      }
-
-      // Keybind indicator
-      Rectangle {
-        id: numberIndicatorRect
-        anchors.left: countdownText.visible ? countdownText.right : parent.left
-        anchors.leftMargin: countdownText.visible ? Style.marginXS : 0
-        anchors.verticalCenter: parent.verticalCenter
-        width: Math.max(Style.marginXL, labelText.implicitWidth + Style.marginM)
-        height: Style.marginXL
-        radius: Math.min(Style.radiusM, height / 2)
-        color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
-        border.width: Style.borderS
-        border.color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Color.mOutline
-        visible: (buttonRoot.keybind !== "") && !buttonRoot.pending
-
-        NText {
-          id: labelText
-          anchors.centerIn: parent
-          text: buttonRoot.keybind
-          pointSize: Style.fontSizeS
-          font.weight: Style.fontWeightBold
-          color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mPrimary : Color.mOnSurface
-
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.OutCirc
-            }
-          }
-        }
-      }
-    }
 
     property string icon: ""
     property string title: ""
@@ -815,6 +769,7 @@ SmartPanel {
     }
 
     Item {
+      id: contentItem
       anchors.fill: parent
       anchors.margins: Style.marginM
 
@@ -846,13 +801,66 @@ SmartPanel {
         }
       }
 
+      // Keybind indicator and countdown text at far right
+      Item {
+        id: indicatorGroup
+        width: (countdownText.visible ? countdownText.width + Style.marginXS : 0) + numberIndicatorRect.width
+        height: numberIndicatorRect.height
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: parent.right
+        z: 20
+
+        // Countdown as plain text (left of keybind)
+        NText {
+          id: countdownText
+          visible: !Settings.data.sessionMenu.showHeader && buttonRoot.pending && timerActive && pendingAction === modelData.action
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          text: Math.ceil(timeRemaining / 1000)
+          pointSize: Style.fontSizeS
+          color: Color.mPrimary
+          font.weight: Style.fontWeightBold
+        }
+
+        // Keybind indicator
+        Rectangle {
+          id: numberIndicatorRect
+          anchors.left: countdownText.visible ? countdownText.right : parent.left
+          anchors.leftMargin: countdownText.visible ? Style.marginXS : 0
+          anchors.verticalCenter: parent.verticalCenter
+          width: Math.max(Style.marginXL, labelText.implicitWidth + Style.marginM)
+          height: Style.marginXL
+          radius: Math.min(Style.radiusM, height / 2)
+          color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
+          border.width: Style.borderS
+          border.color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Color.mOutline
+          visible: Settings.data.sessionMenu.showKeybinds && (buttonRoot.keybind !== "") && !buttonRoot.pending
+
+          NText {
+            id: labelText
+            anchors.centerIn: parent
+            text: buttonRoot.keybind
+            pointSize: Style.fontSizeS
+            font.weight: Style.fontWeightBold
+            color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mPrimary : Color.mOnSurface
+
+            Behavior on color {
+              ColorAnimation {
+                duration: Style.animationFast
+                easing.type: Easing.OutCirc
+              }
+            }
+          }
+        }
+      }
+
       // Text content in the middle
       ColumnLayout {
         anchors.left: iconElement.right
-        anchors.right: numberIndicator.visible ? numberIndicator.left : parent.right
+        anchors.right: indicatorGroup.left
         anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: Style.marginL
-        anchors.rightMargin: numberIndicator.visible ? Style.marginM : 0
+        anchors.rightMargin: Style.marginM
         spacing: 0
 
         NText {
@@ -1063,7 +1071,7 @@ SmartPanel {
       color: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.7)
       border.width: Style.borderS
       border.color: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? Color.mOnPrimary : Color.mOutline
-      visible: (largeButtonRoot.keybind !== "") && !largeButtonRoot.pending
+      visible: Settings.data.sessionMenu.showKeybinds && (largeButtonRoot.keybind !== "") && !largeButtonRoot.pending
       z: 10
 
       NText {

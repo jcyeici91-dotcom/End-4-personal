@@ -8,7 +8,6 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
-// Importamos el estado UI y la carpeta Bar (para los cristales)
 import qs.modules.ii.ui 1.0
 import "../bar" as Bar
 
@@ -21,16 +20,15 @@ Scope {
 
     readonly property bool isOnLeft: {
         const pos = Config.options.sidebar.position;
-        return pos === "default" || pos === "left"; 
+        return pos === "default" || pos === "left";
     }
 
-    // ==========================================
-    // LÓGICA DE CRISTAL (Traída del panel derecho)
-    // ==========================================
+    // ==========================
+    // LÓGICA DE ESTILO (igual que derecha)
+    // ==========================
     readonly property bool safeNoEffects: false
     readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
     readonly property var _opts: ((typeof Config !== "undefined") && Config) ? Config.options : null
-
     readonly property bool followGlobalSidebarStyle: (_opts?.sidebar?.followGlobalSidebarStyle ?? false)
 
     readonly property int styleIntFromConfig: {
@@ -66,9 +64,10 @@ Scope {
         const s = _normalizeStyle(requested)
         if (s === "solid" || s === "glass") return "visible"
         if (s === "crystal") return "crystal"
-
         if (s === "adaptive") {
-            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined) ? UIState.hasWindows : false
+            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined)
+                ? UIState.hasWindows
+                : false
             return hw ? "visible" : "crystal"
         }
         return "visible"
@@ -82,16 +81,14 @@ Scope {
     readonly property bool bgIsVisible: sidebarStyle === "visible"
     readonly property bool bgIsCrystal: sidebarStyle === "crystal"
 
+    function toggleDetach() { root.detach = !root.detach; }
 
-    function toggleDetach() {
-        root.detach = !root.detach;
-    }
-
-    Process { 
+    Process {
         id: pinWithFunnyHyprlandWorkaroundProc
         property var hook: null
-        property int cursorX;
-        property int cursorY;
+        property int cursorX
+        property int cursorY
+
         function doIt() {
             command = ["hyprctl", "cursorpos"]
             hook = (output) => {
@@ -103,9 +100,7 @@ Scope {
         }
         function doIt2(output) {
             command = ["bash", "-c", "hyprctl dispatch movecursor 9999 9999"];
-            hook = () => {
-                doIt3();
-            }
+            hook = () => { doIt3(); }
             running = true;
         }
         function doIt3(output) {
@@ -114,10 +109,9 @@ Scope {
             hook = null
             running = true;
         }
+
         stdout: StdioCollector {
-            onStreamFinished: {
-                pinWithFunnyHyprlandWorkaroundProc.hook(text);
-            }
+            onStreamFinished: { pinWithFunnyHyprlandWorkaroundProc.hook(text); }
         }
     }
 
@@ -127,22 +121,20 @@ Scope {
     }
 
     Component.onCompleted: {
-        root.sidebarContent = contentComponent.createObject(null, {
-            "scopeRoot": root,
-        });
+        root.sidebarContent = contentComponent.createObject(null, { "scopeRoot": root });
         sidebarLoader.item.contentParent.children = [root.sidebarContent];
     }
 
     onDetachChanged: {
         if (root.detach) {
-            sidebarContent.parent = null; 
-            sidebarLoader.active = false; 
-            detachedSidebarLoader.active = true; 
+            sidebarContent.parent = null;
+            sidebarLoader.active = false;
+            detachedSidebarLoader.active = true;
             detachedSidebarLoader.item.contentParent.children = [sidebarContent];
         } else {
-            sidebarContent.parent = null; 
-            detachedSidebarLoader.active = false; 
-            sidebarLoader.active = true; 
+            sidebarContent.parent = null;
+            detachedSidebarLoader.active = false;
+            sidebarLoader.active = true;
             sidebarLoader.item.contentParent.children = [sidebarContent];
         }
     }
@@ -150,11 +142,11 @@ Scope {
     Loader {
         id: sidebarLoader
         active: true
-        
+
         sourceComponent: PanelWindow {
             id: panelWindow
             visible: GlobalStates.sidebarLeftOpen
-            
+
             property bool extend: false
             readonly property real sidebarWidth: {
                 const p = Config.options.policies;
@@ -163,17 +155,17 @@ Scope {
                 if (panelWindow.extend) return Appearance.sizes.sidebarWidthExtended;
                 return allFeatures ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
             }
-            
-            // Apuntamos al contenedor interno para no sobreescribir el cristal
+
+            // Contenedor interno
             property var contentParent: sidebarLeftContentContainer
 
-            function hide() {
-                GlobalStates.sidebarLeftOpen = false
-            }
+            function hide() { GlobalStates.sidebarLeftOpen = false }
 
             exclusionMode: ExclusionMode.Normal
             exclusiveZone: root.pin ? sidebarWidth : 0
             implicitWidth: Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
+
+            // Namespace correcto para tus layerrules
             WlrLayershell.namespace: root.isOnLeft ? "quickshell:sidebarLeft" : "quickshell:sidebarRight"
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             color: "transparent"
@@ -185,23 +177,17 @@ Scope {
                 bottom: true
             }
 
-            mask: Region {
-                item: sidebarLeftBackground
-            }
+            // Recorte por máscara
+            mask: Region { item: sidebarLeftBackground }
 
             onVisibleChanged: {
-                if (visible) {
-                    GlobalFocusGrab.addDismissable(panelWindow);
-                } else {
-                    GlobalFocusGrab.removeDismissable(panelWindow);
-                }
+                if (visible) GlobalFocusGrab.addDismissable(panelWindow);
+                else GlobalFocusGrab.removeDismissable(panelWindow);
             }
-            
+
             Connections {
                 target: GlobalFocusGrab
-                function onDismissed() {
-                    panelWindow.hide();
-                }
+                function onDismissed() { panelWindow.hide(); }
             }
 
             StyledRectangularShadow {
@@ -211,17 +197,19 @@ Scope {
 
             Rectangle {
                 id: sidebarLeftBackground
-                
-                // Fondo Dinámico para Efecto Cristal
-                color: root.bgIsVisible 
-                    ? Appearance.colors.colLayer0 
-                    : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
+
+                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+                antialiasing: true
+                clip: true
+
+                // EXACTO como tu sidebar derecho:
+                // - Visible: sólido normal
+                // - Crystal: 100% transparente (sin neblina)
+                color: root.bgIsVisible ? Appearance.colors.colLayer0 : "transparent"
 
                 border.width: root.bgIsVisible ? 1 : 0
                 border.color: Appearance.colors.colLayer0Border
-                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
-                clip: true // Recorta el cristal a las esquinas redondas
-                
+
                 height: parent.height - (Appearance.sizes.hyprlandGapsOut * 2)
                 y: Appearance.sizes.hyprlandGapsOut
                 width: panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
@@ -230,30 +218,45 @@ Scope {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
                 }
 
-                // ==========================================
-                // CAPAS DE CRISTAL iOS
-                // ==========================================
-                Bar.BarBgOverlayGlassBlur {
+                // ==============================================================
+                // CRISTAL INVISIBLE 100% PURO (igual que el derecho)
+                // ==============================================================
+                Item {
                     anchors.fill: parent
                     visible: root.bgIsCrystal && !root.safeNoEffects
-                    
-                    useGlassMode: root.bgIsCrystal
-                    showSolidBackground: root.bgIsVisible
-                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-                    cornerStyle: 0
-                    
-                    enableRealBlur: false 
-                    enableMask: false
-                }
 
-                Bar.BarBgCrystalOverlay {
-                    anchors.fill: parent
-                    visible: root.bgIsCrystal && !root.safeNoEffects
-                    
-                    useGlassMode: root.bgIsCrystal
-                    showSolidBackground: root.bgIsVisible
-                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-                    cornerStyle: 0
+                    // 1) Borde exterior
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Appearance.colors.isDark
+                            ? Qt.rgba(0, 0, 0, 0.45)
+                            : Qt.rgba(0, 0, 0, 0.15)
+                    }
+
+                    // 2) Bisel interno
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        radius: Math.max(0, parent.radius - 1)
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
+                    }
+
+                    // 3) Highlight superior
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                        anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                        anchors.topMargin: 1
+                        height: 1
+                        color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.35 : 0.70)
+                    }
                 }
 
                 // CONTENEDOR INTERNO PARA EL CONTENIDO
@@ -266,10 +269,10 @@ Scope {
                 states: [
                     State {
                         name: "left"
-                        AnchorChanges { 
+                        AnchorChanges {
                             target: sidebarLeftBackground
                             anchors.left: parent.left
-                            anchors.right: undefined 
+                            anchors.right: undefined
                         }
                         PropertyChanges {
                             target: sidebarLeftBackground
@@ -279,10 +282,10 @@ Scope {
                     },
                     State {
                         name: "right"
-                        AnchorChanges { 
+                        AnchorChanges {
                             target: sidebarLeftBackground
                             anchors.left: undefined
-                            anchors.right: parent.right 
+                            anchors.right: parent.right
                         }
                         PropertyChanges {
                             target: sidebarLeftBackground
@@ -293,24 +296,19 @@ Scope {
                 ]
 
                 Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_Escape) {
-                        panelWindow.hide();
-                    }
+                    if (event.key === Qt.Key_Escape) panelWindow.hide();
+
                     if (event.modifiers === Qt.ControlModifier) {
-                        if (event.key === Qt.Key_O) {
-                            panelWindow.extend = !panelWindow.extend;
-                        } else if (event.key === Qt.Key_D) {
-                            root.toggleDetach();
-                        } else if (event.key === Qt.Key_P) {
-                            root.togglePin();
-                        }
+                        if (event.key === Qt.Key_O) panelWindow.extend = !panelWindow.extend;
+                        else if (event.key === Qt.Key_D) root.toggleDetach();
+                        else if (event.key === Qt.Key_P) root.togglePin();
                         event.accepted = true;
                     }
                 }
             }
         }
     }
-    
+
     Loader {
         id: detachedSidebarLoader
         active: false
@@ -324,37 +322,53 @@ Scope {
             onVisibleChanged: {
                 if (!visible) GlobalStates.sidebarLeftOpen = false;
             }
-            
+
             Rectangle {
                 id: detachedSidebarBackground
                 anchors.fill: parent
-                color: root.bgIsVisible 
-                    ? Appearance.colors.colLayer0 
-                    : (root.safeNoEffects ? Appearance.colors.colLayer0 : "transparent")
-                
-                border.width: root.bgIsVisible ? 1 : 0
-                border.color: Appearance.colors.colLayer0Border
+
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+                antialiasing: true
                 clip: true
 
-                Bar.BarBgOverlayGlassBlur {
-                    anchors.fill: parent
-                    visible: root.bgIsCrystal && !root.safeNoEffects
-                    useGlassMode: root.bgIsCrystal
-                    showSolidBackground: root.bgIsVisible
-                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-                    cornerStyle: 0
-                    enableRealBlur: false 
-                    enableMask: false
-                }
+                color: root.bgIsVisible ? Appearance.colors.colLayer0 : "transparent"
+                border.width: root.bgIsVisible ? 1 : 0
+                border.color: Appearance.colors.colLayer0Border
 
-                Bar.BarBgCrystalOverlay {
+                // Cristal puro también en modo detach
+                Item {
                     anchors.fill: parent
                     visible: root.bgIsCrystal && !root.safeNoEffects
-                    useGlassMode: root.bgIsCrystal
-                    showSolidBackground: root.bgIsVisible
-                    backgroundColor: Appearance.colors.colLayer0 || Qt.rgba(0,0,0,0.5)
-                    cornerStyle: 0
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Appearance.colors.isDark
+                            ? Qt.rgba(0, 0, 0, 0.45)
+                            : Qt.rgba(0, 0, 0, 0.15)
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        radius: Math.max(0, parent.radius - 1)
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
+                    }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                        anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                        anchors.topMargin: 1
+                        height: 1
+                        color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.35 : 0.70)
+                    }
                 }
 
                 Item {
@@ -364,9 +378,7 @@ Scope {
 
                 Keys.onPressed: (event) => {
                     if (event.modifiers === Qt.ControlModifier) {
-                        if (event.key === Qt.Key_D) {
-                            root.toggleDetach();
-                        }
+                        if (event.key === Qt.Key_D) root.toggleDetach();
                         event.accepted = true;
                     }
                 }
@@ -405,3 +417,4 @@ Scope {
         onPressed: { root.detach = !root.detach; }
     }
 }
+

@@ -24,6 +24,7 @@ import qs.Modules.LockScreen
 import qs.Modules.MainScreen
 import qs.Modules.Notification
 import qs.Modules.OSD
+
 import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.Settings
 import qs.Modules.Toast
@@ -113,6 +114,7 @@ ShellRoot {
           GitHubService.init();
           SupporterService.init();
           CustomButtonIPCService.init();
+          IPCService.init(screenDetector);
         });
 
         delayedInitTimer.running = true;
@@ -145,11 +147,7 @@ ShellRoot {
         id: screenDetector
       }
 
-      // IPCService is treated as a service but it must be in graphics scene.
-      IPCService {
-        id: ipcService
-        screenDetector: screenDetector
-      }
+      // IPCService is a singleton, initialized via init() in deferred services block
 
       // Container for plugins Main.qml instances (must be in graphics scene)
       Item {

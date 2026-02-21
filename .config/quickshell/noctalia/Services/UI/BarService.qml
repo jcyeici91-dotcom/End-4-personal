@@ -48,7 +48,7 @@ Singleton {
     if (!screenAutoHideState[screenName]) {
       screenAutoHideState[screenName] = {
         "hovered": false,
-        "hidden": Settings.data.bar.displayMode === "auto_hide"
+        "hidden": Settings.getBarDisplayModeForScreen(screenName) === "auto_hide"
       };
     }
     return screenAutoHideState[screenName];
@@ -86,6 +86,59 @@ Singleton {
     return state ? state.hovered : false;
   }
 
+  // Toggle bar visibility. In auto-hide mode, toggles the auto-hide state
+  // on screens with auto-hide enabled. For other screens, toggles global isVisible flag.
+  function toggleVisibility() {
+    // Check if any auto-hide screen is currently visible
+    var anyAutoHideVisible = false;
+    var hasAutoHideScreens = false;
+    for (var screenName in screenAutoHideState) {
+      if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
+        hasAutoHideScreens = true;
+        if (!screenAutoHideState[screenName].hidden) {
+          anyAutoHideVisible = true;
+          break;
+        }
+      }
+    }
+
+    // Toggle auto-hide screens
+    if (hasAutoHideScreens) {
+      for (var screenName in screenAutoHideState) {
+        if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
+          setScreenHidden(screenName, anyAutoHideVisible);
+        }
+      }
+    }
+
+    // Toggle global visibility (affects non-auto-hide screens)
+    isVisible = !isVisible;
+  }
+
+  // Show bar. In auto-hide mode, un-hides on screens with auto-hide enabled.
+  function show() {
+    // Show auto-hide screens
+    for (var screenName in screenAutoHideState) {
+      if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
+        setScreenHidden(screenName, false);
+      }
+    }
+    // Set global visibility (affects non-auto-hide screens)
+    isVisible = true;
+  }
+
+  // Hide bar. In auto-hide mode, hides on screens with auto-hide enabled.
+  function hide() {
+    // Hide auto-hide screens
+    for (var screenName in screenAutoHideState) {
+      if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
+        setScreenHidden(screenName, true);
+      }
+    }
+    // Set global visibility (affects non-auto-hide screens)
+    isVisible = false;
+  }
+
   Component.onCompleted: {
     Logger.i("BarService", "Service started");
   }
@@ -96,14 +149,32 @@ Singleton {
     function onDisplayModeChanged() {
       Logger.d("BarService", "Display mode changed to:", Settings.data.bar.displayMode);
 
-      if (Settings.data.bar.displayMode === "auto_hide") {
-        // When switching to auto_hide mode, hide the bar on all screens
-        for (let screenName in screenAutoHideState) {
-          setScreenHidden(screenName, true);
+      // Only affect screens without displayMode overrides
+      for (let screenName in screenAutoHideState) {
+        if (!Settings.hasScreenOverride(screenName, "displayMode")) {
+          var displayMode = Settings.getBarDisplayModeForScreen(screenName);
+          if (displayMode === "auto_hide") {
+            setScreenHidden(screenName, true);
+          } else {
+            if (screenAutoHideState[screenName].hidden) {
+              setScreenHidden(screenName, false);
+            }
+          }
         }
-      } else {
-        // When switching out of auto_hide mode, show the bar on all screens
-        for (let screenName in screenAutoHideState) {
+      }
+    }
+
+    function onScreenOverridesChanged() {
+      Logger.d("BarService", "Screen overrides changed, re-evaluating auto-hide states");
+
+      // Re-evaluate auto-hide state for all screens
+      for (let screenName in screenAutoHideState) {
+        var displayMode = Settings.getBarDisplayModeForScreen(screenName);
+        if (displayMode === "auto_hide") {
+          if (!screenAutoHideState[screenName].hidden) {
+            setScreenHidden(screenName, true);
+          }
+        } else {
           if (screenAutoHideState[screenName].hidden) {
             setScreenHidden(screenName, false);
           }
