@@ -17,6 +17,10 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
+// Imports solicitados
+import qs.modules.ii.ui 1.0
+import "." as Bar
+
 Scope {
     id: root
 
@@ -100,6 +104,45 @@ Scope {
     property bool animMarquee: true
     property bool animRevealTransitions: true
     property bool animWaveform: true
+
+    // =========================================================================
+    // NUEVO: DETECCIÓN DE CRISTAL (Sincronizado con la barra)
+    // =========================================================================
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+    readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
+
+    readonly property color glassTint: themeIsDark
+        ? Qt.rgba(0.02, 0.02, 0.03, 0.42)
+        : Qt.rgba(0.98, 0.98, 1.00, 0.58)
+
+    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
+    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _styleFromUIState() {
+        const s = typeof UIState !== "undefined" && UIState ? UIState.surfaceStyle : ""
+        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
+    }
+
+    readonly property string resolvedStyle: {
+        if (followGlobalBarStyle) {
+            const s = _styleFromUIState()
+            if (s !== "") return s
+        }
+        return _styleFromConfig(barBackgroundStyleFromConfig)
+    }
+
+    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
 
     // =========================================================================
     // 2) ⚙️ CONFIGURACIÓN Y PERSISTENCIA (Settings diferido)
@@ -241,7 +284,6 @@ Scope {
             ToolTip.visible: false
 
             // ✅ Volumen con rueda (MUY compatible): MouseArea.onWheel
-            // Importante: acceptedButtons = Qt.NoButton para no romper clicks.
             MouseArea {
                 id: wheelArea
                 anchors.fill: parent
@@ -259,7 +301,7 @@ Scope {
 
             RowLayout {
                 id: mediaRow
-                // ✅ SUBE un poquito TODO el bloque del reproductor (controles incluidos)
+                // ✅ SUBE un poquito TODO el bloque del reproductor
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: -3
@@ -540,7 +582,6 @@ Scope {
                                                 const t = xPlay > 0 ? (x / xPlay) : 0
                                                 const ramp = Math.pow(t, 1.55)
 
-                                                // pseudo-amplitud agradable (más “musical”)
                                                 const e =
                                                     0.55
                                                     + 0.45 * Math.sin((x / 10.0) + miniBar.phase * 2.6)
@@ -696,7 +737,6 @@ Scope {
                 hoverEnabled: true
                 implicitWidth: dockHoverRegion.implicitWidth + Appearance.sizes.elevationMargin * 2
 
-                // ✅ FIX: no robar clicks a los widgets internos
                 acceptedButtons: Qt.NoButton
 
                 anchors {
@@ -739,12 +779,92 @@ Scope {
                                 bottomMargin: Appearance.sizes.hyprlandGapsOut
                             }
 
-                            color: Appearance.colors.colLayer0
                             radius: Appearance.rounding.large
-                            border.width: 1
-                            border.color: Appearance.colors.colLayer0Border
+                            antialiasing: true
 
-                            layer.enabled: root.premiumDock && root.premiumDockGlow
+                            // ==============================================================
+                            // FIX MAESTRO: Si es cristal, fondo y borde son transparentes
+                            // ==============================================================
+                            color: root.bgIsCrystal ? "transparent" : Appearance.colors.colLayer0
+                            border.width: root.bgIsCrystal ? 0 : 1
+                            border.color: root.bgIsCrystal ? "transparent" : Appearance.colors.colLayer0Border
+
+                            // ==============================================================
+                            // MAGIA CRISTAL EXACTA (IDÉNTICA A BARCONTENT.QML)
+                            // ==============================================================
+                            Item {
+                                anchors.fill: parent
+                                visible: root.bgIsCrystal
+
+                                // 1. Tinte Base
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    color: root.glassTint
+                                }
+
+                                // 2. Luz Superior Fija (15 px)
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 15
+                                    radius: parent.radius
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.18 : 0.35) }
+                                        GradientStop { position: 1.0; color: "transparent" }
+                                    }
+                                }
+
+                                // 3. Sombra Inferior Fija (30 px)
+                                Rectangle {
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 30
+                                    radius: parent.radius
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: "transparent" }
+                                        GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.30 : 0.15) }
+                                    }
+                                }
+
+                                // 4. Borde Exterior
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    color: "transparent"
+                                    border.width: 1
+                                    border.color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.15)
+                                }
+
+                                // 5. Bisel Interno Apple
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    radius: Math.max(0, parent.radius - 1)
+                                    color: "transparent"
+                                    border.width: 1
+                                    border.color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.18 : 0.45)
+                                }
+
+                                // 6. Línea de Luz Apple (Filo brillante de 1px)
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                                    anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
+                                    anchors.topMargin: 1
+                                    height: 1
+                                    color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.40 : 0.85)
+                                }
+                            }
+
+                            // ==============================================================
+                            // DISEÑO ORIGINAL (Se oculta en modo Cristal)
+                            // ==============================================================
+                            layer.enabled: !root.bgIsCrystal && root.premiumDock && root.premiumDockGlow
                             layer.effect: MultiEffect {
                                 shadowEnabled: true
                                 shadowBlur: 0.7
@@ -757,7 +877,7 @@ Scope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: parent.radius
-                                visible: root.premiumDock && root.premiumDockGlass
+                                visible: !root.bgIsCrystal && root.premiumDock && root.premiumDockGlass
                                 opacity: dockRoot.reveal ? 0.22 : 0.14
                                 gradient: Gradient {
                                     orientation: Gradient.Horizontal
@@ -834,4 +954,3 @@ Scope {
         }
     }
 }
-

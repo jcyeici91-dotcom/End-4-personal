@@ -31,19 +31,8 @@ Item {
     // ----------------------------------------------------------
     // Style resolution
     // ----------------------------------------------------------
-    // IMPORTANT FIX:
-    // Antes: UIState.surfaceStyle SIEMPRE tenía prioridad, entonces aunque en Settings
-    // cambiaras Visible/Transparente/Adaptive, el bar seguía en "crystal" si UIState quedaba en crystal.
-    //
-    // Ahora:
-    // - Por defecto el BAR obedece *su setting* (Config.options.bar.barBackgroundStyle).
-    // - Si quieres que el bar siga el estilo global (UIState), activa followGlobalBarStyle.
-    //
-    // Si no tienes esa opción en tu config, quedará en false y por fin funcionarán los 3 modos del setting.
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
 
-    // Config legacy (0/1/2/3)
-    // 0: Transparent (Glass) | 1: Visible (Solid) | 2: Adaptive | 3: Crystal
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
     function _styleFromConfig(v) {
@@ -61,9 +50,6 @@ Item {
         return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
     }
 
-    // Resolved style:
-    // - If followGlobalBarStyle = true -> UIState.surfaceStyle (si es válido)
-    // - Else -> Config.options.bar.barBackgroundStyle
     readonly property string resolvedStyle: {
         if (followGlobalBarStyle) {
             const s = _styleFromUIState()
@@ -339,11 +325,6 @@ Item {
         }
     }
 
-    // ==========================================================
-    // Overlay background:
-    // - Glass + Adaptive(no windows): BarBgOverlay
-    // - Crystal: BarBgOverlayGlassBlur + BarBgCrystalOverlay
-    // ==========================================================
     Component {
         id: overlayBgComponent
 
@@ -437,11 +418,22 @@ Item {
 
     readonly property int bridgeExtraBleed: (cornerStyle === 0) ? seamOverlapPx : 0
 
+    // =================================================================================
+    // FIX MAESTRO PARA EL GROSOR DE LA LÍNEA:
+    // He aumentado el multiplicador para que la línea quede "un pelín más grande" (de 4 a 8px aprox),
+    // haciéndola más visible sin llegar a ser gruesa o tosca.
+    // =================================================================================
     readonly property int bridgeBandPx: bridgeEnabled
-        ? Math.max(2, Math.min(6, Math.round((Appearance.rounding.normal ?? 12) * 0.30)))
+        ? Math.max(4, Math.min(8, Math.round((Appearance.rounding.normal ?? 12) * 0.40)))
         : 0
 
-    readonly property color bridgeColor: Appearance.m3colors.m3surfaceContainerLow
+    // =================================================================================
+    // FIX DE COLOR DE LA LÍNEA:
+    // Sigue siendo Cristal en modo Cristal, y tu color de tema en los otros modos.
+    // =================================================================================
+    readonly property color bridgeColor: root.bgIsCrystal 
+        ? root.glassTint 
+        : Appearance.m3colors.m3surfaceContainerLow
 
     Item {
         id: topBridge
@@ -846,4 +838,3 @@ Item {
         if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
     }
 }
-

@@ -668,7 +668,7 @@ Item {
         NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
     }
 
-    // 13) SHELL VISUAL: fondo, borde, sombra, hover, aliveFx
+       // 13) SHELL VISUAL: fondo, borde, sombra, hover, aliveFx
     Item {
         id: islandShell
         anchors.fill: parent
@@ -687,13 +687,67 @@ Item {
                   * ((root.animEnabled && root.islandAliveFx && root.hasMedia) ? aliveFx.breatheY : 1.0)
         }
 
+        // ==========================
+        // CRISTAL (estilo sidebar: sin relleno, solo bordes + bisel + highlight)
+        // ==========================
         Rectangle {
             id: islandBg
             anchors.fill: parent
             radius: root.islandRadius
-            color: root.islandBgColor
-            border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
-            border.color: root.islandBorderColor
+            color: "transparent"   // <- clave: nada de “neblina”
+            border.width: 0
+            border.color: "transparent"
+            antialiasing: true
+            clip: true
+
+            // (Opcional) tinte ultra leve para que se note sobre fondos muy claros.
+            // Si lo quieres 100% puro, déjalo en 0.00.
+            readonly property real tintOpacity: 0.00
+
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: root.isLightTheme
+                    ? Qt.rgba(1, 1, 1, islandBg.tintOpacity)
+                    : Qt.rgba(0, 0, 0, islandBg.tintOpacity)
+                visible: islandBg.tintOpacity > 0.0
+            }
+
+            // 1) Borde exterior
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: "transparent"
+                border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
+                border.color: root.isLightTheme
+                    ? Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.16 : 0.12))
+                    : Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.48 : 0.42))
+                antialiasing: true
+            }
+
+            // 2) Bisel interno (borde blanco suave)
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, parent.radius - 1)
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, root.isLightTheme ? 0.55 : 0.16)
+                antialiasing: true
+            }
+
+            // 3) Highlight superior
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.topMargin: 1
+                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
+                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
+                height: 1
+                color: Qt.rgba(1, 1, 1, root.isLightTheme ? 0.85 : 0.35)
+                antialiasing: true
+            }
         }
 
         layer.enabled: root.fxDropShadows
@@ -824,7 +878,7 @@ Item {
                     NumberAnimation { properties: "opacity"; duration: 160; easing.type: Easing.OutCubic }
                 }
             ]
-
+        
             // 15.1) Vista COLAPSADA (FIX: Portada siempre visible)
             Item {
                 id: collapsedView

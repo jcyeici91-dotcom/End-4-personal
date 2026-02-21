@@ -29,9 +29,6 @@ AbstractBackgroundWidget {
     property var filteredActivePlayer: MprisController.activePlayer
     property MprisPlayer currentPlayer: null
 
-    // ============================================================
-    // Helpers (compatibles: sin ?. ni ??)
-    // ============================================================
     function s(x) { return (x === undefined || x === null) ? "" : ("" + x) }
 
     function playerKey(p) {
@@ -68,10 +65,6 @@ AbstractBackgroundWidget {
         root.currentPlayer = ff ? ff : br
     }
 
-    // ============================================================
-    // ✅ FIX: Cuando se cierra YouTube/Brave/Firefox, la lista cambia.
-    // Re-selecciona currentPlayer automáticamente.
-    // ============================================================
     onPlayerListChanged: {
         if (!root.filteredPlayerList || root.filteredPlayerList.length === 0) {
             root.currentPlayer = null
@@ -90,9 +83,6 @@ AbstractBackgroundWidget {
         }
     }
 
-    // ============================================================
-    // (A) playerctl target (se mantiene)
-    // ============================================================
     property string playerctlId: ""
 
     function resolvePlayerctlId() {
@@ -126,9 +116,6 @@ AbstractBackgroundWidget {
         onExited: function() { playerctlResolve.running = false }
     }
 
-    // ============================================================
-    // Cover Art (robusto)
-    // ============================================================
     property string artUrl: (root.currentPlayer ? s(root.currentPlayer.trackArtUrl) : "")
     property string artUrlFallback: ""
     property string effectiveArtUrl: (root.artUrl !== "" ? root.artUrl : root.artUrlFallback)
@@ -163,11 +150,6 @@ AbstractBackgroundWidget {
         }
     }
 
-    // ============================================================
-    // ✅ refreshArt: comportamiento ORIGINAL
-    //   - sin player => sin carátula (vacío)
-    //   - sin URL => sin carátula (vacío)
-    // ============================================================
     function refreshArt() {
         var u = root.effectiveArtUrl
 
@@ -227,9 +209,6 @@ AbstractBackgroundWidget {
         }
     }
 
-    // ============================================================
-    // Track watcher
-    // ============================================================
     property string lastTrackKey: ""
 
     function makeTrackKey() {
@@ -270,9 +249,6 @@ AbstractBackgroundWidget {
     onArtUrlChanged: refreshArt()
     onArtUrlFallbackChanged: refreshArt()
 
-    // ============================================================
-    // playerctl: carátula fallback
-    // ============================================================
     Process {
         id: playerctlArtFetch
         running: false
@@ -313,9 +289,6 @@ AbstractBackgroundWidget {
         onExited: function(exitCode, exitStatus) { playerctlArtFetch.running = false }
     }
 
-    // ============================================================
-    // Next/Prev: Brave por playerctl
-    // ============================================================
     function doPrev() {
         if (!root.currentPlayer) return
 
@@ -340,9 +313,6 @@ AbstractBackgroundWidget {
         else if (root.currentPlayer.nextTrack) root.currentPlayer.nextTrack()
     }
 
-    // ============================================================
-    // ✅ FIX DEFINITIVO: Brave Next/Prev con 3 niveles (igual que tenías)
-    // ============================================================
     Process {
         id: playerctlPrev
         running: false
@@ -417,9 +387,7 @@ AbstractBackgroundWidget {
         onExited: function() { playerctlNext.running = false }
     }
 
-    // ============================================================
-    // Volumen: Firefox igual, Brave real por wpctl
-    // ============================================================
+
     property real braveSystemVolume: 0.0
     property bool braveSystemVolumeValid: false
 
@@ -480,9 +448,6 @@ AbstractBackgroundWidget {
         onExited: function() { wpctlSet.running = false }
     }
 
-    // ============================================================
-    // Visualizer + quantizer
-    // ============================================================
     property list<real> visualizerPoints: []
 
     Process {
@@ -506,9 +471,6 @@ AbstractBackgroundWidget {
         rescaleSize: 1
     }
 
-    // ============================================================
-    // Colores dinámicos
-    // ============================================================
     property color artDominantColor: ColorUtils.mix(
         (colorQuantizer && colorQuantizer.colors && colorQuantizer.colors.length > 0) ? colorQuantizer.colors[0] : Appearance.colors.colPrimary,
         Appearance.colors.colPrimaryContainer,
@@ -536,9 +498,6 @@ AbstractBackgroundWidget {
         }
     }
 
-    // ============================================================
-    // Layout base
-    // ============================================================
     property real widgetSize: 200
     property real controlsSize: 55
     property real buttonIconSize: 30
@@ -561,8 +520,7 @@ AbstractBackgroundWidget {
         root.lastTrackKey = ""
         resolvePlayerctlId()
 
-        // ✅ comportamiento original: si no hay player => no carátula (vacío)
-        if (!root.currentPlayer) {
+          if (!root.currentPlayer) {
             root.displayedArtFilePath = ""
             root.currentImageToShow = ""
             return
@@ -578,9 +536,7 @@ AbstractBackgroundWidget {
         root.currentPlayer = MprisController.activePlayer
     }
 
-    // ============================================================
-    // UI (igual que tu versión actual, pero con placeholder ORIGINAL)
-    // ============================================================
+
     Item {
         id: contentItem
         implicitWidth: root.widgetSize

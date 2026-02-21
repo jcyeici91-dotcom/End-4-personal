@@ -17,16 +17,19 @@ MouseArea {
     property bool interactionsEnabled: true
     property bool allowPopup: true
 
-    // Pixel/Google toggles
-    property bool enablePixelGrid: true
+    // Toggles
     property bool enableWeatherAura: true
-
-    // NEW: efecto “barrido” que pasa por todo el widget
-    property bool enableSweep: true
 
     // Heartbeat (SIN brillo; solo escala/“palpitar”)
     property bool enableHeartbeat: true
     property real heartbeatStrength: 1.0 // 0..1
+
+    // Cristal (tinte opcional). 0.00 = cristal “puro”
+    property real crystalTintOpacity: 0.00
+
+    // NUEVO: bordes “cuadrito” SOLO al hover (leve)
+    property bool crystalBordersOnHoverOnly: true
+    property real crystalBorderHoverStrength: 1.0 // 0..1 (1 = como lo tenías al hover)
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
@@ -41,8 +44,6 @@ MouseArea {
     property int gap: 8
     property int radius: 12
 
-    // SOLUCIÓN: Definimos las dimensiones aquí en la raíz.
-    // fillHeight asegura que tome todo el espacio vertical disponible (entre 30 y 50).
     Layout.fillHeight: true
     implicitWidth: row.implicitWidth + padX * 2
     implicitHeight: Math.max(30, row.implicitHeight + padY * 2)
@@ -55,7 +56,7 @@ MouseArea {
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
     readonly property color fg: themeIsDark ? "#FFFFFF" : "#161616"
-    readonly property color fgSoft: themeIsDark ? Qt.rgba(1,1,1,0.74) : Qt.rgba(0,0,0,0.60)
+    readonly property color fgSoft: themeIsDark ? Qt.rgba(1, 1, 1, 0.74) : Qt.rgba(0, 0, 0, 0.60)
 
     // =====================================================
     // HOVER / PRESS
@@ -207,7 +208,7 @@ MouseArea {
         }
     }
 
-    // Aura animation phase
+    // Aura animation phase (lo dejé tal cual lo tenías)
     property real auraPhase: 0.0
     NumberAnimation on auraPhase {
         running: root.enableWeatherAura
@@ -218,18 +219,7 @@ MouseArea {
         easing.type: Easing.InOutSine
     }
 
-    // NEW: Sweep phase (efecto que “pasa por todo el widget”)
-    property real sweepPhase: 0.0
-    NumberAnimation on sweepPhase {
-        running: root.enableSweep
-        loops: Animation.Infinite
-        from: 0.0
-        to: 1.0
-        duration: 1800
-        easing.type: Easing.InOutSine
-    }
-
-    // Heartbeat phase (doble latido) — SOLO escala
+    // Heartbeat phase — SOLO escala
     property real beat: 0.0
     SequentialAnimation on beat {
         running: root.enableHeartbeat
@@ -250,7 +240,6 @@ MouseArea {
 
     Item {
         id: chip
-        // SOLUCIÓN: Con esto el chip ocupa todo el espacio que la barra le cede al widget
         anchors.fill: parent
 
         transformOrigin: Item.Center
@@ -266,6 +255,11 @@ MouseArea {
             Translate { y: (-0.40 * root.hoverAmount) + (0.20 * root.pressAmount) }
         ]
 
+        // =================================================
+        // PLATE CRISTAL
+        // Cambio: “cuadrito” (bordes) NO visibles en idle,
+        //         y aparecen LEVES cuando haces hover.
+        // =================================================
         Rectangle {
             id: plate
             anchors.fill: parent
@@ -273,99 +267,92 @@ MouseArea {
             antialiasing: true
             clip: true
 
-            color: Qt.rgba(
-                Appearance.m3colors.m3secondary.r,
-                Appearance.m3colors.m3secondary.g,
-                Appearance.m3colors.m3secondary.b,
-                (root.themeIsDark ? 0.22 : 0.14) + 0.06 * root.hoverAmount
-            )
+            color: "transparent"
+            border.width: 0
+            border.color: "transparent"
 
-            border.width: 1
-            border.color: Qt.rgba(
-                root.accent.r, root.accent.g, root.accent.b,
-                (root.themeIsDark ? 0.38 : 0.30) + 0.18 * root.hoverAmount
-            )
+            // Control de visibilidad de bordes (solo hover)
+            readonly property real borderAmt: (root.crystalBordersOnHoverOnly ? root.hoverAmount : 1.0)
+                                            * root.crystalBorderHoverStrength
 
+            // (Opcional) tinte ultra leve
             Rectangle {
                 anchors.fill: parent
-                radius: root.radius
+                radius: parent.radius
+                visible: root.crystalTintOpacity > 0.0
+                color: root.themeIsDark
+                    ? Qt.rgba(0, 0, 0, root.crystalTintOpacity)
+                    : Qt.rgba(1, 1, 1, root.crystalTintOpacity)
+            }
+
+            // 1) Borde exterior (solo al hover)
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: "transparent"
+                border.width: 1
+                border.color: root.themeIsDark
+                    ? Qt.rgba(0, 0, 0, 0.48 * plate.borderAmt)
+                    : Qt.rgba(0, 0, 0, 0.16 * plate.borderAmt)
+                antialiasing: true
+                visible: plate.borderAmt > 0.01
+            }
+
+            // 2) Bisel interno (solo al hover)
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, parent.radius - 1)
                 color: "transparent"
                 border.width: 1
                 border.color: Qt.rgba(
                     1, 1, 1,
-                    root.themeIsDark ? (0.10 + 0.06 * root.hoverAmount) : (0.08 + 0.05 * root.hoverAmount)
+                    (root.themeIsDark ? (0.14 + 0.06 * root.hoverAmount)
+                                      : (0.40 + 0.08 * root.hoverAmount)) * plate.borderAmt
                 )
+                antialiasing: true
+                visible: plate.borderAmt > 0.01
             }
 
-            // =================================================
-            // SWEEP EFFECT (pasa por todo el widget)
-            // =================================================
-            Item {
+            // 3) Accent outline sutil (solo al hover)
+            Rectangle {
                 anchors.fill: parent
-                visible: root.enableSweep
-                clip: true
-                opacity: 0.12 + 0.08 * root.hoverAmount
+                radius: parent.radius
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(
+                    root.accent.r, root.accent.g, root.accent.b,
+                    ((root.themeIsDark ? 0.16 : 0.12) + 0.14 * root.hoverAmount) * plate.borderAmt
+                )
+                antialiasing: true
+                visible: plate.borderAmt > 0.01
+            }
 
-                Rectangle {
-                    width: parent.width * 0.60
-                    height: parent.height * 2.0
-                    radius: 10
-                    rotation: -18
-
-                    // De izquierda a derecha
-                    x: (-parent.width * 0.75) + (parent.width * 1.75 * root.sweepPhase)
-                    y: -parent.height * 0.60
-
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.00) }
-                        GradientStop { position: 0.5; color: Qt.rgba(1,1,1, root.themeIsDark ? 0.10 : 0.08) }
-                        GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0.00) }
-                    }
-                    opacity: 0.85
-                }
+            // 4) Highlight superior (solo al hover)
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.topMargin: 1
+                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
+                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
+                height: 1
+                color: Qt.rgba(
+                    1, 1, 1,
+                    (root.themeIsDark ? (0.28 + 0.10 * root.hoverAmount)
+                                      : (0.62 + 0.10 * root.hoverAmount)) * plate.borderAmt
+                )
+                antialiasing: true
+                visible: plate.borderAmt > 0.01
             }
 
             // =================================================
-            // PIXEL GRID
-            // =================================================
-            Item {
-                anchors.fill: parent
-                visible: root.enablePixelGrid
-                opacity: 0.10 + 0.10 * root.hoverAmount
-                clip: true
-
-                Repeater {
-                    model: Math.max(0, Math.floor((plate.width - 10) / 10))
-                    delegate: Rectangle {
-                        width: 1
-                        height: plate.height
-                        x: 10 + index * 10
-                        y: 0
-                        color: Qt.rgba(1,1,1, root.themeIsDark ? 0.10 : 0.08)
-                        opacity: 0.35
-                    }
-                }
-
-                Repeater {
-                    model: Math.max(0, Math.floor((plate.height - 10) / 10))
-                    delegate: Rectangle {
-                        width: plate.width
-                        height: 1
-                        x: 0
-                        y: 10 + index * 10
-                        color: Qt.rgba(0,0,0, root.themeIsDark ? 0.14 : 0.10)
-                        opacity: 0.28
-                    }
-                }
-            }
-
-            // =================================================
-            // WEATHER AURA
+            // WEATHER AURA (lo dejé igual que lo tenías)
             // =================================================
             Item {
                 anchors.fill: parent
                 visible: root.enableWeatherAura
-                opacity: 0.20 + 0.18 * root.hoverAmount
+                opacity: 0.18 + 0.18 * root.hoverAmount
                 clip: true
 
                 Rectangle {
@@ -376,9 +363,9 @@ MouseArea {
                     x: (-parent.width * 0.50) + (parent.width * 1.20 * root.auraPhase)
                     y: -parent.height * 0.20
                     gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.00) }
+                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.00) }
                         GradientStop { position: 0.5; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.themeIsDark ? 0.10 : 0.07) }
-                        GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0.00) }
+                        GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
                     }
                     opacity: 0.9
                 }
@@ -390,8 +377,10 @@ MouseArea {
                     radius: 8
                     x: parent.width * 0.08
                     y: -parent.height * 0.40
-                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
-                                  0.08 + 0.08 * (0.5 + 0.5 * Math.sin(6.28318 * root.auraPhase)))
+                    color: Qt.rgba(
+                        root.accent.r, root.accent.g, root.accent.b,
+                        0.08 + 0.08 * (0.5 + 0.5 * Math.sin(6.28318 * root.auraPhase))
+                    )
                 }
 
                 Repeater {
@@ -401,7 +390,8 @@ MouseArea {
                         height: parent.height * 0.60
                         radius: 1
                         rotation: -18
-                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "storm" ? 0.18 : 0.14)
+                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
+                                      root.weatherKind() === "storm" ? 0.18 : 0.14)
                         x: (index * parent.width * 0.16) + (parent.width * 0.30 * root.auraPhase)
                         y: parent.height * 0.10 + (index % 2) * 2
                         opacity: 0.55
@@ -414,9 +404,11 @@ MouseArea {
                         width: 2 + (index % 2)
                         height: width
                         radius: 1
-                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "fog" ? 0.10 : 0.16)
+                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
+                                      root.weatherKind() === "fog" ? 0.10 : 0.16)
                         x: (index * parent.width * 0.12 + parent.width * 0.22 * root.auraPhase) % parent.width
-                        y: parent.height * (0.18 + 0.09 * (index % 4)) + (parent.height * 0.08 * Math.sin(6.28318 * (root.auraPhase + index * 0.14)))
+                        y: parent.height * (0.18 + 0.09 * (index % 4))
+                           + (parent.height * 0.08 * Math.sin(6.28318 * (root.auraPhase + index * 0.14)))
                         opacity: 0.6
                     }
                 }
@@ -483,3 +475,4 @@ MouseArea {
         // NO z: StyledPopup no es Item
     }
 }
+

@@ -10,8 +10,24 @@ Item {
     // =========================
     property bool vertical: false
     property int padding: 6
-    property int spacing: 6
+
+    // ==============================================================
+    // FIX MAESTRO PARA LAS "MINI PÍLDORAS" INTERNAS:
+    // Si estamos en modo Cristal (bgIsCrystal), el espaciado interno
+    // se vuelve 0 para que los elementos se peguen y formen un solo
+    // cuerpo de vidrio sin líneas separadoras en el medio.
+    // Si NO es Cristal, respeta el espaciado original de 4.
+    // ==============================================================
+    property int spacing: root.bgIsCrystal ? 0 : 4
+
     property int edgeInset: 2
+
+    // NUEVO: unificar visualmente el interior del grupo
+    // En modo Cristal, siempre los unificamos. En otros modos, según preferencia.
+    property bool unifyInside: root.bgIsCrystal ? true : false
+
+    // (Opcional) Señal para que los widgets hijos apaguen su propio “chip background”
+    property bool unifyChildChips: root.bgIsCrystal ? true : false
 
     // Propiedades requeridas (No borrar)
     property real startRadius: Appearance.rounding.normal
@@ -39,21 +55,25 @@ Item {
     property bool attachScreenRight: false
 
     // =========================
-    // NUEVO: Bridge mode (para PUENTES)
+    // Bridge mode (para PUENTES)
     // =========================
     property bool bridgeMode: false
 
     // =========================
-    // NUEVO: Animación de tamaño (FIX “relentizado”)
+    // Animación de tamaño
     // =========================
-    property bool enableSizeAnimation: false // prueba relentizado 
+    property bool enableSizeAnimation: false
     property int sizeAnimDuration: 85
 
     // =========================
-    // NUEVO: Detección de Cristal
+    // Detección de Cristal y Tema
     // =========================
     readonly property int styleIntFromConfig: Config.options?.bar?.barBackgroundStyle ?? 1
     readonly property bool bgIsCrystal: styleIntFromConfig === 3
+
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+    readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
     // =========================
     // Lógica Interna y Selector de Estilo
@@ -63,9 +83,9 @@ Item {
     readonly property string groupBackgroundStyle: (Config.options?.bar?.groupBackgroundStyle ?? "rounded")
     readonly property bool useRectBg: groupBackgroundStyle === "rect"
     readonly property bool useHybridBg: groupBackgroundStyle === "hybrid"
-    readonly property bool useLineBg: groupBackgroundStyle === "line" // Soporte para Line agregado
+    readonly property bool useLineBg: groupBackgroundStyle === "line"
 
-    // Barra arriba/abajo (para Hybrid notch)
+    // Barra arriba/abajo
     readonly property bool isBottom: (Config.options?.bar?.bottom ?? false)
 
     readonly property bool hasContent: gridLayout.visibleChildren.length > 0
@@ -85,18 +105,15 @@ Item {
     readonly property real pillRadius: Math.max(0, bgSize / 2)
 
     readonly property real baseRadius: {
-        // CORRECCIÓN: Para el modo Rect usamos radio 4 (esquinas apenas redondeadas)
-        if (useRectBg) return 4; 
+        if (useRectBg) return 4;
         if (useLineBg) return 0;
         if (isBorderless) return startRadius;
         return pillRadius;
     }
 
-    // Hybrid: aplanar el lado “pegado” (top o bottom)
     readonly property bool flattenTop: useHybridBg && !vertical && !isBottom
     readonly property bool flattenBottom: useHybridBg && !vertical && isBottom
 
-    // Radios finales por esquina
     readonly property real finalRTL: {
         if (useRectBg) return baseRadius;
         if (!useHybridBg) return baseRadius;
@@ -159,90 +176,105 @@ Item {
         id: backgroundLoader
         anchors.fill: parent
 
-        // En bridgeMode => 0 todo (evita micro-gaps)
-        anchors.topMargin: root.bridgeMode
-            ? 0
-            : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))
-        anchors.bottomMargin: root.bridgeMode
-            ? 0
-            : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))
+        anchors.topMargin: root.bridgeMode ? 0 : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))
+        anchors.bottomMargin: root.bridgeMode ? 0 : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
 
-        // Selección dinámica de los 3 componentes
         sourceComponent: {
             if (root.useLineBg) return lineBackgroundComponent;
             return root.useRectBg ? rectBackgroundComponent : roundedBackgroundComponent;
         }
     }
 
+    // =========================================================
+    // RECT
+    // =========================================================
     Component {
         id: rectBackgroundComponent
 
-        Canvas {
+        Rectangle {
             anchors.fill: parent
-            antialiasing: true
-            renderTarget: Canvas.Image
-            renderStrategy: Canvas.Cooperative
+            antialiasing: !root.bridgeMode
+            radius: root.baseRadius
 
-            property color bgColor: {
+            readonly property bool showCrystal: root.bgIsCrystal && root.isContainer && !root.isBorderless
+            readonly property bool showSolid: !root.bgIsCrystal && root.isContainer && !root.isBorderless
+
+            color: {
                 if (!root.isContainer || root.isBorderless) return "transparent"
-                // MAGIA CRISTAL: Si el cristal está activo, hacemos el color semi-transparente
-                if (root.bgIsCrystal) return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, 0.25)
+                if (root.bgIsCrystal)
+                    return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, Appearance.colors.isDark ? 0.10 : 0.15)
                 return root.colBackground
             }
-            property color borderColor: {
-                if (!root.isContainer || root.isBorderless || !root.effectiveShowBorder) return "transparent"
-                if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.05)
-                return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14)
-            }
-            property real borderWidth: (root.isContainer && !root.isBorderless && root.effectiveShowBorder) ? 1 : 0
 
-            onBgColorChanged: requestPaint()
-            onBorderColorChanged: requestPaint()
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            onBorderWidthChanged: requestPaint()
+            border.width: (showSolid && root.effectiveShowBorder) ? 1 : 0
+            border.color: border.width > 0
+                ? (Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14))
+                : "transparent"
 
-            onPaint: {
-                var ctx = getContext("2d");
-                var w = width;
-                var h = height;
-
-                ctx.reset();
-                ctx.clearRect(0, 0, w, h);
-                ctx.beginPath();
-
-                var r = root.baseRadius; // Usamos el baseRadius corregido
-
-                ctx.moveTo(0, r);
-                if (r > 0) ctx.arc(r, r, r, Math.PI, 1.5 * Math.PI); else ctx.lineTo(0, 0);
-
-                ctx.lineTo(w - r, 0);
-                if (r > 0) ctx.arc(w - r, r, r, 1.5 * Math.PI, 0); else ctx.lineTo(w, 0);
-
-                ctx.lineTo(w, h - r);
-                if (r > 0) ctx.arc(w - r, h - r, r, 0, 0.5 * Math.PI); else ctx.lineTo(w, h);
-
-                ctx.lineTo(r, h);
-                if (r > 0) ctx.arc(r, h - r, r, 0.5 * Math.PI, Math.PI); else ctx.lineTo(0, h);
-
-                ctx.closePath();
-                ctx.fillStyle = bgColor;
-                ctx.fill();
-
-                if (borderWidth > 0) {
-                    ctx.lineWidth = borderWidth;
-                    ctx.strokeStyle = borderColor;
-                    ctx.stroke();
+            // 1) Luz superior
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                visible: parent.showCrystal
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.15 : 0.35) }
+                    GradientStop { position: 0.4; color: "transparent" }
                 }
             }
 
+            // 2) Sombra inferior
             Rectangle {
                 anchors.fill: parent
-                visible: root.isContainer && root.effectiveShowHighlight && !root.isBorderless
+                radius: parent.radius
+                visible: parent.showCrystal
+                gradient: Gradient {
+                    GradientStop { position: 0.6; color: "transparent" }
+                    GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.30 : 0.10) }
+                }
+            }
+
+            // 3) Borde exterior
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                visible: parent.showCrystal
                 color: "transparent"
-                radius: root.baseRadius
+                border.width: 1
+                border.color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.15)
+            }
+
+            // 4) Bisel interior
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, parent.radius - 1)
+                visible: parent.showCrystal
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.15 : 0.40)
+            }
+
+            // 5) Highlight superior
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: parent.radius / 1.2
+                anchors.rightMargin: parent.radius / 1.2
+                anchors.topMargin: 1
+                height: 1
+                visible: parent.showCrystal
+                color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.40 : 0.80)
+            }
+
+            // Highlight normal
+            Rectangle {
+                anchors.fill: parent
+                visible: showSolid && root.effectiveShowHighlight
+                color: "transparent"
+                radius: parent.radius
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? root.highlightOpacity : root.highlightOpacity * 0.6) }
                     GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.0) }
@@ -251,36 +283,108 @@ Item {
         }
     }
 
+    // =========================================================
+    // PILLS / ROUNDED
+    // =========================================================
     Component {
         id: roundedBackgroundComponent
 
         Rectangle {
             anchors.fill: parent
-            // En bridgeMode desactivamos AA para evitar hairlines al recortar
             antialiasing: !root.bridgeMode
+
+            readonly property bool showCrystal: root.bgIsCrystal && root.isContainer && !root.isBorderless
+            readonly property bool showSolid: !root.bgIsCrystal && root.isContainer && !root.isBorderless
 
             color: {
                 if (!root.isContainer || root.isBorderless) return "transparent"
-                // MAGIA CRISTAL
-                if (root.bgIsCrystal) return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, 0.25)
+                if (root.bgIsCrystal)
+                    return Qt.rgba(root.colBackground.r, root.colBackground.g, root.colBackground.b, Appearance.colors.isDark ? 0.10 : 0.15)
                 return root.colBackground
             }
 
-            border.width: (root.isContainer && !root.isBorderless && root.effectiveShowBorder) ? 1 : 0
-            border.color: {
-                if (!root.isContainer || root.isBorderless || !root.effectiveShowBorder) return "transparent"
-                if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.05)
-                return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14)
-            }
+            border.width: (showSolid && root.effectiveShowBorder) ? 1 : 0
+            border.color: border.width > 0
+                ? (Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity) : Qt.rgba(0, 0, 0, 0.14))
+                : "transparent"
 
             topLeftRadius: root.finalRTL
             topRightRadius: root.finalRTR
             bottomLeftRadius: root.finalRBL
             bottomRightRadius: root.finalRBR
 
+            // 1) Luz superior
             Rectangle {
                 anchors.fill: parent
-                visible: root.isContainer && root.effectiveShowHighlight && !root.isBorderless
+                visible: parent.showCrystal
+                topLeftRadius: parent.topLeftRadius
+                topRightRadius: parent.topRightRadius
+                bottomLeftRadius: parent.bottomLeftRadius
+                bottomRightRadius: parent.bottomRightRadius
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.15 : 0.35) }
+                    GradientStop { position: 0.4; color: "transparent" }
+                }
+            }
+
+            // 2) Sombra inferior
+            Rectangle {
+                anchors.fill: parent
+                visible: parent.showCrystal
+                topLeftRadius: parent.topLeftRadius
+                topRightRadius: parent.topRightRadius
+                bottomLeftRadius: parent.bottomLeftRadius
+                bottomRightRadius: parent.bottomRightRadius
+                gradient: Gradient {
+                    GradientStop { position: 0.6; color: "transparent" }
+                    GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.30 : 0.10) }
+                }
+            }
+
+            // 3) Borde exterior
+            Rectangle {
+                anchors.fill: parent
+                visible: parent.showCrystal
+                topLeftRadius: parent.topLeftRadius
+                topRightRadius: parent.topRightRadius
+                bottomLeftRadius: parent.bottomLeftRadius
+                bottomRightRadius: parent.bottomRightRadius
+                color: "transparent"
+                border.width: 1
+                border.color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.15)
+            }
+
+            // 4) Bisel interior
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                visible: parent.showCrystal
+                topLeftRadius: Math.max(0, parent.topLeftRadius - 1)
+                topRightRadius: Math.max(0, parent.topRightRadius - 1)
+                bottomLeftRadius: Math.max(0, parent.bottomLeftRadius - 1)
+                bottomRightRadius: Math.max(0, parent.bottomRightRadius - 1)
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.15 : 0.40)
+            }
+
+            // 5) Highlight superior
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                visible: parent.showCrystal
+                anchors.leftMargin: parent.topLeftRadius > 0 ? parent.topLeftRadius / 1.2 : 1
+                anchors.rightMargin: parent.topRightRadius > 0 ? parent.topRightRadius / 1.2 : 1
+                anchors.topMargin: 1
+                height: 1
+                color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.40 : 0.80)
+            }
+
+            // Highlight normal
+            Rectangle {
+                anchors.fill: parent
+                visible: showSolid && root.effectiveShowHighlight
                 color: "transparent"
                 topLeftRadius: parent.topLeftRadius
                 topRightRadius: parent.topRightRadius
@@ -294,21 +398,24 @@ Item {
         }
     }
 
-    // Componente Agregado para soportar modo Line sin romper lo demás
+    // =========================================================
+    // LINE
+    // =========================================================
     Component {
         id: lineBackgroundComponent
-        
+
         Rectangle {
             anchors.fill: parent
-            color: "transparent" 
-            
+            color: "transparent"
+
             Rectangle {
                 width: parent.width
                 height: 2
                 anchors.bottom: root.isBottom ? undefined : parent.bottom
                 anchors.top: root.isBottom ? parent.top : undefined
                 color: {
-                    if (root.bgIsCrystal) return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0, 0, 0, 0.3)
+                    if (root.bgIsCrystal)
+                        return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0, 0, 0, 0.3)
                     return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity * 2) : Qt.rgba(0, 0, 0, 0.2)
                 }
                 visible: root.effectiveShowBorder && root.isContainer
@@ -328,11 +435,15 @@ Item {
         GridLayout {
             id: gridLayout
             anchors.centerIn: parent
+
             flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
             columns: root.vertical ? 1 : -1
             rows: root.vertical ? -1 : 1
-            columnSpacing: root.spacing
-            rowSpacing: root.spacing
+
+            // CAMBIO CLAVE para lo que pediste:
+            // esto elimina la “mini separación/píldora” entre widgets
+            columnSpacing: root.unifyInside ? 0 : root.spacing
+            rowSpacing: root.unifyInside ? 0 : root.spacing
         }
     }
 }
