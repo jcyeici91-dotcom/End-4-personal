@@ -143,7 +143,7 @@ Item {
         anchors.right: parent.right
     }
 
-    // Mouse areas (opcional extraído)
+    // Mouse areas 
     Parts.BarSideMouseAreas {
         brightnessMonitor: root.brightnessMonitor
         middleSection: middleSection

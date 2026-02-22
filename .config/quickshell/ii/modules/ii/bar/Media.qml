@@ -16,7 +16,7 @@ import "../../common/utils"
 Item {
     id: root
 
-    // --- NUEVO: Orientación ---
+    // -Orientación ---
     property bool vertical: false
     // Propiedad útil para saber si la barra está a la derecha
     property bool rightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
@@ -26,9 +26,6 @@ Item {
         Config.runtime.bar.position === "right"
     )
 
-    // =====================================================
-    // 1.1) CONFIG BASE
-    // =====================================================
     property bool islandEnabled: true
     property bool expandOnHover: true
     property int  islandCollapsedWidth: 260
@@ -50,26 +47,20 @@ Item {
     property int islandBorderWidthExpanded:  Math.round(2 + 2 * root.barT)
     property int islandMaxWidth: 780
 
-    // =====================================================
-    // 1.2) EFECTOS VISUALES
-    // =====================================================
-    property bool fxDropShadows: true
+     // 1.2) EFECTOS VISUALES
+     property bool fxDropShadows: true
     property bool fxCoverMaskCircle: false
     property bool fxCoverRing: false
     property bool fxWaves: true
     property bool fxLyricsGradientMask: true
 
-    // =====================================================
     // 1.3) ANIMACIONES
-    // =====================================================
     property bool animEnabled: true
     property bool animMarquee: true
     property bool animLyricScroller: true
     property bool animLayoutTransitions: true
 
-    // =====================================================
     // 1.4) “ALIVE FX” & OVERSHOOT
-    // =====================================================
     property bool islandAliveFx: true
 
     property real islandBreatheScaleIdle: tunedBreatheIdle

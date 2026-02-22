@@ -10,9 +10,6 @@ import qs.modules.common.widgets
 RippleButton {
     id: rightSidebarButton
 
-    // =========================
-    // LAYOUT (compacto)
-    // =========================
     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
     Layout.rightMargin: Appearance.rounding.screenRounding
     Layout.fillWidth: false
@@ -25,9 +22,6 @@ RippleButton {
     width: Layout.preferredWidth
     height: Layout.preferredHeight
 
-    // =========================
-    // ESTADO / ACCIÓN
-    // =========================
     toggled: GlobalStates.sidebarRightOpen
 
     onClicked: {
@@ -35,9 +29,6 @@ RippleButton {
         clickFx.restart()
     }
 
-    // =========================
-    // ESTILO (tu tema)
-    // =========================
     buttonRadius: Appearance.rounding.full
     colBackgroundHover: Appearance.colors.colLayer1Hover
     colRipple: Appearance.colors.colLayer1Active
@@ -45,10 +36,8 @@ RippleButton {
     colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
     colRippleToggled: Appearance.colors.colSecondaryContainerActive
 
-    // =========================
     // FX (press + pop + glow + heartbeat)
-    // =========================
-    property real pressScale: 1.0
+     property real pressScale: 1.0
     property real popScale: 1.0
     property real glowOpacity: 0.0
     property real glowScale: 0.90
@@ -160,9 +149,6 @@ RippleButton {
         onExited: rightSidebarButton.hoveredFx = false
     }
 
-    // =========================
-    // CONTENIDO
-    // =========================
     Item {
         id: iconContainer
         anchors.centerIn: parent
@@ -219,7 +205,7 @@ RippleButton {
         Image {
             id: svgSource
             anchors.fill: parent
-            source: "file:///home/jcgomez91/.config/quickshell/ii/assets/icons/nixos-symbolic.svg"
+        source: Qt.resolvedUrl("../../../assets/icons/nixos-symbolic.svg")
             sourceSize.width: rightSidebarButton.iconTargetSize * 2
             sourceSize.height: rightSidebarButton.iconTargetSize * 2
             fillMode: Image.PreserveAspectFit

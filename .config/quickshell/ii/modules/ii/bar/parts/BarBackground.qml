@@ -1,11 +1,8 @@
-// parts/BarBackground.qml
 import QtQuick
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
-// OJO: este archivo vive en /bar/parts,
-// así que ".." es la carpeta /bar donde están BarBgShadowOverlay.qml etc.
 import ".." as Bar
 
 Item {
@@ -13,7 +10,7 @@ Item {
     anchors.fill: parent
     z: -10
 
-    // Inputs necesarios (son los que tu BarContent usa)
+    // Inputs necesarios 
     required property bool shouldDrawBackground
     required property bool useOverlayBg
     required property bool showSolidBackground

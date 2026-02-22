@@ -1,4 +1,3 @@
-// parts/BarBridges.qml
 import QtQuick
 
 Item {

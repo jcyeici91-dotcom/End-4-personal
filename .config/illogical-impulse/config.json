@@ -208,12 +208,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 3,
-        "borderless": true,
+        "barBackgroundStyle": 1,
+        "borderless": false,
         "bottom": false,
-        "cornerStyle": 1,
+        "cornerStyle": 0,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false

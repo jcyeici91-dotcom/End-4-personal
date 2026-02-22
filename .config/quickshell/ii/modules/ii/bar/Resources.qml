@@ -328,6 +328,7 @@ MouseArea {
                     onLoaded: {
                         if (!item) return
                         item.running = Qt.binding(function() { return root.cpuCatRun })
+                        //rutas personales
                         item.runSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-run.gif"
                         item.sleepSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
                         if (item.hasOwnProperty("vertical")) item.vertical = root.vertical

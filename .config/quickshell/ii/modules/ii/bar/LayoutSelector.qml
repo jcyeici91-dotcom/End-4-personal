@@ -7,27 +7,11 @@ import Quickshell
 Item {
     id: root
 
-    // =====================================================================
-    // Layout Selector "Mango-like" (PRO)
-    // ---------------------------------------------------------------------
-    // Esto SOLO selecciona el layout y (opcional) aplica hyprctl.
-    // Los efectos de movimiento de ventanas + gaps + bordes = Hyprland.
-    //
-    // TOCA DESPUÉS:
-    // - Ajustar Hyprland (animaciones/gaps/rounding) -> ver bloque abajo.
-    // - Ajustar el tamaño del panel contenedor (donde colocas este Item)
-    //   si quieres que ocupe idéntico al widget de MangoWC.
-    // =====================================================================
-
-    // -------------------------
-    // Orientación
-    // -------------------------
+        // Orientación
     required property string orientation            // "horizontal" | "vertical"
     readonly property bool isVertical: orientation === "vertical"
 
-    // -------------------------
-    // Layouts Hyprland
-    // -------------------------
+     // Layouts Hyprland
     property var availableLayouts: ["dwindle", "master", "scrolling"]
     property string activeLayout: ""
 
@@ -35,9 +19,7 @@ Item {
     property bool applyOnStartup: true
     property bool rememberSelection: true
 
-    // -------------------------
     // Densidad / Tamaño (Mango-like: un poco más grande y aireado)
-    // -------------------------
     property bool useDensityPreset: true
     property string densityPreset: "normal"         // "compact" | "normal" | "large"
 
@@ -83,24 +65,18 @@ Item {
     property real hoverScale: 1.06
     property real pressedScale: 0.97
 
-    // Master: main más grande (Mango feel)
+    // Master: 
     property real masterMainRatio: 0.78
 
     // Señal externa
     signal layoutSelected(string layout)
 
-    // -------------------------
-    // Persistencia
-    // -------------------------
-    Settings {
+      Settings {
         id: selSettings
         category: "layoutSelector"
         property string savedLayout: ""
     }
 
-    // =====================================================================
-    // PRESETS
-    // =====================================================================
     readonly property var densityPresets: ({
         compact: { buttonSize: 34, spacing: 5, padding: 5, labelFontSize: 12 },
         normal:  { buttonSize: 38, spacing: 6, padding: 6, labelFontSize: 12 },
@@ -117,9 +93,6 @@ Item {
     readonly property int padding: root.useDensityPreset ? root._preset().padding : root.paddingManual
     readonly property int labelFontSize: root.useDensityPreset ? root._preset().labelFontSize : root.labelFontSizeManual
 
-    // =====================================================================
-    // Tamaño calculado (no forzamos width/height)
-    // =====================================================================
     readonly property int calcW: root.isVertical
         ? (root.buttonSize + root.padding * 2)
         : (root.availableLayouts.length * root.buttonSize
@@ -137,10 +110,7 @@ Item {
     implicitWidth: root.calcW
     implicitHeight: root.calcH
 
-    // =====================================================================
-    // Helpers
-    // =====================================================================
-    function displayName(layout) {
+      function displayName(layout) {
         if (layout === "dwindle") return "Dwindle"
         if (layout === "master") return "Master"
         if (layout === "scrolling") return "Scrolling"
@@ -160,9 +130,6 @@ Item {
         return root.activeTintDwindle
     }
 
-    // =====================================================================
-    // Apply + persist
-    // =====================================================================
     function applyLayout(layout) {
         if (!layout || root.availableLayouts.indexOf(layout) === -1) return
 
@@ -191,9 +158,6 @@ Item {
         }
     }
 
-    // =====================================================================
-    // UI
-    // =====================================================================
     Rectangle {
         id: frame
         anchors.fill: parent
@@ -243,7 +207,7 @@ Item {
                     background: Rectangle {
                         radius: root.btnRadius
 
-                        // Fondo con “tint” activo
+                        // Fondo 
                         color: btn.isActive
                             ? Qt.rgba(
                                   root.activeTint(btn.modelData).r,
@@ -256,7 +220,7 @@ Item {
                         border.width: 1
                         border.color: btn.isActive ? root.btnBorderActive : root.btnBorder
 
-                        // Glow sutil “Mango feel” (sin shaders)
+                        // Glow sutil
                         Rectangle {
                             anchors.fill: parent
                             radius: parent.radius
@@ -325,7 +289,7 @@ Item {
                                 }
                             }
 
-                            // MASTER (main más grande)
+                            // MASTER 
                             Item {
                                 anchors.fill: parent
                                 visible: btn.modelData === "master"

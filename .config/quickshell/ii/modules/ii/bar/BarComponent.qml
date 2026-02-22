@@ -28,9 +28,7 @@ Item {
 
     readonly property var safeList: (Array.isArray(list) ? list : [])
 
-    // ---------------------------------------------------------
     // MUSIC_PLAYER: Ocultar grupo si no hay medios
-    // ---------------------------------------------------------
     readonly property bool isMusicPlayer: (rootItem.modelData && rootItem.modelData.id === "music_player")
 
     readonly property bool musicHasMedia: (MprisController.activePlayer !== null)
@@ -43,16 +41,12 @@ Item {
 
     visible: effectiveVisible
 
-    // ---------------------------------------------------------
     // Helpers de Color
-    // ---------------------------------------------------------
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.55 }
     function _on(bg, a) { return _isDark(bg) ? Qt.rgba(1, 1, 1, a) : Qt.rgba(0, 0, 0, a) }
 
-    // ---------------------------------------------------------
     // Tokens
-    // ---------------------------------------------------------
     readonly property color groupBg: wrapper.colBackground
 
     readonly property color onStrong: _on(groupBg, 0.95)
@@ -68,9 +62,7 @@ Item {
         ? Qt.rgba(1, 1, 1, 0.16)
         : Qt.rgba(0, 0, 0, 0.14)
 
-    // ---------------------------------------------------------
     // Toggle de Visibilidad
-    // ---------------------------------------------------------
     function toggleVisible(visibility) {
         rootItem.userVisible = visibility
 
@@ -89,13 +81,11 @@ Item {
         arr[rootItem.originalIndex].visible = visibility
     }
 
-    // ---------------------------------------------------------
     // Mapa de Componentes
-    // ---------------------------------------------------------
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
 
-        // CAMBIO: ya no usamos VerticalMedia.qml; usamos Media.qml adaptativo en ambas orientaciones
+        // Media adaptativo en ambas orientaciones
         "music_player": [musicPlayerComp, musicPlayerCompVert],
 
         "system_monitor": [hybridResUtilComp, systemMonitorCompVert],
@@ -111,7 +101,10 @@ Item {
         "date": [dateCompVert, dateCompVert],
         "record_indicator": [recordIndicatorComp, recordIndicatorComp],
         "screen_share_indicator": [screenshareIndicatorComp, screenshareIndicatorComp],
-        "timer": [timerComp, timerCompVert],
+
+        // CAMBIO: TimerWidget ya soporta vertical; no usar VerticalTimerWidget
+        "timer": [timerComp, timerComp],
+
         "weather": [weatherComp, weatherComp],
 
         "policies_panel_button": [policiesPanelButtonComp, policiesPanelButtonComp],
@@ -152,9 +145,7 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
     // Inyección de Tokens
-    // ---------------------------------------------------------
     function applyTokens(item) {
         if (!item) return
         if (item.onStrong !== undefined) item.onStrong = rootItem.onStrong
@@ -169,9 +160,7 @@ Item {
         if (item.backgroundColor !== undefined) item.backgroundColor = rootItem.groupBg
     }
 
-    // ---------------------------------------------------------
     // Wrapper (Grupo)
-    // ---------------------------------------------------------
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
@@ -203,9 +192,7 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
     // Componentes
-    // ---------------------------------------------------------
     Component {
         id: unknownComp
         Item { implicitWidth: 1; implicitHeight: 1 }
@@ -213,43 +200,42 @@ Item {
 
     Component { id: weatherComp; WeatherBar { vertical: rootItem.vertical } }
 
-    Component { id: timerComp; TimerWidget {} }
-    Component { id: timerCompVert; Vertical.VerticalTimerWidget {} }
+    // Timer: único componente 
+    Component { id: timerComp; TimerWidget { } }
 
-    Component { id: screenshareIndicatorComp; ScreenShareIndicator {} }
+    Component { id: screenshareIndicatorComp; ScreenShareIndicator { } }
 
     Component { id: recordIndicatorComp; RecordIndicator { vertical: rootItem.vertical } }
 
     Component { id: activeWindowComp; ActiveWindow { vertical: rootItem.vertical } }
 
-    Component { id: systemMonitorComp; Resources {} }
-    Component { id: systemMonitorCompVert; Vertical.Resources {} }
+    Component { id: systemMonitorComp; Resources { } }
+    Component { id: systemMonitorCompVert; Vertical.Resources { } }
 
-    // CAMBIO: Media adaptativo en ambas orientaciones (sin VerticalMedia.qml)
     Component { id: musicPlayerComp; Media { vertical: rootItem.vertical } }
     Component { id: musicPlayerCompVert; Media { vertical: rootItem.vertical } }
 
     Component { id: utilityButtonsComp; UtilButtons { vertical: rootItem.vertical } }
 
-    Component { id: batteryComp; BatteryIndicator {} }
-    Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
+    Component { id: batteryComp; BatteryIndicator { } }
+    Component { id: batteryCompVert; Vertical.BatteryIndicator { } }
 
-    Component { id: hybridClockComp; HybridClockWeather {} }
+    Component { id: hybridClockComp; HybridClockWeather { } }
 
-    Component { id: hybridResUtilComp; HybridResourcesUtilButtons {} }
+    Component { id: hybridResUtilComp; HybridResourcesUtilButtons { } }
 
-    Component { id: clockComp; ClockWidget {} }
-    Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
+    Component { id: clockComp; ClockWidget { } }
+    Component { id: clockCompVert; Vertical.VerticalClockWidget { } }
 
     Component { id: systemTrayComp; SysTray { vertical: rootItem.vertical } }
 
-    Component { id: dateCompVert; Vertical.VerticalDateWidget {} }
+    Component { id: dateCompVert; Vertical.VerticalDateWidget { } }
 
     Component { id: workspaceComp; Workspaces { vertical: rootItem.vertical } }
 
-    Component { id: policiesPanelButtonComp; PoliciesPanelButton {} }
+    Component { id: policiesPanelButtonComp; PoliciesPanelButton { } }
 
-    Component { id: dashboardPanelButtonComp; DashboardPanelButton {} }
-    Component { id: dashboardPanelButtonCompVert; VerticalDashboardPanelButton {} }
+    Component { id: dashboardPanelButtonComp; DashboardPanelButton { } }
+    Component { id: dashboardPanelButtonCompVert; VerticalDashboardPanelButton { } }
 }
 

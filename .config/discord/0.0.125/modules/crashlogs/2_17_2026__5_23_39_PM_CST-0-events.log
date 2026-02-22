@@ -486,3 +486,5 @@
 2/22/2026, 9:36:08 AM CST 9: webContents.destroyed web1
 2/22/2026, 9:36:08 AM CST 10: window.closed win1
 2/22/2026, 9:37:21 AM CST 11: window.close win2
+2/22/2026, 9:47:30 AM CST 12: before-quit
+2/22/2026, 9:47:30 AM CST 13: window.close win2

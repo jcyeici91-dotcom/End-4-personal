@@ -14,7 +14,7 @@ Item {
     function _isDark(c) { return _lin(c) < 0.65 }
     function _rgba(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
-    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode)
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode !== undefined)
         ? Appearance.m3colors.darkmode
         : _isDark(Appearance.colors.colLayer0)
 
@@ -31,19 +31,27 @@ Item {
     }
     function _toHex(c) { return "#" + _hex2(c.r * 255) + _hex2(c.g * 255) + _hex2(c.b * 255) }
 
-    readonly property color bgPill: Appearance.colors.colLayer1
-    readonly property color bgWidget: Appearance.colors.colLayer1
+    readonly property color bgPill: (Appearance.m3colors && Appearance.m3colors.m3surfaceContainerLow !== undefined)
+        ? Appearance.m3colors.m3surfaceContainerLow
+        : Appearance.colors.colLayer1
 
-    readonly property color _textMainRaw: Appearance.colors.colOnLayer1
-    readonly property color _textSubRaw: Appearance.colors.colOnLayer2
+    readonly property color bgWidget: (Appearance.m3colors && Appearance.m3colors.m3surfaceContainerLow !== undefined)
+        ? Appearance.m3colors.m3surfaceContainerLow
+        : Appearance.colors.colLayer1
+
+    readonly property color _textMainRaw: (Appearance.colors.colOnLayer1 !== undefined) ? Appearance.colors.colOnLayer1 : _pickOn(bgWidget)
+    readonly property color _textSubRaw: (Appearance.colors.colOnLayer2 !== undefined) ? Appearance.colors.colOnLayer2 : _rgba(_pickOn(bgWidget), 0.72)
 
     readonly property color textMain: _ensureReadable(_textMainRaw, bgWidget, 0.30)
     readonly property color textSub: _ensureReadable(_textSubRaw, bgWidget, 0.22)
 
-    readonly property color accent: Appearance.colors.colPrimary
+    readonly property color accent: (Appearance.colors.colPrimary !== undefined) ? Appearance.colors.colPrimary : "#4285F4"
 
-    readonly property color outlineSoft: _rgba(_ensureReadable(Appearance.colors.colOnLayer1, bgWidget, 0.18), themeIsDark ? 0.14 : 0.18)
-    readonly property color surfaceSubtle: Appearance.colors.colLayer2
+    readonly property color outlineSoft: _rgba(_ensureReadable(textMain, bgWidget, 0.18), themeIsDark ? 0.14 : 0.18)
+    readonly property color surfaceSubtle: (Appearance.m3colors && Appearance.m3colors.m3surfaceContainer !== undefined)
+        ? Appearance.m3colors.m3surfaceContainer
+        : ((Appearance.colors.colLayer2 !== undefined) ? Appearance.colors.colLayer2 : _rgba(bgWidget, themeIsDark ? 0.92 : 0.97))
+
     readonly property color shadowCol: Qt.rgba(0, 0, 0, themeIsDark ? 0.40 : 0.22)
 
     readonly property color danger: (Appearance.colors.colError !== undefined) ? Appearance.colors.colError : "#ff4d4d"
@@ -215,6 +223,14 @@ Item {
                     border.width: 1
                     border.color: root.outlineSoft
 
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true
+                        shadowBlur: 0.65
+                        shadowVerticalOffset: 1
+                        shadowColor: root.shadowCol
+                    }
+
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 12
@@ -302,6 +318,8 @@ Item {
                                 radius: 10
                                 width: 72
                                 height: 30
+                                border.width: 1
+                                border.color: root.outlineSoft
                                 Text {
                                     anchors.centerIn: parent
                                     text: model.fullScore
@@ -414,8 +432,8 @@ Item {
                                 anchors.fill: parent
                                 visible: parent.children[0].status !== Image.Ready
                                 gradient: Gradient {
-                                    GradientStop { position: 0.0; color: root._rgba(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.16 : 0.12) }
-                                    GradientStop { position: 1.0; color: root._rgba(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.10 : 0.08) }
+                                    GradientStop { position: 0.0; color: root._rgba(root.textMain, root.themeIsDark ? 0.10 : 0.08) }
+                                    GradientStop { position: 1.0; color: root._rgba(root.textMain, root.themeIsDark ? 0.06 : 0.05) }
                                 }
                                 MaterialSymbol {
                                     anchors.centerIn: parent
@@ -479,8 +497,15 @@ Item {
         property int visibleWhenCount: 0
         signal triggered()
 
-        width: 30; height: 60; radius: 15
-        color: pressed ? root.surfaceSubtle : Appearance.colors.colLayer1
+        width: 30
+        height: 60
+        radius: 15
+
+        readonly property color baseBg: root.bgWidget
+        readonly property color hoverBg: root.surfaceSubtle
+        readonly property color fg: root._ensureReadable(root.textMain, (pressed ? hoverBg : baseBg), 0.30)
+
+        color: pressed ? hoverBg : baseBg
         border.width: (activeFocus || hovered || pressed) ? 1.5 : 1
         border.color: (activeFocus || hovered || pressed) ? root.accent : root.outlineSoft
         visible: visibleWhenCount > 0
@@ -495,7 +520,7 @@ Item {
         readonly property bool atEnd: list ? list.atXEnd : true
         readonly property bool disabled: (side === "left") ? atBeginning : atEnd
 
-        opacity: disabled ? 0.25 : 0.88
+        opacity: disabled ? 0.20 : 0.92
         enabled: !disabled
 
         property bool pressed: false
@@ -519,7 +544,7 @@ Item {
         MaterialSymbol {
             anchors.centerIn: parent
             text: (side === "left") ? "chevron_left" : "chevron_right"
-            color: root.textMain
+            color: arrow.fg
             font.pixelSize: 22
             opacity: 0.95
         }
@@ -622,7 +647,7 @@ Item {
         property string hintBg: root._toHex(Appearance.colors.colLayer0)
         property string hintFg: root._toHex(root.textMain)
 
-        function send(title, body, urgency /*"low"|"normal"|"critical"*/) {
+        function send(title, body, urgency) {
             var u = urgency || "normal"
             var t = (u === "critical") ? timeoutMsImportant : timeoutMsNormal
 
@@ -1278,7 +1303,7 @@ Item {
                             "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName)
                         )
 
-                            procScores.pendingScores.push({
+                        procScores.pendingScores.push({
                             "id": eid,
                             "league": lg.name,
                             "dayLabel": procScores.dayLabelFromOffset(off),

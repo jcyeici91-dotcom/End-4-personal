@@ -12,7 +12,6 @@ Item {
     id: root
 
     // Solo para que BarComponent pueda pasar `vertical: true/false`
-    // y podamos ajustar tamaño/fecha en vertical sin cambiar el diseño horizontal.
     property bool vertical: false
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
@@ -40,7 +39,7 @@ Item {
     property int pillGap: 8
     property int timeColonGap: 2
 
-    // NUEVO: gap más compacto al expandir (para que no quede hueco)
+    // gap más compacto al expandir (para que no quede hueco)
     property int expandedGap: 0
 
     // NUEVO: margen lateral del divider (reduce el hueco extra)
@@ -256,9 +255,6 @@ Item {
         }
     }
 
-    // =====================================================
-    // 9) INPUT (igual)
-    // =====================================================
     MouseArea {
         id: mouseArea
         anchors.fill: parent

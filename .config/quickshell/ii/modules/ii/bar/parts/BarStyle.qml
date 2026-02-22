@@ -1,4 +1,3 @@
-// parts/BarStyle.qml
 import QtQuick
 import qs
 import qs.modules.common
@@ -10,7 +9,7 @@ QtObject {
     // Inputs
     required property bool hasActiveWindows
 
-    // Expones esto para que BarContent siga usando "screen?.width"
+    // para que BarContent siga usando "screen?.width"
     property var screen: null
 
     // Config/State

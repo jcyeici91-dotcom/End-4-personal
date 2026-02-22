@@ -9,16 +9,13 @@ import qs.modules.common.widgets
 Item {
     id: root
     
-    // --- NUEVO: Orientación ---
+    // -Orientación ---
     property bool vertical: false
 
-    // =====================================================================
     // ESTADO
-    // =====================================================================
-    // false = Resources, true = UtilButtons
-    property bool showUtilButtons: false
+     property bool showUtilButtons: false
 
-    // (Opcional) evita cambios múltiples por una sola “pasada” de rueda
+    // evita cambios múltiples por una sola “pasada” de rueda
     property int wheelCooldownMs: 180
     property bool wheelLocked: false
 
@@ -33,9 +30,7 @@ Item {
         onTriggered: root.wheelLocked = false
     }
 
-    // =====================================================================
     // TAMAÑO AUTOMÁTICO (según el componente visible y la orientación)
-    // =====================================================================
     readonly property real contentWidth: showUtilButtons
         ? (utilLoader.item ? utilLoader.item.implicitWidth : 100)
         : (resourcesLoader.item ? resourcesLoader.item.implicitWidth : 100)
@@ -57,9 +52,6 @@ Item {
         NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
     }
 
-    // =====================================================================
-    // ÚNICO CONTROL: RUEDA DEL RATÓN PARA ALTERNAR VISTA
-    // =====================================================================
     MouseArea {
         id: wheelOnly
         anchors.fill: parent
@@ -83,9 +75,6 @@ Item {
         }
     }
 
-    // =====================================================================
-    // Loader reusable con animación
-    // =====================================================================
     component AnimatedPage: Loader {
         id: page
         property bool shown: false
@@ -97,7 +86,7 @@ Item {
         opacity: shown ? 1 : 0
         scale: shown ? 1.0 : 0.8
 
-        // Pasamos la propiedad vertical a lo que sea que se cargue
+        // propiedad vertical 
         onLoaded: {
             if (item && item.hasOwnProperty("vertical")) {
                 item.vertical = root.vertical;
@@ -108,10 +97,7 @@ Item {
         Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
     }
 
-    // =====================================================================
-    // RESOURCES / UTILBUTTONS
-    // =====================================================================
-    AnimatedPage {
+        AnimatedPage {
         id: resourcesLoader
         source: "Resources.qml"
         shown: !root.showUtilButtons

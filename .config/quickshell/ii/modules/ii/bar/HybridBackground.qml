@@ -1,4 +1,3 @@
-// ~/.config/quickshell/ii/modules/ii/bar/HybridBackground.qml
 import qs.modules.common
 import QtQuick
 

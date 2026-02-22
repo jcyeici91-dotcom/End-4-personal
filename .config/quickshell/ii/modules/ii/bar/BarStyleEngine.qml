@@ -9,7 +9,7 @@ QtObject {
     // Config completo
     property var options: null
 
-    // A menudo esto vive en Appearance, pero lo dejamos como input para testear/override
+    // A menudo esto vive en Appearance, pero lo deje como input para testear/override
     property color layer0: Appearance.colors.colLayer0
 
     // Inputs para “corner”
@@ -20,7 +20,7 @@ QtObject {
     property string cornerStyle: "hug"
 
     // flags generales
-    // (si no los seteas, se toma el valor del Config en "resolved...")
+    // (si no setea, se toma el valor del Config en "resolved...")
     property bool isBorderless: false
     property bool attachScreenLeft: false
     property bool attachScreenRight: false
@@ -50,7 +50,7 @@ QtObject {
     // Inputs para “background insets”
     property bool bridgeMode: false
 
-     // 1) THEME RESOLVER (BarThemeResolver.qml) 
+     // 1) THEME RESOLVER 
       property QtObject theme: QtObject {
         id: t
 
@@ -71,12 +71,12 @@ QtObject {
         // opcional pero útil (centraliza)
         readonly property bool isBorderless: options?.bar?.borderless ?? false
 
-        // tu selector original (lo dejamos aquí para que BarGroup no piense de más)
+        // lo deje aquí para que BarGroup no piense de más)
         readonly property string groupBackgroundStyle: options?.bar?.groupBackgroundStyle ?? "rounded"
         readonly property bool isBottom: options?.bar?.bottom ?? false
     }
 
-    // 2) CORNER STYLE (BarCornerStyle.qml) 
+    // 2) CORNER STYLE 
     property QtObject corners: QtObject {
         id: s
 
@@ -152,7 +152,7 @@ QtObject {
         }
     }
 
-      // 3) VISIBILITY (BarVisibilityLogic.qml) 
+      // 3) VISIBILITY 
     property QtObject visibility: QtObject {
         id: v
 
@@ -165,7 +165,7 @@ QtObject {
         readonly property bool shouldBeVisible: autoHide ? hasContent : true
     }
 
-       // 4) IMPLICIT SIZE (BarImplicitSizeLogic.qml) 
+       // 4) IMPLICIT SIZE
        property QtObject sizeLogic: QtObject {
         id: sizeLogic
 
@@ -194,7 +194,7 @@ QtObject {
             : 0
     }
 
-      // 5) BACKGROUND INSETS (BarBackgroundInsetsLogic.qml) 
+      // 5) BACKGROUND INSETS 
       property QtObject insets: QtObject {
         id: i
 

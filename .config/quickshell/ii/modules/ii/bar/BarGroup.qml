@@ -43,7 +43,7 @@ Item {
     property bool enableSizeAnimation: false
     property int sizeAnimDuration: 85
 
-    // ========= Nuevo motor unificado (reemplaza Theme/Corners/Visibility/Size/Insets) =========
+    // cerebro
     BarStyleEngine {
         id: engine
 

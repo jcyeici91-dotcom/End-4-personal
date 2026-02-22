@@ -14,59 +14,22 @@ import Quickshell.Services.UPower
 Item {
     id: root
 
-    // ========================================================================
-    // ✅ PANEL DE CONTROL (Presets + Compactación + Efectos)
-    //
-    // ────────────────────────────────────────────────────────────────────────
-    // ✅ CÓMO USAR LOS PRESETS (lo más fácil)
-    //
-    // 1) Activa presets:
-    //      useDensityPreset: true
-    //
-    // 2) Elige uno:
-    //      densityPreset: "compact" | "normal" | "large"
-    //
-    // 3) Para volver a manual:
-    //      useDensityPreset: false
-    //
-    // NOTA:
-    // - NO necesitas poner 3 booleans (true/false) para cada preset.
-    // - Un solo string es mejor: evita conflictos (dos “true” a la vez).
-    // - Tus valores manuales NO se pierden; quedan guardados en:
-    //      manualGridRowSpacingBase, manualGridColumnSpacingBase, etc.
-    //
-    // ────────────────────────────────────────────────────────────────────────
-    // ✅ DÓNDE ACERCAR TODO (si lo haces manual)
-    // - Entre botones: manualGridRowSpacingBase / manualGridColumnSpacingBase
-    // - “Padding” extra del widget: manualOuterPaddingH / manualOuterPaddingV
-    // - Tamaño iconos: manualBaseIconScale
-    // - Salto en hover: manualHoverScale
-    // ========================================================================
-
-    // -------------------------
     // ORIENTACIÓN / ESTADO
-    // -------------------------
-    property bool vertical: false
+     property bool vertical: false
     property bool borderless: Config.options.bar.borderless
 
-    // -------------------------
-    // PRESETS (NUEVO)
-    // -------------------------
+  
     property bool useDensityPreset: true
     property string densityPreset: "compact" // "compact" | "normal" | "large"
 
-    // -------------------------
-    // EFECTOS (master + sub)
-    // -------------------------
-    property bool enableEffectsMaster: true
+        // EFECTOS (master + sub)
+     property bool enableEffectsMaster: true
     property bool enableSprings: true
     property bool enableHoverGrow: true
     property bool enableHoverRotate: true
     property bool enableHoverRecolor: true
 
-    // -------------------------
-    // VALORES MANUALES (no se pisan por los presets)
-    // -------------------------
+
     // Espacio entre botones
     property int manualGridRowSpacingBase: 8
     property int manualGridColumnSpacingBase: 8
@@ -79,9 +42,6 @@ Item {
     property real manualBaseIconScale: 1.00
     property real manualHoverScale: 1.20
 
-    // -------------------------
-    // TOOLTIP (manual)
-    // -------------------------
     property bool tooltipsEnabled: true
     property bool tooltipsFollowEnabled: true
     property int tooltipFollowIntervalMs: 30
@@ -94,10 +54,6 @@ Item {
     property real tooltipBgOpacity: 0.82
     property real tooltipShadowOpacity: 0.22
 
-    // ========================================================================
-    // PRESET TABLE (valores por preset)
-    // (Aquí perfeccionas “la configuración” sin tocar lo manual)
-    // ========================================================================
     readonly property var densityPresets: ({
         compact: {
             gridRowSpacingBase: 4,
@@ -130,10 +86,7 @@ Item {
         return p ? p : root.densityPresets.normal
     }
 
-    // ========================================================================
-    // VALORES EFECTIVOS (preset si está activo, si no -> manual)
-    // ========================================================================
-    readonly property int gridRowSpacingBase: root.useDensityPreset
+       readonly property int gridRowSpacingBase: root.useDensityPreset
         ? root._presetObj().gridRowSpacingBase
         : root.manualGridRowSpacingBase
 
@@ -161,10 +114,7 @@ Item {
     readonly property int gridRowSpacing: Math.max(0, Math.round(root.gridRowSpacingBase))
     readonly property int gridColumnSpacing: Math.max(0, Math.round(root.gridColumnSpacingBase))
 
-    // ========================================================================
-    // ICON SIZE HELPERS
-    // ========================================================================
-    readonly property int baseIconSize: Math.max(
+       readonly property int baseIconSize: Math.max(
         1,
         Math.round(Appearance.font.pixelSize.large * root.baseIconScale)
     )
@@ -176,9 +126,6 @@ Item {
         return Math.max(1, Math.round(root.baseIconSize * m))
     }
 
-    // ========================================================================
-    // TOOLTIP: estado + helpers
-    // ========================================================================
     property Item tooltipTarget: null
     property string tooltipText: ""
 
@@ -196,9 +143,6 @@ Item {
         property int layoutIndex: 0
     }
 
-    // ------------------------------------------------------------------------
-    // TOOLTIP API
-    // ------------------------------------------------------------------------
     function _setTip(target, text) {
         if (!root.tooltipsEnabledEffective) return
         root.tooltipTarget = target
@@ -224,10 +168,7 @@ Item {
         }
     }
 
-    // ========================================================================
-    // TOOLTIP LAYER
-    // ========================================================================
-    Item {
+      Item {
         id: tipLayer
 
         parent: (root.Window.window && root.Window.window.contentItem) ? root.Window.window.contentItem : root
@@ -335,9 +276,6 @@ Item {
         }
     }
 
-    // ========================================================================
-    // LAYOUT TOGGLE (Hyprland)
-    // ========================================================================
     property int _layoutIndex: 0
     readonly property var _layouts: ["dwindle", "master", "scrolling"]
 
@@ -381,9 +319,6 @@ Item {
         root._applyLayout(root._currentLayout())
     }
 
-    // ========================================================================
-    // REACTIVIDAD: refrescar tooltip si cambia el estado externo
-    // ========================================================================
     Connections {
         target: GlobalStates
         function onOskOpenChanged() {
@@ -417,9 +352,6 @@ Item {
         }
     }
 
-    // ========================================================================
-    // SIZE / RESIZE ANIM
-    // ========================================================================
     implicitWidth: gridLayout.implicitWidth + (vertical ? 0 : root.outerPaddingH)
     implicitHeight: gridLayout.implicitHeight + (vertical ? root.outerPaddingV : 0)
 
@@ -432,9 +364,6 @@ Item {
         SpringAnimation { spring: 3; damping: 0.2; epsilon: 0.5 }
     }
 
-    // ========================================================================
-    // GRID DE BOTONES
-    // ========================================================================
     GridLayout {
         id: gridLayout
         anchors.centerIn: parent
