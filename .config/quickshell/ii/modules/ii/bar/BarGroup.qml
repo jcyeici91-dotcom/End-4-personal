@@ -7,12 +7,12 @@ Item {
 
     property bool vertical: false
     property int padding: 6
-    property int spacing: theme.bgIsCrystal ? 0 : 4
+    property int spacing: engine.bgIsCrystal ? 0 : 4
     property int edgeInset: 2
 
     // En modo Cristal, unificados.
-    property bool unifyInside: theme.bgIsCrystal ? true : false
-    property bool unifyChildChips: theme.bgIsCrystal ? true : false
+    property bool unifyInside: engine.bgIsCrystal ? true : false
+    property bool unifyChildChips: engine.bgIsCrystal ? true : false
 
     // Props requeridas
     property real startRadius: Appearance.rounding.normal
@@ -43,18 +43,48 @@ Item {
     property bool enableSizeAnimation: false
     property int sizeAnimDuration: 85
 
-    // ===== Theme resolver extracted =====
-    BarThemeResolver {
-        id: theme
+    // ========= Nuevo motor unificado (reemplaza Theme/Corners/Visibility/Size/Insets) =========
+    BarStyleEngine {
+        id: engine
+
+        // Theme / config
         options: Config.options
         layer0: Appearance.colors.colLayer0
+
+        // Corner / geometry inputs
+        vertical: root.vertical
+        isBottom: Config.options?.bar?.bottom ?? false
+        cornerStyle: root.cornerStyle
+
+        isBorderless: Config.options?.bar?.borderless ?? false
+        attachScreenLeft: root.attachScreenLeft
+        attachScreenRight: root.attachScreenRight
+
+        startRadius: root.startRadius
+        endRadius: root.endRadius
+
+        pillRadius: root.pillRadius
+        rectRadius: 4
+
+        // Visibility inputs
+        autoHide: root.autoHide
+        visibleChildrenCount: gridLayout.visibleChildren.length
+
+        // Implicit size inputs
+        padding: root.padding
+        effectiveEdgeInset: root.effectiveEdgeInset
+        contentImplicitWidth: gridLayout.implicitWidth
+        contentImplicitHeight: gridLayout.implicitHeight
+
+        // Background insets inputs
+        bridgeMode: root.bridgeMode
     }
 
     // Map a cornerStyle unificado: hug/float/rect/line
     readonly property string cornerStyle: {
-        if (theme.groupBackgroundStyle === "rect") return "rect";
-        if (theme.groupBackgroundStyle === "line") return "line";
-        if (theme.groupBackgroundStyle === "hybrid") return "float";
+        if (engine.groupBackgroundStyle === "rect") return "rect";
+        if (engine.groupBackgroundStyle === "line") return "line";
+        if (engine.groupBackgroundStyle === "hybrid") return "float";
         return "hug";
     }
 
@@ -65,59 +95,13 @@ Item {
     readonly property real bgSize: Math.min(width, height)
     readonly property real pillRadius: Math.max(0, bgSize / 2)
 
-    // ===== Corner style extracted (hug/float/rect/line) =====
-    BarCornerStyle {
-        id: corners
-        vertical: root.vertical
-        isBottom: theme.isBottom
-        cornerStyle: root.cornerStyle
-
-        isBorderless: theme.isBorderless
-        attachScreenLeft: root.attachScreenLeft
-        attachScreenRight: root.attachScreenRight
-
-        startRadius: root.startRadius
-        endRadius: root.endRadius
-
-        pillRadius: root.pillRadius
-        rectRadius: 4
-    }
-
-    // ===== Visibility/auto-hide extracted =====
-    BarVisibilityLogic {
-        id: vis
-        autoHide: root.autoHide
-        visibleChildrenCount: gridLayout.visibleChildren.length
-    }
-
-    // ===== Implicit sizes extracted =====
-    BarImplicitSizeLogic {
-        id: sz
-        shouldBeVisible: vis.shouldBeVisible
-        vertical: root.vertical
-        padding: root.padding
-        effectiveEdgeInset: root.effectiveEdgeInset
-        contentImplicitWidth: gridLayout.implicitWidth
-        contentImplicitHeight: gridLayout.implicitHeight
-    }
-
-    // ===== Background insets extracted (NUEVO) =====
-    BarBackgroundInsetsLogic {
-        id: insets
-        bridgeMode: root.bridgeMode
-        vertical: root.vertical
-        isBottom: theme.isBottom
-        cornerStyle: root.cornerStyle
-        effectiveEdgeInset: root.effectiveEdgeInset
-    }
-
     // Geometría / visibilidad
-    visible: vis.shouldBeVisible || opacity > 0
-    opacity: vis.shouldBeVisible ? 1 : 0
+    visible: engine.shouldBeVisible || opacity > 0
+    opacity: engine.shouldBeVisible ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.InOutQuad } }
 
-    implicitWidth: sz.implicitWidth
-    implicitHeight: sz.implicitHeight
+    implicitWidth: engine.implicitWidth
+    implicitHeight: engine.implicitHeight
 
     Behavior on implicitWidth {
         enabled: root.enableSizeAnimation
@@ -135,11 +119,11 @@ Item {
         id: backgroundLoader
         anchors.fill: parent
 
-        // (REEMPLAZO) márgenes desde BarBackgroundInsetsLogic
-        anchors.topMargin: insets.topMargin
-        anchors.bottomMargin: insets.bottomMargin
-        anchors.leftMargin: insets.leftMargin
-        anchors.rightMargin: insets.rightMargin
+        // márgenes desde BarStyleEngine (antes BarBackgroundInsetsLogic)
+        anchors.topMargin: engine.topMargin
+        anchors.bottomMargin: engine.bottomMargin
+        anchors.leftMargin: engine.leftMargin
+        anchors.rightMargin: engine.rightMargin
 
         sourceComponent: (root.cornerStyle === "line") ? lineBackgroundComponent : backgroundComponent
     }
@@ -153,12 +137,12 @@ Item {
             Rectangle {
                 width: parent.width
                 height: 2
-                anchors.bottom: theme.isBottom ? undefined : parent.bottom
-                anchors.top: theme.isBottom ? parent.top : undefined
+                anchors.bottom: engine.isBottomValue ? undefined : parent.bottom
+                anchors.top: engine.isBottomValue ? parent.top : undefined
                 color: {
-                    if (theme.bgIsCrystal)
-                        return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0, 0, 0, 0.3)
-                    return Appearance.colors.isDark ? Qt.rgba(1, 1, 1, root.borderOpacity * 2) : Qt.rgba(0, 0, 0, 0.2)
+                    if (engine.bgIsCrystal)
+                        return engine.themeIsDark ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0, 0, 0, 0.3)
+                    return engine.themeIsDark ? Qt.rgba(1, 1, 1, root.borderOpacity * 2) : Qt.rgba(0, 0, 0, 0.2)
                 }
                 visible: root.effectiveShowBorder && root.isContainer
             }
@@ -171,10 +155,10 @@ Item {
         HybridBackground {
             bridgeMode: root.bridgeMode
             isContainer: root.isContainer
-            isBorderless: theme.isBorderless
+            isBorderless: engine.isBorderlessEffective
 
-            bgIsCrystal: theme.bgIsCrystal
-            themeIsDark: theme.themeIsDark
+            bgIsCrystal: engine.bgIsCrystal
+            themeIsDark: engine.themeIsDark
             effectiveShowBorder: root.effectiveShowBorder
             effectiveShowHighlight: root.effectiveShowHighlight
 
@@ -183,12 +167,12 @@ Item {
             highlightOpacity: root.highlightOpacity
 
             useRectBg: (root.cornerStyle === "rect")
-            rectRadius: corners.baseRadius
+            rectRadius: engine.baseRadius
 
-            rtl: corners.rtl
-            rtr: corners.rtr
-            rbl: corners.rbl
-            rbr: corners.rbr
+            rtl: engine.rtl
+            rtr: engine.rtr
+            rbl: engine.rbl
+            rbr: engine.rbr
         }
     }
 

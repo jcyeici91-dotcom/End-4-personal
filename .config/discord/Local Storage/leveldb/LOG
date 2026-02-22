@@ -1,20 +1,5 @@
-2026/02/21-23:03:33.788 61a94 Reusing MANIFEST /home/jcgomez91/.config/discord/Local Storage/leveldb/MANIFEST-000001
-2026/02/21-23:03:33.815 61a94 Recovering log #2098
-2026/02/21-23:03:33.815 61a94 Reusing old log /home/jcgomez91/.config/discord/Local Storage/leveldb/002098.log 
-2026/02/21-23:04:33.820 61a95 Level-0 table #2102: started
-2026/02/21-23:04:33.830 61a95 Level-0 table #2102: 79253 bytes OK
-2026/02/21-23:04:33.834 61a95 Delete type=0 #2098
-2026/02/21-23:04:33.834 61a95 Compacting 4@0 + 2@1 files
-2026/02/21-23:04:33.874 61a95 Generated table #2103@0: 41 keys, 4391242 bytes
-2026/02/21-23:04:33.912 61a95 Generated table #2104@0: 96 keys, 4110137 bytes
-2026/02/21-23:04:33.912 61a95 Compacted 4@0 + 2@1 files => 8501379 bytes
-2026/02/21-23:04:33.915 61a95 compacted to: files[ 0 3 1 0 0 0 0 ]
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2097
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2099
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2102
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2095
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2093
-2026/02/21-23:04:33.916 61a95 Delete type=2 #2092
-2026/02/21-23:14:54.915 61a95 Level-0 table #2106: started
-2026/02/21-23:14:54.956 61a95 Level-0 table #2106: 4411041 bytes OK
-2026/02/21-23:14:54.960 61a95 Delete type=0 #2101
+2026/02/22-09:36:06.623 6e2f5 Reusing MANIFEST /home/jcgomez91/.config/discord/Local Storage/leveldb/MANIFEST-000001
+2026/02/22-09:36:06.631 6e2f5 Recovering log #2105
+2026/02/22-09:36:06.632 6e2f5 Level-0 table #2108: started
+2026/02/22-09:36:06.634 6e2f5 Level-0 table #2108: 35774 bytes OK
+2026/02/22-09:36:06.635 6e2f5 Delete type=0 #2105
