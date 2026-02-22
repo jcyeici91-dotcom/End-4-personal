@@ -488,3 +488,16 @@
 2/22/2026, 9:37:21 AM CST 11: window.close win2
 2/22/2026, 9:47:30 AM CST 12: before-quit
 2/22/2026, 9:47:30 AM CST 13: window.close win2
+2/22/2026, 11:32:51 AM CST 0: 
+
+----------------------------------------------
+2/22/2026, 11:32:51 AM CST 1: Discord starting: {"releaseChannel":"stable","version":"0.0.125"}, modulepath: /home/jcgomez91/.config/discord/0.0.125/modules
+2/22/2026, 11:32:51 AM CST 2: ✅ webContents.created web1 ""
+2/22/2026, 11:32:51 AM CST 3: ✅ window.created win1 "discord"
+2/22/2026, 11:32:52 AM CST 4: ✅ webContents.did-finish-load web1
+2/22/2026, 11:32:52 AM CST 5: ✅ webContents.created web2 ""
+2/22/2026, 11:32:52 AM CST 6: ✅ window.created win2 "Discord"
+2/22/2026, 11:32:53 AM CST 7: ✅ webContents.did-finish-load web2
+2/22/2026, 11:32:54 AM CST 8: window.close win1
+2/22/2026, 11:32:54 AM CST 9: webContents.destroyed web1
+2/22/2026, 11:32:54 AM CST 10: window.closed win1

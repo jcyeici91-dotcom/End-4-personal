@@ -33652,3 +33652,50 @@
 [2026-02-22 09:46:16.526] [warn]  The resource https://discord.com/assets/7a6a566c2e88a35d.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
 [2026-02-22 09:46:16.526] [warn]  The resource https://discord.com/assets/e52f0cba712e2fb4.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
 [2026-02-22 09:46:16.526] [warn]  The resource https://discord.com/assets/dd24010f3cf7def7.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:32:52.234] [info]  DiscordSplash.signalReady
+[2026-02-22 11:32:52.297] [info]  DiscordSplash.onStateUpdate: {"status":"checking-for-updates"}
+[2026-02-22 11:32:52.297] [info]  Splash.onStateUpdate: {"status":"checking-for-updates"}
+[2026-02-22 11:32:52.773] [info]  DiscordSplash.onStateUpdate: {"status":"launching"}
+[2026-02-22 11:32:52.774] [info]  Splash.onStateUpdate: {"status":"launching"}
+[2026-02-22 11:32:53.234] [info]  Splash.updateCountdownSeconds: undefined
+[2026-02-22 11:32:53.471] [info]  [FAST CONNECT] wss://gateway.discord.gg/?encoding=etf&v=9&compress=zstd-stream, encoding: etf, version: 9
+[2026-02-22 11:32:53.653] [info]  [libdiscore] [experiment_manager] Loaded experiments from cache
+[2026-02-22 11:32:53.965] [info]  Initializing voice engine with audio subsystem: standard
+[2026-02-22 11:32:54.174] [info]  [default] [BUILD INFO] Release Channel: stable, Build Number: 500334, Version Hash: b1425155b3274edfed84ddc4aa68048c8469cb87
+[2026-02-22 11:32:54.233] [info]  Splash.updateCountdownSeconds: undefined
+[2026-02-22 11:32:54.364] [warn]  [CloudSyncUtils] CloudSync is not supported on this platform
+[2026-02-22 11:32:54.376] [info]  [default] [NATIVE INFO] host 0.0.125, modules: discord_desktop_core: 1, discord_erlpack: 1, discord_spellcheck: 1, discord_utils: 1, discord_voice: 1, discord_zstd: 1, discord_krisp: 1, discord_game_utils: 1, discord_rpc: 1, build: null
+[2026-02-22 11:32:54.384] [info]  [libdiscore] The answer for life the universe and everything is: 42
+[2026-02-22 11:32:54.399] [error] [Spellchecker] sh is not a valid locale.
+[2026-02-22 11:32:55.040] [info]  [FAST CONNECT] sending identify
+[2026-02-22 11:32:55.086] [info]  [Spellchecker] Switching to es-ES (available)
+[2026-02-22 11:32:55.086] [info]  [MediaEngineStore] OpenH264 is ready [object Object]
+[2026-02-22 11:32:55.192] [info]  [MediaEngineStore] OpenH264 cleanup [object Object]
+[2026-02-22 11:32:55.513] [info]  [GatewaySocket] [CONNECT] wss://gateway.discord.gg, encoding: etf, version: 9, compression: zstd-stream
+[2026-02-22 11:32:55.513] [info]  [GatewaySocket] [FAST CONNECT] successfully took over websocket, state: [object Object]
+[2026-02-22 11:32:55.513] [info]  [GatewaySocket] [CONNECTED] wss://gateway.discord.gg/?encoding=etf&v=9&compress=zstd-stream in 1 ms
+[2026-02-22 11:32:55.565] [info]  [RPCServer:WSS] Starting on 6463
+[2026-02-22 11:32:55.567] [info]  [RPCServer:IPC] Starting on /run/user/1000/discord-ipc-0
+[2026-02-22 11:32:55.984] [info]  [GatewaySocket] [READY] took 472ms, as 4bc3d3ef1feb11a2bf1a036bfc692971
+[2026-02-22 11:32:55.987] [info]  [Flux] Dispatching CONNECTION_OPEN
+[2026-02-22 11:32:55.991] [info]  [DatabaseManager] removing database (user: 711276958700404810, database: undefined)
+[2026-02-22 11:32:55.999] [warn]  [NativeDispatchUtils] Tried getting Dispatch instance before instantiated
+[2026-02-22 11:32:56.011] [info]  [MessageActionCreators] Fetching messages for 1393081757070397610 between undefined and undefined. jump={"jumpType":"ANIMATED"}
+[2026-02-22 11:32:56.071] [warn]  Requested message VG4zAf does not have a value in the requested locale es-ES nor the default locale en-US
+[2026-02-22 11:32:56.071] [warn]  Requested message 8VIRzR does not have a value in the requested locale es-ES nor the default locale en-US
+[2026-02-22 11:32:56.208] [info]  [GatewaySocket] [READY_SUPPLEMENTAL] took 696ms
+[2026-02-22 11:32:56.378] [info]  [MessageActionCreators] Fetched 30 messages for 1393081757070397610 isBefore:false isAfter:false
+[2026-02-22 11:32:56.382] [info]  [ChannelMessages] loadComplete: resetting state for channelId=1393081757070397610, sending.length=0
+[2026-02-22 11:32:58.279] [info]  [OverlayKeybindExperimentManager] Experiments initializing...
+[2026-02-22 11:32:58.287] [info]  [OverlayKeybindExperimentManager] Experiments initialized
+[2026-02-22 11:33:02.671] [info]  [Routing/Utils] transitionTo - Transitioning to /channels/1393080422245863506/1393081757070397610
+[2026-02-22 11:33:04.834] [info]  [discord_protos.discord_users.v1.FrecencyUserSettings] Loading proto
+[2026-02-22 11:33:06.738] [info]  [discord_protos.discord_users.v1.FrecencyUserSettings] Scheduling save from markDirty
+[2026-02-22 11:33:06.738] [info]  [discord_protos.discord_users.v1.FrecencyUserSettings] Persisting proto
+[2026-02-22 11:33:08.462] [info]  [libdiscore] [BlockedDomainsStore] Successfully fetched blocked domains
+[2026-02-22 11:33:11.462] [warn]  The resource https://discord.com/assets/189422196a4f8b53.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:33:11.463] [warn]  The resource https://discord.com/assets/ce3b8055f5114434.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:33:11.463] [warn]  The resource https://discord.com/assets/cb2006dbced0e246.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:33:11.464] [warn]  The resource https://discord.com/assets/7a6a566c2e88a35d.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:33:11.464] [warn]  The resource https://discord.com/assets/e52f0cba712e2fb4.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+[2026-02-22 11:33:11.464] [warn]  The resource https://discord.com/assets/dd24010f3cf7def7.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.

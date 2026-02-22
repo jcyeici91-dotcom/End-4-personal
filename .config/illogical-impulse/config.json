@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 2767.6484375,
-                "y": 229.58984375
+                "x": 2859.296875,
+                "y": 235.02734375
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2696.3671875,
-                "y": 1607.1640625
+                "x": 2850.61328125,
+                "y": 1705.859375
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 303.9374999999999,
-                "y": 103.67578125
+                "x": 239.3437499999999,
+                "y": 131.73046875
             }
         }
     },
@@ -208,12 +208,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 1,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 0,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rounded",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false

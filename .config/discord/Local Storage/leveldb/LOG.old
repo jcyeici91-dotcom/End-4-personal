@@ -1,3 +1,8 @@
-2026/02/22-00:06:39.527 878a Reusing MANIFEST /home/jcgomez91/.config/discord/Local Storage/leveldb/MANIFEST-000001
-2026/02/22-00:06:39.565 878a Recovering log #2105
-2026/02/22-00:06:39.565 878a Reusing old log /home/jcgomez91/.config/discord/Local Storage/leveldb/002105.log 
+2026/02/22-09:36:06.623 6e2f5 Reusing MANIFEST /home/jcgomez91/.config/discord/Local Storage/leveldb/MANIFEST-000001
+2026/02/22-09:36:06.631 6e2f5 Recovering log #2105
+2026/02/22-09:36:06.632 6e2f5 Level-0 table #2108: started
+2026/02/22-09:36:06.634 6e2f5 Level-0 table #2108: 35774 bytes OK
+2026/02/22-09:36:06.635 6e2f5 Delete type=0 #2105
+2026/02/22-09:47:27.494 6e2f6 Level-0 table #2111: started
+2026/02/22-09:47:27.532 6e2f6 Level-0 table #2111: 4456109 bytes OK
+2026/02/22-09:47:27.536 6e2f6 Delete type=0 #2109
