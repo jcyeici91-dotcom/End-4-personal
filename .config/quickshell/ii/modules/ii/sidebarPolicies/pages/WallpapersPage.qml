@@ -5,7 +5,7 @@ import QtQuick.Effects
 import Qt.labs.folderlistmodel
 import Qt.labs.platform 1.1
 
-import qs.services            
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
@@ -13,20 +13,42 @@ Item {
     id: page
     required property var theme
 
-    // Ruta de tus fondos    /HOME/usuario/Pictures/Wallpapers/
-    property url wallpapersFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0] + "/Wallpapers"        
+    property url wallpapersFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0] + "/Wallpapers"
 
     property string selectedPath: ""
     property bool reduceMotion: false
 
+    function _rgba(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode)
+        ? Appearance.m3colors.darkmode
+        : _isDark(Appearance.colors.colLayer0)
+
     readonly property color surface0: Appearance.colors.colLayer0
     readonly property color surface1: Appearance.colors.colLayer1
-    readonly property color border0: Appearance.colors.colLayer0Border
-    readonly property color onSurface: Appearance.colors.colOnLayer0
-    readonly property color onSurfaceMuted: Qt.rgba(onSurface.r, onSurface.g, onSurface.b, 0.75)
 
-    readonly property color accent: (page.theme && page.theme.colAccent) ? page.theme.colAccent : Qt.rgba(0.45, 0.65, 1.0, 1.0)
+    readonly property color border0: (Appearance.colors.colLayer1Border !== undefined)
+        ? Appearance.colors.colLayer1Border
+        : _rgba(Appearance.colors.colOnLayer1, themeIsDark ? 0.14 : 0.18)
+
+    readonly property color onSurface: Appearance.colors.colOnLayer1
+    readonly property color onSurfaceMuted: _rgba(onSurface, 0.75)
+
+    readonly property color accent: (page.theme && page.theme.colAccent)
+        ? page.theme.colAccent
+        : (Appearance.colors.colPrimary !== undefined ? Appearance.colors.colPrimary : Qt.rgba(0.45, 0.65, 1.0, 1.0))
+
     readonly property string fontMain: (page.theme && page.theme.fontMain) ? page.theme.fontMain : ""
+
+    readonly property color overlayInk: _rgba(onSurface, 0.10)
+    readonly property color overlayInkPressed: _rgba(onSurface, 0.22)
+
+    readonly property color selectionChipBg: _rgba(accent, 0.16)
+    readonly property color selectionChipBorder: _rgba(accent, 0.18)
+
+    readonly property color cardShadow: Qt.rgba(0, 0, 0, themeIsDark ? 0.35 : 0.22)
+    readonly property color imagePlaceholder: _rgba(onSurface, 0.06)
 
     function toCleanPath(fileUrl) {
         return fileUrl.toString().replace("file://", "")
@@ -84,9 +106,9 @@ Item {
                     width: 34
                     height: 34
                     radius: 17
-                    color: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.16)
+                    color: page.selectionChipBg
                     border.width: 1
-                    border.color: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.18)
+                    border.color: page.selectionChipBorder
 
                     MaterialSymbol {
                         anchors.centerIn: parent
@@ -120,19 +142,17 @@ Item {
                     }
                 }
 
-                // Botones de acción
                 RowLayout {
                     spacing: 8
                     Layout.alignment: Qt.AlignVCenter
 
-                    // Botón: Aleatorio
                     Rectangle {
                         width: 34
                         height: 34
                         radius: 17
-                        color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
+                        color: page.overlayInk
                         border.width: 1
-                        border.color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+                        border.color: _rgba(page.onSurface, 0.10)
 
                         MaterialSymbol {
                             anchors.centerIn: parent
@@ -145,8 +165,8 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
-                            color: "black"
-                            opacity: rndMouse.pressed ? 0.22 : (rndMouse.containsMouse ? 0.10 : 0.0)
+                            color: _rgba(page.onSurface, 1.0)
+                            opacity: rndMouse.pressed ? 0.12 : (rndMouse.containsMouse ? 0.06 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
 
@@ -159,14 +179,13 @@ Item {
                         }
                     }
 
-                    // Botón: Re-escanear
                     Rectangle {
                         width: 34
                         height: 34
                         radius: 17
-                        color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
+                        color: page.overlayInk
                         border.width: 1
-                        border.color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+                        border.color: _rgba(page.onSurface, 0.10)
 
                         MaterialSymbol {
                             anchors.centerIn: parent
@@ -179,8 +198,8 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
-                            color: "black"
-                            opacity: refMouse.pressed ? 0.22 : (refMouse.containsMouse ? 0.10 : 0.0)
+                            color: _rgba(page.onSurface, 1.0)
+                            opacity: refMouse.pressed ? 0.12 : (refMouse.containsMouse ? 0.06 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
 
@@ -193,18 +212,13 @@ Item {
                         }
                     }
 
-                    // Botón: Reducir movimiento (toggle)
                     Rectangle {
                         width: 34
                         height: 34
                         radius: 17
-                        color: page.reduceMotion
-                               ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.18)
-                               : Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
+                        color: page.reduceMotion ? _rgba(page.accent, 0.18) : page.overlayInk
                         border.width: 1
-                        border.color: page.reduceMotion
-                                     ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.35)
-                                     : Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.10)
+                        border.color: page.reduceMotion ? _rgba(page.accent, 0.35) : _rgba(page.onSurface, 0.10)
 
                         MaterialSymbol {
                             anchors.centerIn: parent
@@ -217,8 +231,8 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             radius: 17
-                            color: "black"
-                            opacity: motMouse.pressed ? 0.22 : (motMouse.containsMouse ? 0.10 : 0.0)
+                            color: _rgba(page.onSurface, 1.0)
+                            opacity: motMouse.pressed ? 0.12 : (motMouse.containsMouse ? 0.06 : 0.0)
                             Behavior on opacity { NumberAnimation { duration: 110 } }
                         }
 
@@ -234,7 +248,6 @@ Item {
             }
         }
 
-        // GRID
         GridView {
             id: wallGrid
             Layout.fillWidth: true
@@ -259,14 +272,12 @@ Item {
 
                 contentItem: Rectangle {
                     radius: 4
-                    color: vbar.pressed
-                           ? Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.55)
-                           : Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.35)
+                    color: vbar.pressed ? _rgba(page.onSurface, 0.55) : _rgba(page.onSurface, 0.35)
                 }
 
                 background: Rectangle {
                     radius: 4
-                    color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.08)
+                    color: _rgba(page.onSurface, 0.08)
                 }
             }
 
@@ -284,15 +295,13 @@ Item {
                     radius: 16
                     color: page.surface1
                     border.width: isSelected ? 2 : 1
-                    border.color: isSelected
-                                  ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.90)
-                                  : page.border0
+                    border.color: isSelected ? _rgba(page.accent, 0.90) : page.border0
                     clip: true
 
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         shadowEnabled: true
-                        shadowColor: Qt.rgba(0, 0, 0, 0.35)
+                        shadowColor: page.cardShadow
                         shadowBlur: 0.70
                         shadowVerticalOffset: 2
                         shadowHorizontalOffset: 0
@@ -313,7 +322,7 @@ Item {
                         id: placeholder
                         anchors.fill: parent
                         visible: img.status !== Image.Ready
-                        color: Qt.rgba(page.onSurface.r, page.onSurface.g, page.onSurface.b, 0.06)
+                        color: page.imagePlaceholder
 
                         Rectangle {
                             id: shimmer
@@ -357,7 +366,7 @@ Item {
                         anchors.bottom: parent.bottom
                         anchors.margins: 10
                         text: fileName
-                        color: "white"
+                        color: Qt.rgba(1, 1, 1, 1)
                         font.pixelSize: 12
                         font.bold: true
                         font.family: page.fontMain
@@ -372,24 +381,22 @@ Item {
                         height: 30
                         radius: 15
                         visible: isSelected || wallMouse.containsMouse || wallMouse.pressed
-                        color: isSelected
-                               ? Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.90)
-                               : Qt.rgba(0, 0, 0, 0.35)
+                        color: isSelected ? _rgba(page.accent, 0.90) : Qt.rgba(0, 0, 0, 0.35)
                         border.width: 1
-                        border.color: Qt.rgba(1, 1, 1, 0.18)
+                        border.color: _rgba(Qt.rgba(1, 1, 1, 1), 0.18)
 
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: isSelected ? "check" : "wallpaper"
-                            color: "white"
+                            color: Qt.rgba(1, 1, 1, 1)
                             font.pixelSize: 18
                         }
                     }
 
                     Rectangle {
                         anchors.fill: parent
-                        color: "black"
-                        opacity: wallMouse.pressed ? 0.30 : (wallMouse.containsMouse ? 0.10 : 0.0)
+                        color: _rgba(page.onSurface, 1.0)
+                        opacity: wallMouse.pressed ? 0.16 : (wallMouse.containsMouse ? 0.07 : 0.0)
                         Behavior on opacity { NumberAnimation { duration: 110 } }
                     }
 
@@ -398,7 +405,7 @@ Item {
                         width: 12
                         height: 12
                         radius: 999
-                        color: Qt.rgba(page.accent.r, page.accent.g, page.accent.b, 0.22)
+                        color: _rgba(page.accent, 0.22)
                         visible: false
                         x: cx - width / 2
                         y: cy - height / 2
@@ -444,7 +451,7 @@ Item {
             }
         }
 
-            Rectangle {
+        Rectangle {
             Layout.fillWidth: true
             visible: wallpaperModel.count === 0
             radius: 16

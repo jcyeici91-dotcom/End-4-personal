@@ -1,7 +1,7 @@
 {
   "id": "todo",
   "name": "Todo List",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "minNoctaliaVersion": "3.7.1",
   "author": "lonerOrz <lonerOrz@qq.com>",
   "license": "MIT",
@@ -13,7 +13,8 @@
     "barWidget": "BarWidget.qml",
     "desktopWidget": "DesktopWidget.qml",
     "panel": "Panel.qml",
-    "settings": "Settings.qml"
+    "settings": "Settings.qml",
+    "controlCenterWidget": "ControlCenterWidget.qml"
   },
   "dependencies": {
     "plugins": []

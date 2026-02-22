@@ -29,9 +29,9 @@ Item {
     function getLuminance(c) { return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b }
     readonly property bool isDark: getLuminance(surface1) < 0.5
 
-    readonly property color smartAccent: isDark ? "#40c4ff" : "#0091ea"
-    readonly property color smartText: isDark ? "#ffffff" : "#1d1d1d"
-    readonly property color smartTextMuted: isDark ? "#b0bec5" : "#546e7a"
+readonly property color smartAccent: Appearance.colors.colPrimary
+readonly property color smartText: Appearance.colors.colOnLayer1
+readonly property color smartTextMuted: Appearance.colors.colSubtext
 
     // Header 
     Flickable {

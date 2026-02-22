@@ -16,10 +16,12 @@ Item {
     if (pluginApi) {
       // Initialize pages config
       if (!pluginApi.pluginSettings.pages) {
-        pluginApi.pluginSettings.pages = [{
-          id: 0,
-          name: "General"
-        }];
+        pluginApi.pluginSettings.pages = [
+              {
+                id: 0,
+                name: "General"
+              }
+            ];
         pluginApi.pluginSettings.current_page_id = 0;
       }
 
@@ -70,7 +72,8 @@ Item {
   // ============================================
 
   function saveTodos() {
-    if (!pluginApi || !pluginApi.pluginSettings) return;
+    if (!pluginApi || !pluginApi.pluginSettings)
+      return;
     pluginApi.pluginSettings.todos = rawTodos.slice();
     pluginApi.pluginSettings.count = rawTodos.length;
     pluginApi.pluginSettings.completedCount = rawTodos.filter(t => t.completed).length;
@@ -78,7 +81,8 @@ Item {
   }
 
   function savePages() {
-    if (!pluginApi || !pluginApi.pluginSettings) return;
+    if (!pluginApi || !pluginApi.pluginSettings)
+      return;
     pluginApi.pluginSettings.pages = rawPages.slice();
     pluginApi.saveSettings();
   }
@@ -92,10 +96,11 @@ Item {
 
     // Panel Control
     function togglePanel() {
-      if (!pluginApi) return;
+      if (!pluginApi)
+        return;
       pluginApi.withCurrentScreen(screen => {
-        pluginApi.togglePanel(screen);
-      });
+                                    pluginApi.togglePanel(screen);
+                                  });
     }
 
     // Todo Read Operations
@@ -108,10 +113,10 @@ Item {
     }
     function getCount(): string {
       return JSON.stringify({
-        total: rawTodos.length,
-        active: rawTodos.filter(t => !t.completed).length,
-        completed: rawTodos.filter(t => t.completed).length
-      });
+                              total: rawTodos.length,
+                              active: rawTodos.filter(t => !t.completed).length,
+                              completed: rawTodos.filter(t => t.completed).length
+                            });
     }
 
     // Todo Create Operations
@@ -143,24 +148,24 @@ Item {
 
     // Todo Update Operations
     function setTodoPriority(id: string, priority: string) {
-      updateTodo(id, { priority: priority })
-        ? ToastService.showNotice(pluginApi.tr("main.updated_todo_priority"))
-        : ToastService.showError(pluginApi.tr("main.error_update_failed"));
+      updateTodo(id, {
+                   priority: priority
+                 }) ? ToastService.showNotice(pluginApi.tr("main.updated_todo_priority")) : ToastService.showError(pluginApi.tr("main.error_update_failed"));
     }
     function setTodoCompleted(id: string, completed: bool) {
-      updateTodo(id, { completed: completed })
-        ? ToastService.showNotice(pluginApi.tr("main.updated_todo"))
-        : ToastService.showError(pluginApi.tr("main.error_update_failed"));
+      updateTodo(id, {
+                   completed: completed
+                 }) ? ToastService.showNotice(pluginApi.tr("main.updated_todo")) : ToastService.showError(pluginApi.tr("main.error_update_failed"));
     }
     function setTodoDetails(id: string, details: string) {
-      updateTodo(id, { details: details })
-        ? ToastService.showNotice(pluginApi.tr("main.updated_todo"))
-        : ToastService.showError(pluginApi.tr("main.error_update_failed"));
+      updateTodo(id, {
+                   details: details
+                 }) ? ToastService.showNotice(pluginApi.tr("main.updated_todo")) : ToastService.showError(pluginApi.tr("main.error_update_failed"));
     }
     function setTodoText(id: string, text: string) {
-      updateTodo(id, { text: text })
-        ? ToastService.showNotice(pluginApi.tr("main.updated_todo"))
-        : ToastService.showError(pluginApi.tr("main.error_update_failed"));
+      updateTodo(id, {
+                   text: text
+                 }) ? ToastService.showNotice(pluginApi.tr("main.updated_todo")) : ToastService.showError(pluginApi.tr("main.error_update_failed"));
     }
     function toggleTodo(id: string) {
       var todo = findTodo(id);
@@ -169,16 +174,16 @@ Item {
         return;
       }
       var completed = !todo.completed;
-      updateTodo(id, { completed: completed });
+      updateTodo(id, {
+                   completed: completed
+                 });
       var action = completed ? pluginApi.tr("main.todo_completed") : pluginApi.tr("main.todo_marked_incomplete");
       ToastService.showNotice(pluginApi.tr("main.todo_status_changed") + action);
     }
 
     // Todo Delete Operations
     function removeTodo(id: string) {
-      deleteTodo(id)
-        ? ToastService.showNotice(pluginApi.tr("main.removed_todo"))
-        : ToastService.showError(pluginApi.tr("main.error_remove_failed"));
+      deleteTodo(id) ? ToastService.showNotice(pluginApi.tr("main.removed_todo")) : ToastService.showError(pluginApi.tr("main.error_remove_failed"));
     }
     function clearCompleted() {
       var cleared = clearCompletedTodos();
@@ -281,7 +286,8 @@ Item {
   // Update todo (supports text/completed/priority/details)
   function updateTodo(id, updates) {
     var index = findTodoIndex(id);
-    if (index === -1) return false;
+    if (index === -1)
+      return false;
 
     var todo = rawTodos[index];
     var oldCompleted = todo.completed;
@@ -308,7 +314,8 @@ Item {
   // Delete specific todo
   function deleteTodo(id) {
     var index = findTodoIndex(id);
-    if (index === -1) return false;
+    if (index === -1)
+      return false;
     rawTodos.splice(index, 1);
     saveTodos();
     return true;
@@ -333,9 +340,9 @@ Item {
   function createPage(name) {
     var newId = rawPages.length > 0 ? Math.max(...rawPages.map(p => p.id)) + 1 : 0;
     rawPages.push({
-      id: newId,
-      name: name
-    });
+                    id: newId,
+                    name: name
+                  });
     savePages();
     return true;
   }
@@ -369,7 +376,8 @@ Item {
   // Move todo to correct position based on completion status
   // Called when todo completion status changes
   function moveTodoToCorrectPosition(todoId) {
-    if (!rawTodos || rawTodos.length === 0) return;
+    if (!rawTodos || rawTodos.length === 0)
+      return;
 
     // Find the todo
     var todoIndex = -1;
@@ -379,7 +387,8 @@ Item {
         break;
       }
     }
-    if (todoIndex === -1) return;
+    if (todoIndex === -1)
+      return;
 
     var movedTodo = rawTodos[todoIndex];
     var todoPageId = movedTodo.pageId;  // Use the todo's own pageId
@@ -413,7 +422,8 @@ Item {
 
   // Move todo by index (for drag reorder in Panel)
   function moveTodo(todoId, fromIndex: int, toIndex: int, pageId: int) {
-    if (!rawTodos || rawTodos.length === 0) return;
+    if (!rawTodos || rawTodos.length === 0)
+      return;
 
     // Find the todo in rawTodos
     var todo = null;
@@ -425,15 +435,18 @@ Item {
         break;
       }
     }
-    if (!todo || fromGlobalIndex === -1) return;
+    if (!todo || fromGlobalIndex === -1)
+      return;
 
     // Get todos for the target page
-    var pageTodos = rawTodos.filter(function(t) {
+    var pageTodos = rawTodos.filter(function (t) {
       return t.pageId === pageId;
     });
 
-    if (fromIndex < 0 || fromIndex >= pageTodos.length) return;
-    if (toIndex < 0 || toIndex >= pageTodos.length) return false;
+    if (fromIndex < 0 || fromIndex >= pageTodos.length)
+      return;
+    if (toIndex < 0 || toIndex >= pageTodos.length)
+      return false;
 
     // Remove from current position
     rawTodos.splice(fromGlobalIndex, 1);
@@ -473,13 +486,16 @@ Item {
   // Move todo by page-relative index (for drag reorder in Panel)
   // Always operates within the current page
   function moveTodoItem(fromIndex: int, toIndex: int) {
-    if (!rawTodos || rawTodos.length === 0) return;
+    if (!rawTodos || rawTodos.length === 0)
+      return;
 
     var pageId = pluginApi?.pluginSettings?.current_page_id ?? 0;
     var pageTodos = rawTodos.filter(t => t.pageId === pageId);
 
-    if (fromIndex < 0 || fromIndex >= pageTodos.length) return;
-    if (toIndex < 0 || toIndex >= pageTodos.length) return;
+    if (fromIndex < 0 || fromIndex >= pageTodos.length)
+      return;
+    if (toIndex < 0 || toIndex >= pageTodos.length)
+      return;
 
     var todoId = pageTodos[fromIndex].id;
     moveTodo(todoId, fromIndex, toIndex, pageId);

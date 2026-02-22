@@ -3,31 +3,55 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.ii.ui 1.0  
+
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
+
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+
 import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
 
     property bool vertical: false
+    // Detectamos si la barra está a la derecha o a la izquierda
+    readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
 
-    // --- Tamaño: NO crecer por más letras ---
-    // Si fixedSize está activo, usa fixedSize.
-    // Si no, usa maxSize como ancho/alto fijo (no depende del texto).
     property int maxSize: 165
     property bool isFixedSize: Config.options.bar.activeWindow.fixedSize
-    property int fixedSize: vertical ? 150 : 250
+    // Le damos un tamaño un poco más largo en vertical para que el texto fluya bien
+    property int fixedSize: vertical ? 180 : 250
     readonly property int capsuleSize: isFixedSize ? fixedSize : maxSize
+
+    // --- LÓGICA DE ESTILOS BASADA EN BARCONTENT ---
+    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
+    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+
+    readonly property string resolvedStyle: {
+        if (followGlobalBarStyle) {
+            const s = UIState.surfaceStyle
+            if (s !== "") return s
+        }
+        switch (barBackgroundStyleFromConfig) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        case 4: return "line"
+        default: return "solid"
+        }
+    }
+
+    property bool hideBackground: resolvedStyle === "crystal" || resolvedStyle === "line"
 
     property bool parallaxEnabled: true
     property bool prismaticBorder: true
 
-    // --- Hover scroll: velocidad “media” (px/seg) ---
     property int titleScrollPxPerSecond: 25
     property int titleScrollPauseStartMs: 450
     property int titleScrollPauseEndMs: 650
@@ -38,36 +62,26 @@ Item {
     property real prismAngle: 0.0
     property point parallaxOffset: Qt.point(0, 0)
 
-    function _luma(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode) ? Appearance.m3colors.darkmode : false
 
-    readonly property color _themeProbe: (
-        Appearance.colors.colLayer0
-        ?? Appearance.colors.colLayer1
-        ?? Appearance.colors.colSurface
-        ?? Appearance.colors.colBackground
-        ?? Appearance.colors.colOnSurface
-    )
-
-    readonly property bool isLightTheme: _luma(_themeProbe) > 0.55
-
-    readonly property color titleColor: isLightTheme
-        ? Qt.rgba(0.05, 0.05, 0.06, 0.98)
-        : Qt.rgba(1.00, 1.00, 1.00, 0.96)
-
-    readonly property color labelColor: isLightTheme
-        ? Qt.rgba(0.08, 0.08, 0.10, 0.84)
-        : Qt.rgba(1.00, 1.00, 1.00, 0.78)
-
+    // Texto
+    readonly property color titleColor: Appearance.colors.colOnLayer1
+    readonly property color labelColor: Appearance.colors.colOnLayer2
     readonly property real labelOpacity: 1.0
 
     readonly property bool titleShadowEnabled: true
-    readonly property color titleShadowColor: isLightTheme
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.10)
-        : Qt.rgba(0.0, 0.0, 0.0, 0.60)
+    readonly property color titleShadowColor: themeIsDark
+        ? Qt.rgba(0, 0, 0, 0.55)
+        : Qt.rgba(0, 0, 0, 0.18)
 
-    readonly property color labelShadowColor: isLightTheme
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.06)
-        : Qt.rgba(0.0, 0.0, 0.0, 0.50)
+    readonly property color labelShadowColor: themeIsDark
+        ? Qt.rgba(0, 0, 0, 0.45)
+        : Qt.rgba(0, 0, 0, 0.12)
+
+    // Fondo “capsule”
+    readonly property color capsuleFill: Appearance.colors.colLayer1
+    readonly property color capsuleBorder: Appearance.colors.colLayer3
+    readonly property color capsuleInner: Appearance.colors.colLayer2
 
     QtObject {
         id: internal
@@ -98,11 +112,9 @@ Item {
         }
     }
 
-    // Tamaño fijo (no depende del contentRow / texto)
-    implicitWidth: vertical ? Appearance.sizes.barHeight : capsuleSize
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : capsuleSize
     implicitHeight: vertical ? capsuleSize : Appearance.sizes.barHeight
 
-    // Mantengo animación suave cuando cambie fixedSize/maxSize, etc.
     Behavior on implicitWidth { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
     Behavior on implicitHeight { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
 
@@ -116,35 +128,45 @@ Item {
 
     Rectangle {
         id: bgCapsule
+
+        visible: !root.hideBackground
         anchors.fill: parent
         anchors.margins: 2
-        radius: 10
-        color: Appearance.colors.colOnSurface
-        opacity: 0.0
-        visible: false
-        enabled: false
+        radius: root.vertical ? (width / 2) : 10
+        antialiasing: true
+        clip: true
+
+        color: root.capsuleFill
+
+        border.width: 1
+        border.color: ColorUtils.transparentize(root.capsuleBorder, root.themeIsDark ? 0.35 : 0.50)
+
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: ColorUtils.transparentize(root.capsuleInner, root.themeIsDark ? 0.45 : 0.60)
+            opacity: 0.55
+        }
 
         Rectangle {
             anchors.fill: parent
             radius: parent.radius
             color: "transparent"
             border.width: 1.5
-            opacity: 0.0
-            layer.enabled: false
+            opacity: root.prismaticBorder ? 0.85 : 0.0
+
+            layer.enabled: root.prismaticBorder
             layer.effect: ConicalGradient {
                 angle: root.prismAngle
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 0.25; color: Qt.rgba(1,1,1,0.3) }
-                    GradientStop { position: 0.5; color: "transparent" }
-                    GradientStop { position: 0.75; color: Qt.rgba(1,1,1,0.3) }
-                    GradientStop { position: 1.0; color: "transparent" }
+                    GradientStop { position: 0.0; color: Qt.rgba(root.capsuleBorder.r, root.capsuleBorder.g, root.capsuleBorder.b, 0.00) }
+                    GradientStop { position: 0.25; color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, 0.18) }
+                    GradientStop { position: 0.5; color: Qt.rgba(root.capsuleBorder.r, root.capsuleBorder.g, root.capsuleBorder.b, 0.00) }
+                    GradientStop { position: 0.75; color: Qt.rgba(Appearance.colors.colSecondary.r, Appearance.colors.colSecondary.g, Appearance.colors.colSecondary.b, 0.16) }
+                    GradientStop { position: 1.0; color: Qt.rgba(root.capsuleBorder.r, root.capsuleBorder.g, root.capsuleBorder.b, 0.00) }
                 }
             }
         }
-
-        border.width: 0
-        border.color: "transparent"
     }
 
     Item {
@@ -155,22 +177,29 @@ Item {
         Behavior on x { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
         Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
-        RowLayout {
-            id: contentRow
+        GridLayout {
+            id: contentGrid
             anchors.fill: parent
-            anchors.margins: 10
-            rotation: vertical ? 90 : 0
-            spacing: 12
+            anchors.margins: root.vertical ? 6 : 10
+
+            // Layout adaptativo: Columna en vertical, Fila en horizontal
+            columns: root.vertical ? 1 : 2
+            rows: root.vertical ? 2 : 1
+            rowSpacing: 10
+            columnSpacing: 12
 
             Item {
                 id: iconContainer
-                Layout.alignment: Qt.AlignVCenter
+                Layout.alignment: root.vertical ? Qt.AlignTop | Qt.AlignHCenter : Qt.AlignVCenter
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
+                Layout.topMargin: root.vertical ? 4 : 0
 
                 Image {
                     id: appIcon
-                    anchors.fill: parent
+                    anchors.centerIn: parent
+                    width: 26
+                    height: 26
                     source: internal.iconSource
                     fillMode: Image.PreserveAspectFit
                     smooth: true
@@ -198,112 +227,130 @@ Item {
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     shadowBlur: 0.8
-                    shadowOpacity: 0.30
+                    shadowOpacity: root.themeIsDark ? 0.34 : 0.22
                     shadowVerticalOffset: 1
                 }
             }
 
-            ColumnLayout {
-                id: textCol
+            // CONTENEDOR MÁGICO DEL TEXTO ROTADO
+            Item {
+                id: textWrapper
                 Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                spacing: 0
-
-                StyledText {
-                    id: appClassText
-                    visible: !root.vertical
-                    Layout.fillWidth: true
-                    text: internal.classText.toUpperCase()
-                    font.pixelSize: 9
-                    font.bold: true
-                    font.capitalization: Font.AllUppercase
-                    color: root.labelColor
-                    opacity: root.labelOpacity
-                    elide: Text.ElideRight
-
-                    layer.enabled: root.titleShadowEnabled
-                    layer.effect: DropShadow {
-                        horizontalOffset: 0
-                        verticalOffset: root.isLightTheme ? 0 : 1
-                        radius: root.isLightTheme ? 3 : 6
-                        samples: root.isLightTheme ? 8 : 14
-                        color: root.labelShadowColor
-                    }
-                }
+                Layout.fillHeight: true
+                clip: true
 
                 Item {
-                    id: titleViewport
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: titleTextMetrics.height
-                    clip: true
+                    id: rotatedTextContainer
+                    // Invertimos las dimensiones internamente para rotarlo sin que se corte
+                    width: root.vertical ? textWrapper.height : textWrapper.width
+                    height: root.vertical ? textWrapper.width : textWrapper.height
+                    anchors.centerIn: parent
 
-                    // IMPORTANTE: el viewport ya no “crece” con el texto.
-                    // Ocupa el ancho disponible del layout (y se elide/scroll dentro).
-                    readonly property int baseWidth: width
-                    readonly property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
-                    readonly property bool hoverScrollEnabled: mouseArea.containsMouse
+                    // AQUÍ ESTÁ EL SECRETO:
+                    // Si la barra está a la derecha, gira 90°. Si está a la izquierda, gira -90° para que sea legible.
+                    rotation: root.vertical ? (root.isRightSide ? 90 : -90) : 0
 
-                    TextMetrics {
-                        id: titleTextMetrics
-                        text: internal.titleText
-                        font.pixelSize: Appearance.font.pixelSize.medium
-                        font.bold: true
-                    }
+                    ColumnLayout {
+                        id: textCol
+                        anchors.fill: parent
+                        spacing: 0
 
-                    StyledText {
-                        id: mainTitle
-                        text: internal.titleText
-                        font.pixelSize: Appearance.font.pixelSize.medium
-                        font.bold: true
-                        color: root.titleColor
+                        StyledText {
+                            id: appClassText
+                            // CAMBIO ÚNICO: ocultar “nombre de la app” en vertical, mantenerlo en horizontal
+                            visible: !root.vertical
 
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: 0
+                            Layout.fillWidth: true
+                            text: internal.classText.toUpperCase()
+                            font.pixelSize: 9
+                            font.bold: true
+                            font.capitalization: Font.AllUppercase
+                            color: root.labelColor
+                            opacity: root.labelOpacity
+                            elide: Text.ElideRight
 
-                        property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
-
-                        layer.enabled: root.titleShadowEnabled
-                        layer.effect: DropShadow {
-                            horizontalOffset: 0
-                            verticalOffset: root.isLightTheme ? 0 : 1
-                            radius: root.isLightTheme ? 4 : 8
-                            samples: root.isLightTheme ? 10 : 16
-                            color: root.titleShadowColor
-                        }
-
-                        // Scroll SOLO al pasar el mouse, y con velocidad controlada (px/seg).
-                        SequentialAnimation on x {
-                            id: hoverScrollAnim
-                            running: mainTitle.shouldScroll && root.visible && titleViewport.hoverScrollEnabled
-                            loops: Animation.Infinite
-
-                            PauseAnimation { duration: root.titleScrollPauseStartMs }
-
-                            NumberAnimation {
-                                // mueve hasta el final visible
-                                to: -titleViewport.delta
-                                duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
-                                easing.type: Easing.InOutSine
-                            }
-
-                            PauseAnimation { duration: root.titleScrollPauseEndMs }
-
-                            NumberAnimation {
-                                to: 0
-                                duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
-                                easing.type: Easing.InOutSine
+                            layer.enabled: root.titleShadowEnabled
+                            layer.effect: DropShadow {
+                                // Mantenemos la sombra yendo visualmente hacia abajo ajustando la matemática
+                                horizontalOffset: root.vertical ? (root.isRightSide ? (root.themeIsDark ? 1 : 0) : (root.themeIsDark ? -1 : 0)) : 0
+                                verticalOffset: root.vertical ? 0 : (root.themeIsDark ? 1 : 0)
+                                radius: root.themeIsDark ? 6 : 3
+                                samples: root.themeIsDark ? 14 : 8
+                                color: root.labelShadowColor
                             }
                         }
 
-                        onShouldScrollChanged: {
-                            if (!shouldScroll) x = 0
-                        }
-                    }
+                        Item {
+                            id: titleViewport
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: titleTextMetrics.height
+                            clip: true
 
-                    Connections {
-                        target: mouseArea
-                        function onContainsMouseChanged() {
-                            if (!mouseArea.containsMouse) mainTitle.x = 0
+                            readonly property int baseWidth: width
+                            readonly property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
+                            readonly property bool hoverScrollEnabled: mouseArea.containsMouse
+
+                            TextMetrics {
+                                id: titleTextMetrics
+                                text: internal.titleText
+                                font.pixelSize: Appearance.font.pixelSize.medium
+                                font.bold: true
+                            }
+
+                            StyledText {
+                                id: mainTitle
+                                text: internal.titleText
+                                font.pixelSize: Appearance.font.pixelSize.medium
+                                font.bold: true
+                                color: root.titleColor
+
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: 0
+
+                                property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
+
+                                layer.enabled: root.titleShadowEnabled
+                                layer.effect: DropShadow {
+                                    horizontalOffset: root.vertical ? (root.isRightSide ? (root.themeIsDark ? 1 : 0) : (root.themeIsDark ? -1 : 0)) : 0
+                                    verticalOffset: root.vertical ? 0 : (root.themeIsDark ? 1 : 0)
+                                    radius: root.themeIsDark ? 8 : 4
+                                    samples: root.themeIsDark ? 16 : 10
+                                    color: root.titleShadowColor
+                                }
+
+                                SequentialAnimation on x {
+                                    id: hoverScrollAnim
+                                    running: mainTitle.shouldScroll && root.visible && titleViewport.hoverScrollEnabled
+                                    loops: Animation.Infinite
+
+                                    PauseAnimation { duration: root.titleScrollPauseStartMs }
+
+                                    NumberAnimation {
+                                        to: -titleViewport.delta
+                                        duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
+                                        easing.type: Easing.InOutSine
+                                    }
+
+                                    PauseAnimation { duration: root.titleScrollPauseEndMs }
+
+                                    NumberAnimation {
+                                        to: 0
+                                        duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
+                                        easing.type: Easing.InOutSine
+                                    }
+                                }
+
+                                onShouldScrollChanged: {
+                                    if (!shouldScroll) x = 0
+                                }
+                            }
+
+                            Connections {
+                                target: mouseArea
+                                function onContainsMouseChanged() {
+                                    if (!mouseArea.containsMouse) mainTitle.x = 0
+                                }
+                            }
                         }
                     }
                 }
@@ -336,7 +383,6 @@ Item {
             mainTitle.x = 0
         }
 
-        // Mejor: usar position changes (X e Y) en un solo handler
         onPositionChanged: {
             if (!root.parallaxEnabled) return
             var centerX = width / 2

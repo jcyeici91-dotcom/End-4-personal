@@ -17,8 +17,8 @@ ContentPage {
     interactive: true
 
     property string wallpapersDir: (Directories.home && ("" + Directories.home).length > 0)
-                                 ? ("" + Directories.home + "/Pictures/Wallpapers")
-                                 : ((Quickshell.env("HOME") || "/home/jcgomez91") + "/Pictures/Wallpapers")
+                                  ? ("" + Directories.home + "/Pictures/Wallpapers")
+                                  : ((Quickshell.env("HOME") || "/home/jcgomez91") + "/Pictures/Wallpapers")
 
     property int thumbSize: 72
     property bool roundedThumbs: false
@@ -38,38 +38,20 @@ ContentPage {
         }
     }
 
-    // ---------------------------------------------------------
-    // FIX for Light/Dark:
-    // - Do NOT open any window: use hidden Process (no execDetached)
-    // - Run the script directly (no "bash -c"), and silence output
-    // ---------------------------------------------------------
     Process {
         id: modeSwitchProc
         property string pendingMode: ""
-        // command will be set right before running
         command: []
-
-        // swallow output to avoid any UI side effects
         stdout: SplitParser { onRead: function(_) {} }
         stderr: SplitParser { onRead: function(_) {} }
-
-        onExited: {
-            // If your script returns non-zero, you’ll see it here while debugging.
-            // (kept silent per your request)
-        }
     }
 
-    // ---------------------------------------------------------
-    // Premium Android-like segmented control (Light / Dark)
-    // (Only change vs last version: applyMode() now uses modeSwitchProc)
-    // ---------------------------------------------------------
     component LightDarkSegmented: Item {
         id: seg
         Layout.fillWidth: true
         implicitHeight: 56
 
         property bool enabled: true
-
         property bool hasPending: false
         property bool pendingDark: false
 
@@ -81,16 +63,10 @@ ContentPage {
             pendingDark = dark
             pendingReset.restart()
 
-            // IMPORTANT:
-            // Run without opening any window: call script directly via Process.
-            // If the script is not executable, we fallback to bash -lc (still no window).
             var script = ("" + Directories.wallpaperSwitchScriptPath)
             var args = ["--mode", (dark ? "dark" : "light")]
 
-            // Try direct execution first (preferred)
             modeSwitchProc.command = [script].concat(args)
-
-            // Start the process (restart if already running)
             if (modeSwitchProc.running) {
                 modeSwitchProc.kill()
             }
@@ -164,24 +140,19 @@ ContentPage {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     buttonRadius: Appearance.rounding.full
-
                     colBackground: "transparent"
                     colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.92)
                     colRipple: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.80)
-
                     onClicked: seg.applyMode(false)
-
                     contentItem: RowLayout {
                         anchors.centerIn: parent
                         spacing: 8
-
                         MaterialSymbol {
                             text: "light_mode"
                             iconSize: 20
                             fill: seg.effectiveDark ? 0 : 1
                             color: seg.effectiveDark ? Appearance.colors.colOnLayer1 : Appearance.colors.colOnPrimary
                         }
-
                         StyledText {
                             text: Translation.tr("Light")
                             font.pixelSize: Appearance.font.pixelSize.normal
@@ -195,24 +166,19 @@ ContentPage {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     buttonRadius: Appearance.rounding.full
-
                     colBackground: "transparent"
                     colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.92)
                     colRipple: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.80)
-
                     onClicked: seg.applyMode(true)
-
                     contentItem: RowLayout {
                         anchors.centerIn: parent
                         spacing: 8
-
                         MaterialSymbol {
                             text: "dark_mode"
                             iconSize: 20
                             fill: seg.effectiveDark ? 1 : 0
                             color: seg.effectiveDark ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
                         }
-
                         StyledText {
                             text: Translation.tr("Dark")
                             font.pixelSize: Appearance.font.pixelSize.normal
@@ -224,9 +190,6 @@ ContentPage {
         }
     }
 
-    // --------------------------------------------
-    // Themes strip (unchanged from your “me encantó” version)
-    // --------------------------------------------
     component ThemePaletteStrip: Item {
         id: tp
         Layout.fillWidth: true
@@ -234,18 +197,13 @@ ContentPage {
         property int itemWidth: 112
         property int itemHeight: 60
         property int chipHeight: 20
-
         property int stripPadding: 6
         property int stripRadius: Appearance.rounding.normal
         property int stripSpacing: 6
-
         property int scrubHeight: 6
         property int scrubMinHandle: 26
 
-        implicitHeight: titleRow.implicitHeight
-                        + 10
-                        + (tp.itemHeight + tp.stripPadding * 2)
-                        + (scrubWrap.visible ? (6 + tp.scrubHeight) : 0)
+        implicitHeight: titleRow.implicitHeight + 10 + (tp.itemHeight + tp.stripPadding * 2) + (scrubWrap.visible ? (6 + tp.scrubHeight) : 0)
 
         readonly property list<string> builtInColorSchemes: [
             "angel_light", "angel", "ayu", "cobalt2", "cursor", "dracula", "flexoki",
@@ -254,32 +212,14 @@ ContentPage {
             "orng", "osaka_jade", "rose_pine", "sakura", "samurai", "synthwave84",
             "vercel", "vesper", "zen_burn", "zen_garden"
         ]
-
         property list<string> customColorSchemes: (Config.options.appearance.customColorSchemes ?? [])
-
         readonly property list<string> extraCustomSchemes: [
-            "espresso",
-            "mocha_cream",
-            "ink_olive",
-            "carbon_amber",
-            "midnight_plum",
-            "obsidian_teal",
-            "cocoa_rose",
-            "night_sand",
-            "smoke_blue",
-            "noir_copper"
+            "espresso", "mocha_cream", "ink_olive", "carbon_amber", "midnight_plum",
+            "obsidian_teal", "cocoa_rose", "night_sand", "smoke_blue", "noir_copper"
         ]
-
         readonly property list<string> wallpaperColorSchemes: [
-            "scheme-auto",
-            "scheme-content",
-            "scheme-tonal-spot",
-            "scheme-fidelity",
-            "scheme-fruit-salad",
-            "scheme-expressive",
-            "scheme-rainbow",
-            "scheme-neutral",
-            "scheme-monochrome"
+            "scheme-auto", "scheme-content", "scheme-tonal-spot", "scheme-fidelity",
+            "scheme-fruit-salad", "scheme-expressive", "scheme-rainbow", "scheme-neutral", "scheme-monochrome"
         ]
 
         function uniq(list) {
@@ -297,9 +237,7 @@ ContentPage {
         readonly property list<string> effectiveCustomSchemes: uniq(customColorSchemes.concat(extraCustomSchemes))
 
         function formatText(text, isWallpaperScheme) {
-            if (!isWallpaperScheme)
-                return text.charAt(0).toUpperCase() + text.slice(1)
-
+            if (!isWallpaperScheme) return text.charAt(0).toUpperCase() + text.slice(1)
             const sliced = ("" + text).split("-").slice(1).join(" ")
             return sliced.charAt(0).toUpperCase() + sliced.slice(1)
         }
@@ -308,25 +246,21 @@ ContentPage {
 
         function rebuildModel() {
             const m = []
-
             m.push({ kind: "chip", title: Translation.tr("Schemes") })
             for (let i = 0; i < tp.wallpaperColorSchemes.length; i++) {
                 const s = tp.wallpaperColorSchemes[i]
                 m.push({ kind: "theme", scheme: s, display: tp.formatText(s, true), customTheme: false, builtInTheme: false })
             }
-
             m.push({ kind: "chip", title: Translation.tr("Built-in") })
             for (let j = 0; j < tp.builtInColorSchemes.length; j++) {
                 const b = tp.builtInColorSchemes[j]
                 m.push({ kind: "theme", scheme: b, display: tp.formatText(b, false), customTheme: false, builtInTheme: true })
             }
-
             m.push({ kind: "chip", title: Translation.tr("Custom") })
             for (let k = 0; k < tp.effectiveCustomSchemes.length; k++) {
                 const c = tp.effectiveCustomSchemes[k]
                 m.push({ kind: "theme", scheme: c, display: tp.formatText(c, false), customTheme: true, builtInTheme: false })
             }
-
             tp.combinedModel = m
             tp.restartLazyLoad()
         }
@@ -340,7 +274,6 @@ ContentPage {
                 if (tp.combinedModel[i].kind === "theme") n++
             }
             tp.totalThemes = n
-
             tp.loadedThemeCount = 0
             loadTimer.stop()
             Qt.callLater(function() { loadTimer.start() })
@@ -361,13 +294,11 @@ ContentPage {
             RowLayout {
                 id: titleRow
                 Layout.fillWidth: true
-
                 StyledText {
                     text: Translation.tr("Themes")
                     font.pixelSize: Appearance.font.pixelSize.normal
                     color: Appearance.colors.colOnLayer1
                 }
-
                 Item { Layout.fillWidth: true }
             }
 
@@ -394,7 +325,6 @@ ContentPage {
                     orientation: ListView.Horizontal
                     spacing: tp.stripSpacing
                     clip: true
-
                     boundsBehavior: Flickable.StopAtBounds
                     boundsMovement: Flickable.StopAtBounds
                     model: tp.combinedModel
@@ -469,20 +399,17 @@ ContentPage {
                 visible: themeList.contentWidth > themeList.width
 
                 function maxHandleX() { return Math.max(0, scrubWrap.width - handle.width) }
-
                 function handleWidth() {
                     if (themeList.contentWidth <= 0) return scrubWrap.width
                     var ratio = Math.min(1.0, themeList.width / themeList.contentWidth)
                     return Math.max(tp.scrubMinHandle, scrubWrap.width * ratio)
                 }
-
                 function xFromContent() {
                     var maxContent = Math.max(0, themeList.contentWidth - themeList.width)
                     if (maxContent <= 0) return 0
                     var t = themeList.contentX / maxContent
                     return t * scrubWrap.maxHandleX()
                 }
-
                 function contentFromX(x) {
                     var maxContent = Math.max(0, themeList.contentWidth - themeList.width)
                     var maxHX = scrubWrap.maxHandleX()
@@ -567,9 +494,6 @@ ContentPage {
         onCustomColorSchemesChanged: tp.rebuildModel()
     }
 
-    // --------------------------------------------
-    // Wallpaper strip (unchanged)
-    // --------------------------------------------
     component WallpaperStrip: Item {
         id: ws
         property string dir: page.wallpapersDir
@@ -805,7 +729,7 @@ ContentPage {
     }
 
     // --------------------------------------------
-    // Main section (kept exactly as your “bonito” version)
+    // Main section
     // --------------------------------------------
     ContentSection {
         icon: "format_paint"
@@ -925,9 +849,6 @@ ContentPage {
         }
     }
 
-    // --------------------------------------------
-    // Rest of your page (unchanged)
-    // --------------------------------------------
     ContentSection {
         icon: "screenshot_monitor"
         title: Translation.tr("Bar & screen")
@@ -1003,7 +924,8 @@ ContentPage {
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
                     { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 },
-                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
+                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 },
+                    { displayName: Translation.tr("Crystal"),     icon: "diamond",            value: 3 }
                 ]
             }
         }
@@ -1039,4 +961,3 @@ ContentPage {
         }
     }
 }
-

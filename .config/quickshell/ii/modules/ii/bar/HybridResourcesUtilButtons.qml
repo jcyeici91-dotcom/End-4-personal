@@ -8,6 +8,9 @@ import qs.modules.common.widgets
 
 Item {
     id: root
+    
+    // --- NUEVO: Orientación ---
+    property bool vertical: false
 
     // =====================================================================
     // ESTADO
@@ -31,22 +34,31 @@ Item {
     }
 
     // =====================================================================
-    // TAMAÑO AUTOMÁTICO (según el componente visible)
+    // TAMAÑO AUTOMÁTICO (según el componente visible y la orientación)
     // =====================================================================
     readonly property real contentWidth: showUtilButtons
         ? (utilLoader.item ? utilLoader.item.implicitWidth : 100)
         : (resourcesLoader.item ? resourcesLoader.item.implicitWidth : 100)
 
-    implicitWidth: Math.max(1, contentWidth)
-    implicitHeight: Appearance.sizes.barHeight > 0 ? Appearance.sizes.barHeight : 45
+    readonly property real contentHeight: showUtilButtons
+        ? (utilLoader.item ? utilLoader.item.implicitHeight : 45)
+        : (resourcesLoader.item ? resourcesLoader.item.implicitHeight : 45)
+
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : Math.max(1, contentWidth)
+    implicitHeight: root.vertical ? Math.max(1, contentHeight) : (Appearance.sizes.barHeight > 0 ? Appearance.sizes.barHeight : 45)
 
     Behavior on implicitWidth {
+        enabled: !root.vertical
+        NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+    }
+    
+    Behavior on implicitHeight {
+        enabled: root.vertical
         NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
     }
 
     // =====================================================================
     // ÚNICO CONTROL: RUEDA DEL RATÓN PARA ALTERNAR VISTA
-    // (No bloquea clicks, no cierra popups, etc.)
     // =====================================================================
     MouseArea {
         id: wheelOnly
@@ -59,7 +71,6 @@ Item {
             if (wheel.angleDelta.y === 0)
                 return
 
-            // anti “scroll spam”
             if (root.wheelLocked) {
                 wheel.accepted = true
                 return
@@ -86,12 +97,19 @@ Item {
         opacity: shown ? 1 : 0
         scale: shown ? 1.0 : 0.8
 
+        // Pasamos la propiedad vertical a lo que sea que se cargue
+        onLoaded: {
+            if (item && item.hasOwnProperty("vertical")) {
+                item.vertical = root.vertical;
+            }
+        }
+
         Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
         Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
     }
 
     // =====================================================================
-    // RESOURCES / UTILBUTTONS (sin tocar configuración interna)
+    // RESOURCES / UTILBUTTONS
     // =====================================================================
     AnimatedPage {
         id: resourcesLoader

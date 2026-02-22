@@ -6,25 +6,21 @@ import qs.modules.common
 Item {
     id: root
 
-    // Compatibilidad: si quieres usarlo luego para algo (top/bottom),
-    // pero ya no forzamos required porque en tu BarContent no se usa para nada real.
-    property string position: "top" // "top" | "bottom"
+     property string position: "top" // "top" | "bottom"
 
     required property bool useGlassMode
     required property bool showSolidBackground
     required property color backgroundColor
     required property int cornerStyle
 
-    // Ajustes finos (mejorables sin tocar BarContent.qml)
+    // Ajustes finos
     property int basePadding: 4
     property bool enableMask: true
 
-    // Para usar los gaps externos cuando cornerStyle == Float
     readonly property int outerMargin: (cornerStyle === 1)
         ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut))
         : 0
 
-    // Radio: cuando Float, usa windowRounding; si no, 0
     readonly property int radiusPx: (cornerStyle === 1) ? Appearance.rounding.windowRounding : 0
 
     // Slot para contenido
@@ -105,14 +101,14 @@ Item {
         }
     }
 
-    // Contenido con padding (igual que tu idea original, pero configurable)
+    // Contenido con padding 
     Item {
         id: contentContainer
         anchors.fill: parent
         anchors.margins: root.outerMargin + root.basePadding
     }
 
-    // Máscara para recortar (útil si metes efectos o quieres garantizar bordes perfectos)
+    // Máscara para recortar 
     layer.enabled: root.enableMask
     layer.effect: MultiEffect {
         maskEnabled: true

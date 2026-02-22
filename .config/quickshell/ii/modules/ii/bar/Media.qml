@@ -16,67 +16,51 @@ import "../../common/utils"
 Item {
     id: root
 
+    // --- NUEVO: Orientación ---
+    property bool vertical: false
+    // Propiedad útil para saber si la barra está a la derecha
+    property bool rightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
+
+    readonly property bool barIsVertical: root.vertical || (
+        Config.runtime.bar.position === "left" ||
+        Config.runtime.bar.position === "right"
+    )
+
     // =====================================================
-    // 1.1) CONFIG BASE (toggles + tamaños + tiempos) — FIX 30..50
+    // 1.1) CONFIG BASE
     // =====================================================
     property bool islandEnabled: true
     property bool expandOnHover: true
     property int  islandCollapsedWidth: 260
 
-    // Altura colapsada: NO dependas solo del parent (a veces arranca en 0 o da valores raros).
-    // Usa barHeightLimit (que ya “anti-recorta”) como fuente principal y clampa a 30..50.
-    property int islandCollapsedHeight: {
-        // candidato 1: el tamaño real del parent (si existe y es válido)
-        var p = 0
-        if (root.parent) {
-            p = Math.floor(root.barIsVertical ? root.parent.width : root.parent.height)
-        }
-
-        // candidato 2: el límite ya calculado por tu pipeline (más estable)
-        var lim = Math.floor(root.barHeightLimit)
-
-        // si parent es válido, úsalo; si no, usa barHeightLimit
-        var base = (p >= 24) ? p : lim
-
-        // tu rango objetivo 30..50, con fallback razonable
-        if (base <= 0) base = 44
-        return Math.max(30, Math.min(50, base))
-    }
-
-    // Altura expandida: debe seguir el límite real de la barra
     property int islandExpandedHeight: root.barHeightLimit
-
     property int islandRadius: 999
 
-    // Padding adaptativo real (en 30px, V=6 no cabe bien)
-    property int islandPaddingH: Math.round(8 + 4 * root.barT)  // 8..12
-    property int islandPaddingV: Math.round(2 + 4 * root.barT)  // 2..6
+    property int islandPaddingH: Math.round(8 + 4 * root.barT)
+    property int islandPaddingV: Math.round(2 + 4 * root.barT)
 
-    // Layout / opacity (ligeramente más “snap” para no sentirse lento)
     property int islandExpandAnimMs: 240
     property int islandFadeAnimMs: 170
 
-    // Pulso al cambiar lyric line
     property bool islandPulseOnLyricChange: true
     property int  islandPulseAnimMs: 220
     property real islandPulseScale: 1.000
 
-    // Bordes + límites (4px en 30 se ve gordo y roba alto útil)
-    property int islandBorderWidthCollapsed: Math.round(2 + 2 * root.barT) // 2..4
-    property int islandBorderWidthExpanded:  Math.round(2 + 2 * root.barT) // 2..4
+    property int islandBorderWidthCollapsed: Math.round(2 + 2 * root.barT)
+    property int islandBorderWidthExpanded:  Math.round(2 + 2 * root.barT)
     property int islandMaxWidth: 780
 
     // =====================================================
-    // 1.2) EFECTOS VISUALES (toggles)
+    // 1.2) EFECTOS VISUALES
     // =====================================================
     property bool fxDropShadows: true
-    property bool fxCoverMaskCircle: false   // <- CAMBIO: quitar máscara circular
-    property bool fxCoverRing: false         // <- CAMBIO: quitar ring circular
+    property bool fxCoverMaskCircle: false
+    property bool fxCoverRing: false
     property bool fxWaves: true
     property bool fxLyricsGradientMask: true
 
     // =====================================================
-    // 1.3) ANIMACIONES (toggles globales)
+    // 1.3) ANIMACIONES
     // =====================================================
     property bool animEnabled: true
     property bool animMarquee: true
@@ -84,35 +68,30 @@ Item {
     property bool animLayoutTransitions: true
 
     // =====================================================
-    // 1.4) “ALIVE FX” (breathing) + OVERSHOOT (iOS feel)
+    // 1.4) “ALIVE FX” & OVERSHOOT
     // =====================================================
     property bool islandAliveFx: true
 
-    // breathing (se “auto-tunea” más abajo con barT)
     property real islandBreatheScaleIdle: tunedBreatheIdle
     property real islandBreatheScalePlay: tunedBreathePlay
     property int  islandBreatheMsPlay: tunedBreatheMsPlay
     property int  islandBreatheMsIdle: tunedBreatheMsIdle
 
-    // overshoot (se “auto-tunea” más abajo con barT)
     property bool islandOvershootEnabled: true
     property real islandOvershootScaleExpand: tunedOvershootExpand
     property real islandOvershootScaleCollapse: tunedOvershootCollapse
     property int  islandOvershootMs: tunedOvershootMs
 
-    // UI: indicadores
     property bool uiShowLoadingIndicator: true
 
-    // Intervalos
     property int  pollIntervalMs: 80
     property int  lyricScrollAnimMs: 240
     property int  progressAnimMs: 120
 
-    // Ring continuo (se “auto-tunea” más abajo con barT)
     property int ringCycleMsPlay: tunedRingMsPlay
     property int ringCycleMsIdle: tunedRingMsIdle
 
-    // 2) MPRIS: bootstrap + estado del player + metadata
+    // 2) MPRIS
     property int _mprisRefreshTick: 0
 
     Timer {
@@ -133,11 +112,6 @@ Item {
         return MprisController.activePlayer
     }
 
-    readonly property bool barIsVertical: (
-        Config.runtime.bar.position === "left" ||
-        Config.runtime.bar.position === "right"
-    )
-
     readonly property bool hasMedia: activePlayer != null
         && activePlayer.playbackState !== MprisPlaybackState.Stopped
 
@@ -148,40 +122,34 @@ Item {
     readonly property string trackArtist: (activePlayer ? activePlayer.trackArtist : "") || ""
     readonly property string fullText: trackTitle + (trackArtist ? " • " + trackArtist : "")
 
-    // THEME: Colores adaptativos
+    // THEME
     function _luma(c) {
-        // luminancia aproximada sRGB (0..1)
         return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
     }
 
-    // Detecta si el tema es "claro" mirando el color base de layer
-    // (si tu tema expone otro color más fiable, lo cambiamos)
     readonly property bool isLightTheme: _luma(Appearance.colors.colLayer1) > 0.55
 
-    // Fondo/borde del island
     readonly property color islandBgColor: isLightTheme
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.72)          // claro: “glass” blanco
-        : Qt.rgba(0.08, 0.08, 0.10, 0.72)       // oscuro: tu valor actual
+        ? Qt.rgba(1.0, 1.0, 1.0, 0.72)
+        : Qt.rgba(0.08, 0.08, 0.10, 0.72)
 
     readonly property color islandBorderColor: isLightTheme
         ? Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.14 : 0.10))
         : Qt.rgba(1.0, 1.0, 1.0, (root.islandExpanded ? 0.13 : 0.11))
 
-    // Textos: primario y secundario
     readonly property color islandTextPrimary: isLightTheme
-        ? Qt.rgba(0.06, 0.06, 0.07, 0.98)       // casi negro
+        ? Qt.rgba(0.06, 0.06, 0.07, 0.98)
         : Qt.rgba(1.0, 1.0, 1.0, 0.92)
 
     readonly property color islandTextSecondary: isLightTheme
         ? Qt.rgba(0.10, 0.10, 0.12, 0.72)
         : Qt.rgba(1.0, 1.0, 1.0, 0.72)
 
-    // Sombras de texto (en claro conviene MUY suave; en oscuro ayuda más)
     readonly property color islandTextShadowColor: isLightTheme
-        ? Qt.rgba(1.0, 1.0, 1.0, 0.35)          // glow suave claro
-        : Qt.rgba(0.0, 0.0, 0.0, 0.55)          // sombra oscura
+        ? Qt.rgba(1.0, 1.0, 1.0, 0.35)
+        : Qt.rgba(0.0, 0.0, 0.0, 0.55)
 
-    // 3) ART (carátula)
+    // 3) ART
     function normalizeArtUrl(u) {
         if (!u) return ""
         if (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("file://") || u.startsWith("image://"))
@@ -202,16 +170,15 @@ Item {
     }
     readonly property string trackArt: normalizeArtUrl(trackArtRaw)
 
-    // 4) LYRICS: config + loader + estado derivado
+    // 4) LYRICS
     readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
     readonly property bool useGradientMask: Config.options.bar.mediaPlayer.lyrics.useGradientMask
-    readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style // "static" | "scrolling"
+    readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style
     readonly property bool showLoadingIndicator: Config.options.bar.mediaPlayer.lyrics.showLoadingIndicator
     readonly property int  lyricsManualOffsetMs: (Config.options?.bar?.mediaPlayer?.lyrics?.manualOffsetMs ?? 1500)
     readonly property bool lyricsAdaptiveSync: (Config.options?.bar?.mediaPlayer?.lyrics?.adaptiveSync ?? true)
     readonly property int  lyricsSmoothSlackMs: (Config.options?.bar?.mediaPlayer?.lyrics?.smoothSlackMs ?? 160)
 
-    // Polling de posición/duración (ms)
     property int polledPositionMs: 0
     property int polledDurationMs: 0
 
@@ -253,13 +220,10 @@ Item {
 
             title: root.trackTitle
             artist: root.trackArtist
-
             duration: root.polledDurationMs
             position: root.polledPositionMs
-
             selectedId: 0
             manualOffsetMs: root.lyricsManualOffsetMs
-
             adaptiveSync: root.lyricsAdaptiveSync
             smoothPosition: true
             smoothSlackMs: root.lyricsSmoothSlackMs
@@ -294,7 +258,7 @@ Item {
         ? (lyricsLoader.item?.currentIndex ?? -1)
         : -1
 
-    // 5) WIDTH: límites + cálculos + “stable width” (anti-jitter)
+    // 5) WIDTH
     property int maxWidthLyrics: 900
     property int maxWidthNoLyrics: 430
     property int minWidthNoLyrics: 180
@@ -411,7 +375,7 @@ Item {
         }
     }
 
-    // 6) WAVEVISUALIZER (cava): proceso + puntos
+    // 6) WAVEVISUALIZER (cava)
     property list<real> visualizerPoints: []
 
     Process {
@@ -440,7 +404,7 @@ Item {
         }
     }
 
-    // 7) Anti-recorte: boot refresh + barHeightLimit
+    // 7) Anti-recorte y adaptabilidad
     property int _bootRefresh: 0
 
     Timer {
@@ -452,9 +416,11 @@ Item {
         onTriggered: _bootRefresh++
     }
 
-    readonly property int _parentBarH: (root.parent && root.parent.height > 0)
-        ? Math.floor(root.parent.height)
-        : 0
+    readonly property int _parentBarThickness: {
+        if (!root.parent) return 0
+        // En vertical, el ancho de la barra es el grosor. En horizontal es el alto.
+        return Math.floor(root.vertical ? root.parent.width : root.parent.height)
+    }
 
     readonly property int _cfgBarH: {
         var h = Math.floor(Appearance.sizes.barHeight)
@@ -464,34 +430,29 @@ Item {
 
     readonly property int barHeightLimit: {
         _bootRefresh
-        var h = (_parentBarH > 10) ? _parentBarH : _cfgBarH
-        return Math.max(24, h)
+        var t = (_parentBarThickness > 10) ? _parentBarThickness : _cfgBarH
+        return Math.max(24, t)
     }
 
-    // 7.1) TUNING ADAPTATIVO (PONER AQUÍ)
     readonly property real barT: {
-        // 0 en 30px, 1 en 50px
         var t = (root.barHeightLimit - 30) / 20.0
         return Math.max(0.0, Math.min(1.0, t))
     }
 
-    // Overshoot adaptativo
-    readonly property real tunedOvershootExpand: 1.012 + (0.010 * barT)      // 1.012..1.022
-    readonly property real tunedOvershootCollapse: 0.992 - (0.006 * barT)    // 0.992..0.986
-    readonly property int  tunedOvershootMs: Math.round(190 + 60 * barT)     // 190..250
+    readonly property real tunedOvershootExpand: 1.012 + (0.010 * barT)
+    readonly property real tunedOvershootCollapse: 0.992 - (0.006 * barT)
+    readonly property int  tunedOvershootMs: Math.round(190 + 60 * barT)
 
-    // Breathing adaptativo
-    readonly property real tunedBreatheIdle: 1.0022 + (0.0010 * barT)        // 1.0022..1.0032
-    readonly property real tunedBreathePlay: 1.0070 + (0.0040 * barT)        // 1.007..1.011
-    readonly property int  tunedBreatheMsIdle: Math.round(2600 + 300 * barT) // 2600..2900
-    readonly property int  tunedBreatheMsPlay: Math.round(1700 + 250 * barT) // 1700..1950
+    readonly property real tunedBreatheIdle: 1.0022 + (0.0010 * barT)
+    readonly property real tunedBreathePlay: 1.0070 + (0.0040 * barT)
+    readonly property int  tunedBreatheMsIdle: Math.round(2600 + 300 * barT)
+    readonly property int  tunedBreatheMsPlay: Math.round(1700 + 250 * barT)
 
-    // Ring adaptativo
-    readonly property int tunedRingMsIdle: Math.round(1850 + 250 * barT)     // 1850..2100
-    readonly property int tunedRingMsPlay: Math.round(1050 + 200 * barT)     // 1050..1250
+    readonly property int tunedRingMsIdle: Math.round(1850 + 250 * barT)
+    readonly property int tunedRingMsPlay: Math.round(1050 + 200 * barT)
 
-    // 8) Expand/Collapse: regla + tamaños finales
-    readonly property bool islandExpanded: root.hasMedia && (
+    // 8) Expand/Collapse y Tamaños
+    readonly property bool islandExpanded: !root.vertical && root.hasMedia && (
         GlobalStates.mediaControlsOpen ||
         (root.islandEnabled && root.expandOnHover && islandHover.hovered) ||
         (root.lyricsEnabled && root.hasSyncedLines)
@@ -507,6 +468,9 @@ Item {
 
     readonly property int targetIslandWidth: {
         if (!root.hasMedia) return 0
+        if (root.vertical) {
+            return Math.max(24, Math.floor(root.barHeightLimit))
+        }
         if (!root.islandEnabled) return Math.min(expandedWidth, root.islandMaxWidth)
         var w = root.islandExpanded ? expandedWidth : collapsedWidth
         return Math.min(w, root.islandMaxWidth)
@@ -514,41 +478,43 @@ Item {
 
     readonly property int targetIslandHeight: {
         if (!root.hasMedia) return 0
+        
+        if (root.vertical) {
+            // ALTURA VERTICAL: Carátula + Botón Play/Pause apilados
+            var pad = root.islandPaddingV * 2
+            var thickness = Math.max(1, root.targetIslandWidth - pad)
+            var slotSize = Math.max(18, Math.min(28, thickness))
+            var spc = Math.round(6 + 4 * root.barT)
+            // Altura = padding + carátula + espacio + botón
+            return pad + slotSize + spc + slotSize
+        }
 
-        // un mínimo mayor que la barra real
         var hLimit = Math.max(24, Math.floor(root.barHeightLimit))
-        var minSafeH = Math.min(24, hLimit)   // <= 24, pero si la barra es 24 también encaja
-
+        var minSafeH = Math.min(24, hLimit)
         var expandedH  = Math.max(minSafeH, hLimit)
-
-        // Colapsado clamped
-        var collapsedH = Math.max(minSafeH, Math.floor(root.islandCollapsedHeight))
+        var collapsedH = Math.max(minSafeH, Math.floor(hLimit))
         collapsedH = Math.min(collapsedH, hLimit)
 
         var desired = (!root.islandEnabled)
             ? expandedH
             : (root.islandExpanded ? expandedH : collapsedH)
 
-        // Clamp final: JAMÁS más alto que la barra
         return Math.max(minSafeH, Math.min(desired, hLimit))
     }
 
-    // 9) Hover “suavizado” (0..1) para reacciones (ring, etc.)
     property real hoverAmount: islandHover.hovered ? 1.0 : 0.0
     Behavior on hoverAmount {
         enabled: root.animEnabled && root.animLayoutTransitions
         NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
 
-    // 10) Pulse al cambiar lyric line
     property real islandScale: 1.0
     property int _lastPulseIndex: -999
 
     function maybePulseIsland() {
         if (!root.animEnabled || !root.animLayoutTransitions) return
         if (!root.islandEnabled || !root.islandPulseOnLyricChange) return
-        if (!root.hasSyncedLines) return
-        if (!root.islandExpanded) return
+        if (!root.hasSyncedLines || !root.islandExpanded || root.vertical) return
 
         if (root.currentLyricIndex === root._lastPulseIndex) return
         root._lastPulseIndex = root.currentLyricIndex
@@ -577,11 +543,10 @@ Item {
         }
     }
 
-    // 11) Overshoot iOS-like (inercia visual en X)
     property real overshootX: 1.0
 
     function triggerOvershoot(expanding) {
-        if (!root.animEnabled || !root.animLayoutTransitions || !root.islandOvershootEnabled) return
+        if (!root.animEnabled || !root.animLayoutTransitions || !root.islandOvershootEnabled || root.vertical) return
         overshootAnim.stop()
         overshootAnim.expanding = expanding
         overshootAnim.restart()
@@ -615,32 +580,7 @@ Item {
         }
     }
 
-    // 12) Layout / Visibilidad  (FINAL: nudge adaptativo + minHeight limpio)
-    property int _layoutNudgePx: 0
-
-    Timer {
-        id: layoutNudgeTimer
-        interval: 200
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        property int checks: 0
-        onTriggered: {
-            checks++
-
-            // Umbral adaptativo: si la altura real está por debajo de lo que debería,
-            // empuja relayout. Funciona bien en 30..50.
-            var needH = Math.max(1, root.targetIslandHeight)
-            if (root.height < (needH - 1) && root.hasMedia) {
-                root._layoutNudgePx = (root._layoutNudgePx === 0 ? 1 : 0)
-                if (root.parent && typeof root.parent.forceLayout === "function")
-                    root.parent.forceLayout()
-            } else {
-                if (checks > 10) running = false
-            }
-        }
-    }
-
+    // DIMENSIONES RAÍZ
     Layout.alignment: Qt.AlignVCenter
     Layout.fillHeight: false
     Layout.fillWidth: false
@@ -659,16 +599,19 @@ Item {
     opacity: root.hasMedia ? 1 : 0
 
     Behavior on implicitWidth {
-        enabled: root.animLayoutTransitions && root.animEnabled
+        enabled: root.animLayoutTransitions && root.animEnabled && !root.vertical
         NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
     }
-    Behavior on implicitHeight { enabled: false }
+    Behavior on implicitHeight {
+        enabled: root.animLayoutTransitions && root.animEnabled && root.vertical
+        NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
+    }
     Behavior on opacity {
         enabled: root.animLayoutTransitions && root.animEnabled
         NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
     }
 
-       // 13) SHELL VISUAL: fondo, borde, sombra, hover, aliveFx
+    // 13) SHELL VISUAL
     Item {
         id: islandShell
         anchors.fill: parent
@@ -687,21 +630,16 @@ Item {
                   * ((root.animEnabled && root.islandAliveFx && root.hasMedia) ? aliveFx.breatheY : 1.0)
         }
 
-        // ==========================
-        // CRISTAL (estilo sidebar: sin relleno, solo bordes + bisel + highlight)
-        // ==========================
         Rectangle {
             id: islandBg
             anchors.fill: parent
-            radius: root.islandRadius
-            color: "transparent"   // <- clave: nada de “neblina”
+            radius: root.vertical ? (width / 2) : root.islandRadius
+            color: "transparent"
             border.width: 0
             border.color: "transparent"
             antialiasing: true
             clip: true
 
-            // (Opcional) tinte ultra leve para que se note sobre fondos muy claros.
-            // Si lo quieres 100% puro, déjalo en 0.00.
             readonly property real tintOpacity: 0.00
 
             Rectangle {
@@ -713,7 +651,6 @@ Item {
                 visible: islandBg.tintOpacity > 0.0
             }
 
-            // 1) Borde exterior
             Rectangle {
                 anchors.fill: parent
                 radius: parent.radius
@@ -725,7 +662,6 @@ Item {
                 antialiasing: true
             }
 
-            // 2) Bisel interno (borde blanco suave)
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
@@ -736,15 +672,18 @@ Item {
                 antialiasing: true
             }
 
-            // 3) Highlight superior
             Rectangle {
                 anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.topMargin: 1
-                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
-                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
-                height: 1
+                anchors.left: root.vertical ? (root.rightSide ? undefined : parent.left) : parent.left
+                anchors.right: root.vertical ? (root.rightSide ? parent.right : undefined) : parent.right
+                
+                anchors.topMargin: root.vertical ? parent.radius / 1.6 : 1
+                anchors.leftMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
+                anchors.rightMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
+                
+                height: root.vertical ? Math.max(2, Math.round(parent.height * 0.26)) : 1
+                width: root.vertical ? 1 : undefined
+
                 color: Qt.rgba(1, 1, 1, root.isLightTheme ? 0.85 : 0.35)
                 antialiasing: true
             }
@@ -761,10 +700,9 @@ Item {
 
         HoverHandler {
             id: islandHover
-            enabled: root.islandEnabled && root.expandOnHover
+            enabled: root.islandEnabled && root.expandOnHover && !root.vertical
         }
 
-        // Alive FX: breathing también en pausa (tuneado por barT)
         Item {
             id: aliveFx
             anchors.fill: parent
@@ -815,7 +753,6 @@ Item {
             }
         }
 
-        // 14) INPUT: MouseArea global
         MouseArea {
             id: mouseControl
             anchors.fill: parent
@@ -846,7 +783,6 @@ Item {
             }
         }
 
-        // 15) CONTENIDO: Collapsed / Expanded
         Item {
             id: contentRoot
             anchors.fill: parent
@@ -878,8 +814,8 @@ Item {
                     NumberAnimation { properties: "opacity"; duration: 160; easing.type: Easing.OutCubic }
                 }
             ]
-        
-            // 15.1) Vista COLAPSADA (FIX: Portada siempre visible)
+
+            // 15.1) Vista COLAPSADA (Horizontal y Vertical)
             Item {
                 id: collapsedView
                 anchors.fill: parent
@@ -887,43 +823,52 @@ Item {
                 visible: opacity > 0.01
                 clip: true
 
-                // Propiedades de tamaño adaptativo
-                readonly property int _contentH: Math.max(1, height - (root.islandPaddingV * 2))
-                readonly property int _bongoH: Math.max(16, Math.min(30, _contentH))
-                readonly property int _bongoW: Math.round(_bongoH * 1.35)
-                readonly property int _coverSlot: Math.max(18, Math.min(28, _contentH))
-                readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 24))
-                readonly property int _dotSize: Math.max(6, Math.min(8, Math.round(_contentH * 0.28)))
+                readonly property int _contentThickness: root.vertical 
+                    ? Math.max(1, width - (root.islandPaddingV * 2)) 
+                    : Math.max(1, height - (root.islandPaddingV * 2))
 
-                RowLayout {
+                readonly property int _bongoH: Math.max(16, Math.min(30, _contentThickness))
+                readonly property int _bongoW: Math.round(_bongoH * 1.35)
+                readonly property int _coverSlot: Math.max(18, Math.min(28, _contentThickness))
+                readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 24))
+                readonly property int _dotSize: Math.max(6, Math.min(8, Math.round(_contentThickness * 0.28)))
+
+                GridLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: root.islandPaddingH
-                    anchors.rightMargin: root.islandPaddingH
+                    
+                    anchors.leftMargin: root.vertical ? root.islandPaddingV : root.islandPaddingH
+                    anchors.rightMargin: root.vertical ? root.islandPaddingV : root.islandPaddingH
                     anchors.topMargin: root.islandPaddingV
                     anchors.bottomMargin: root.islandPaddingV
-                    spacing: Math.round(6 + 4 * root.barT) // Espaciado dinámico 6..10
+                    
+                    rowSpacing: Math.round(6 + 4 * root.barT)
+                    columnSpacing: Math.round(6 + 4 * root.barT)
 
-                    // 1) Bongo Cat con tamaño mínimo forzado
+                    columns: root.vertical ? 1 : 4
+                    rows: root.vertical ? 4 : 1
+                    flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
+
+                    // 1) Bongo Cat (Solo horizontal)
                     BongoCat {
-                        Layout.alignment: Qt.AlignVCenter
+                        Layout.alignment: Qt.AlignCenter
                         Layout.preferredWidth: collapsedView._bongoW
                         Layout.preferredHeight: collapsedView._bongoH
-                        Layout.minimumWidth: collapsedView._bongoW  // <--- CRÍTICO
+                        Layout.minimumWidth: collapsedView._bongoW
                         Layout.minimumHeight: collapsedView._bongoH
 
-                        visible: root.hasMedia
+                        visible: root.hasMedia && !root.vertical
                         animate: root.animEnabled && root.isPlaying
                         gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
-                        isVertical: root.barIsVertical
+                        isVertical: false
                     }
 
-                    // 2) Slot de la Portada con tamaño mínimo forzado
+                    // 2) Slot de la Portada
                     Item {
                         id: coverSlotSmall
-                        Layout.alignment: Qt.AlignVCenter
+                        Layout.alignment: Qt.AlignCenter
                         Layout.preferredWidth: collapsedView._coverSlot
                         Layout.preferredHeight: collapsedView._coverSlot
-                        Layout.minimumWidth: collapsedView._coverSlot   // <--- CRÍTICO
+                        Layout.minimumWidth: collapsedView._coverSlot
                         Layout.minimumHeight: collapsedView._coverSlot
 
                         Item {
@@ -932,10 +877,9 @@ Item {
                             width: collapsedView._coverCircle
                             height: collapsedView._coverCircle
 
-                            // <- CAMBIO: ahora es "cuadrado" (opcional: esquina suave)
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 4     // pon 0 si lo quieres totalmente cuadrado
+                                radius: 4
                                 color: Qt.rgba(1, 1, 1, 0.06)
                                 border.width: 1
                                 border.color: Qt.rgba(1, 1, 1, 0.10)
@@ -950,41 +894,53 @@ Item {
                                 smooth: true
                                 asynchronous: true
                                 cache: true
-                                visible: (status === Image.Ready)
-
-                                // <- CAMBIO: quitamos máscara circular
+                                visible: true
                                 layer.enabled: false
                             }
 
-                            // Icono de repuesto si la portada falla o carga
                             MaterialSymbol {
                                 anchors.centerIn: parent
-                                text: root.isPlaying ? "pause" : "play_arrow"
+                                text: "music_note"
                                 fill: 1
                                 iconSize: Math.max(12, Math.round(coverCircleSmall.width * 0.65))
                                 color: Qt.rgba(1, 1, 1, 0.80)
                                 visible: (coverImgSmall.status !== Image.Ready)
                             }
+                        }
+                    }
 
-                            // <- CAMBIO: stroke cuadrado
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 4     // pon 0 si lo quieres totalmente cuadrado
-                                color: "transparent"
-                                border.width: 1
-                                border.color: Qt.rgba(
-                                    Appearance.m3colors.m3primary.r,
-                                    Appearance.m3colors.m3primary.g,
-                                    Appearance.m3colors.m3primary.b,
-                                    root.isPlaying ? 0.65 : 0.40
-                                )
-                                antialiasing: true
+                    // NUEVO: Botón Play/Pause grande (Solo vertical)
+                    Item {
+                        visible: root.vertical && root.hasMedia
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredWidth: collapsedView._coverSlot
+                        Layout.preferredHeight: collapsedView._coverSlot
+                        Layout.minimumWidth: collapsedView._coverSlot
+                        Layout.minimumHeight: collapsedView._coverSlot
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: collapsedView._coverCircle
+                            height: collapsedView._coverCircle
+                            radius: width / 2
+                            color: Qt.rgba(0.2, 0.2, 0.2, 0.8)
+                            border.width: 1
+                            border.color: Qt.rgba(1, 1, 1, 0.10)
+                            antialiasing: true
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: root.isPlaying ? "pause" : "play_arrow"
+                                fill: 1
+                                iconSize: Math.max(12, Math.round(parent.width * 0.7))
+                                color: "white"
                             }
                         }
                     }
 
-                    // 3) Textos (este sí puede reducirse)
+                    // 3) Textos (Solo horizontal)
                     ColumnLayout {
+                        visible: !root.vertical
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         spacing: 0
@@ -1004,7 +960,7 @@ Item {
                         Item {
                             id: collapsedLyricViewport
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(12, Math.min(14, Math.round(collapsedView._contentH * 0.45)))
+                            Layout.preferredHeight: Math.max(12, Math.min(14, Math.round(collapsedView._contentThickness * 0.45)))
                             clip: true
                             visible: root.hasMedia
 
@@ -1057,9 +1013,10 @@ Item {
                         }
                     }
 
-                    // 4) Indicador de estado (Dot)
+                    // 4) Indicador de estado (Dot) (Solo horizontal)
                     Rectangle {
-                        Layout.alignment: Qt.AlignVCenter
+                        visible: !root.vertical && root.isPlaying
+                        Layout.alignment: Qt.AlignCenter
                         Layout.preferredWidth: collapsedView._dotSize
                         Layout.preferredHeight: collapsedView._dotSize
                         Layout.minimumWidth: collapsedView._dotSize
@@ -1075,12 +1032,12 @@ Item {
                 }
             }
 
-            // 15.2) Vista EXPANDIDA
+            // 15.2) Vista EXPANDIDA (Solo Horizontal)
             Item {
                 id: expandedView
                 anchors.fill: parent
                 opacity: 0
-                visible: opacity > 0.01
+                visible: opacity > 0.01 && !root.vertical
                 clip: true
 
                 readonly property int contentH: Math.max(1, height - (root.islandPaddingV * 2))
@@ -1108,11 +1065,10 @@ Item {
                         Layout.preferredHeight: expandedView.bongoH
                         Layout.preferredWidth: expandedView.bongoW
                         gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
-                        isVertical: root.barIsVertical
+                        isVertical: false
                         layer.enabled: false
                     }
 
-                    // Cover (sin ring)
                     Item {
                         id: coverSlot
                         Layout.alignment: Qt.AlignVCenter
@@ -1120,17 +1076,6 @@ Item {
                         implicitHeight: expandedView.coverSlotSize
                         clip: false
 
-                        readonly property int fxPad: 3
-
-                        // <- CAMBIO: ring desactivado (se queda el bloque pero no se ve)
-                        Item {
-                            id: ringFx
-                            anchors.fill: parent
-                            anchors.margins: coverSlot.fxPad
-                            visible: false
-                        }
-
-                        // Carátula CUADRADA
                         Item {
                             id: coverCircle
                             anchors.centerIn: parent
@@ -1139,7 +1084,7 @@ Item {
 
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 4    // pon 0 si lo quieres totalmente cuadrado
+                                radius: 4
                                 color: Qt.rgba(1, 1, 1, 0.06)
                                 border.width: 1
                                 border.color: Qt.rgba(1, 1, 1, 0.10)
@@ -1169,7 +1114,7 @@ Item {
                             Rectangle {
                                 id: coverStroke
                                 anchors.fill: parent
-                                radius: 4    // pon 0 si lo quieres totalmente cuadrado
+                                radius: 4
                                 color: "transparent"
                                 border.width: 1
                                 border.color: Qt.rgba(
@@ -1186,7 +1131,7 @@ Item {
                                 anchors.centerIn: parent
                                 width: parent.width
                                 height: parent.height
-                                radius: 4    // <- CAMBIO: glow cuadrado también
+                                radius: 4
                                 color: "transparent"
                                 border.width: 1
                                 border.color: Qt.rgba(
@@ -1230,19 +1175,9 @@ Item {
                                 shapeColor: Appearance.colors.colOnPrimaryContainer
                             }
                         }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            z: 101
-                            onClicked: {
-                                if (root.activePlayer) root.activePlayer.togglePlaying()
-                            }
-                        }
                     }
 
-                    // 15.2.1) LYRICS SCROLLER
+                    // LYRICS SCROLLER
                     Item {
                         id: lyricScroller
                         Layout.fillWidth: false
@@ -1448,7 +1383,7 @@ Item {
                         }
                     }
 
-                    // 15.2.2) NO LYRICS: marquee + waves
+                    // NO LYRICS: marquee + waves
                     Item {
                         id: marqueeViewport
                         Layout.fillWidth: false
@@ -1540,19 +1475,17 @@ Item {
         }
     }
 
-    // 16) COMPONENTE: LyricLine (seguro + limpio)
+    // 16) COMPONENTE: LyricLine
     component LyricLine: Item {
         id: lyricLineItem
 
         required property string text
         property bool highlight: false
         property bool useGradient: false
-        property string gradientDirection: "top" // "top" | "bottom"
+        property string gradientDirection: "top" 
         property real fillProgress: 0.0
 
-        // Altura inyectada desde lyricScroller
         property int lineHeight: Math.max(12, Appearance.font.pixelSize.smallie + 4)
-
         property bool reallyUseGradient: useGradient && root.useGradientMask && root.fxLyricsGradientMask
 
         width: parent.width
@@ -1646,4 +1579,3 @@ Item {
         }
     }
 }
-

@@ -1,66 +1,63 @@
+// WeatherBar.qml
 pragma ComponentBehavior: Bound
 
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.services
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import qs.modules.common
+import qs.modules.common.widgets
+import qs.modules.common.functions
+import qs.services
 
 MouseArea {
     id: root
 
-    // FIX: BarComponent a veces asigna `vertical: ...`
     property bool vertical: false
+    readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
 
-    // Controls
     property bool interactionsEnabled: true
     property bool allowPopup: true
 
-    // Toggles
     property bool enableWeatherAura: true
-
-    // Heartbeat (SIN brillo; solo escala/“palpitar”)
     property bool enableHeartbeat: true
-    property real heartbeatStrength: 1.0 // 0..1
+    property real heartbeatStrength: 1.0
 
-    // Cristal (tinte opcional). 0.00 = cristal “puro”
     property real crystalTintOpacity: 0.00
-
-    // NUEVO: bordes “cuadrito” SOLO al hover (leve)
     property bool crystalBordersOnHoverOnly: true
-    property real crystalBorderHoverStrength: 1.0 // 0..1 (1 = como lo tenías al hover)
+    property real crystalBorderHoverStrength: 1.0
+
+    // Padding real usado por el contenido (debe coincidir con el cálculo del implicit size)
+    property int padX: root.vertical ? 6 : 10
+    property int padY: root.vertical ? 6 : 10
+
+    property int gap: 8
+    property int radius: 12
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
     preventStealing: true
     cursorShape: Qt.PointingHandCursor
 
-    // =====================================================
-    // CHIP LAYOUT Y DIMENSIONES
-    // =====================================================
-    property int padX: 12
-    property int padY: 7
-    property int gap: 8
-    property int radius: 12
-
     Layout.fillHeight: true
-    implicitWidth: row.implicitWidth + padX * 2
-    implicitHeight: Math.max(30, row.implicitHeight + padY * 2)
 
-    // =====================================================
-    // THEME
-    // =====================================================
-    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
-    function _isDark(c) { return _lin(c) < 0.65 }
-    readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
+    // El tamaño implícito ahora coincide con el padding real aplicado al contenido
+    implicitWidth: root.vertical
+        ? Appearance.sizes.verticalBarWidth
+        : (contentGrid.implicitWidth + padX * 2)
 
-    readonly property color fg: themeIsDark ? "#FFFFFF" : "#161616"
-    readonly property color fgSoft: themeIsDark ? Qt.rgba(1, 1, 1, 0.74) : Qt.rgba(0, 0, 0, 0.60)
+    implicitHeight: root.vertical
+        ? (contentGrid.implicitHeight + padY * 2)
+        : Math.max(30, contentGrid.implicitHeight + padY * 2)
 
-    // =====================================================
-    // HOVER / PRESS
-    // =====================================================
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode)
+        ? Appearance.m3colors.darkmode
+        : false
+
+    readonly property color fg: Appearance.colors.colOnLayer1
+    readonly property color fgSoft: Appearance.colors.colOnLayer2
+    readonly property color plateBase: Appearance.colors.colLayer1
+    readonly property color plateBorderBase: Appearance.colors.colLayer3
+
     property real hoverAmount: containsMouse ? 1.0 : 0.0
     Behavior on hoverAmount {
         enabled: root.interactionsEnabled
@@ -73,12 +70,9 @@ MouseArea {
         NumberAnimation { duration: 90; easing.type: Easing.OutCubic }
     }
 
-    // =====================================================
-    // WEATHER DATA
-    // =====================================================
+    // Weather data
     readonly property var w: Weather.data
     readonly property var wCode: w?.wCode
-
     readonly property string tempText: (w?.temp !== undefined && w?.temp !== null) ? ("" + w.temp + "°") : "--°"
 
     readonly property string cityText: {
@@ -132,7 +126,7 @@ MouseArea {
         case "storm": return Qt.rgba(0.72, 0.46, 1.00, 1.0)
         case "snow":  return Qt.rgba(0.66, 0.95, 1.00, 1.0)
         case "fog":   return Qt.rgba(0.80, 0.84, 0.88, 1.0)
-        default:      return Qt.rgba(1, 1, 1, 1.0)
+        default:      return Appearance.colors.colPrimary
         }
     }
 
@@ -140,12 +134,18 @@ MouseArea {
 
     readonly property color accent: {
         var a = accentBase()
-        var tTheme = themeIsDark ? 0.70 : 0.54
-        var t = _clamp(tTheme + 0.18 * hoverAmount, 0.30, 0.92)
+        var p = Appearance.colors.colPrimary
+        var t = _clamp((themeIsDark ? 0.55 : 0.48) + 0.18 * hoverAmount, 0.20, 0.92)
+        var m = Qt.rgba(
+            a.r * (1.0 - 0.35) + p.r * 0.35,
+            a.g * (1.0 - 0.35) + p.g * 0.35,
+            a.b * (1.0 - 0.35) + p.b * 0.35,
+            1.0
+        )
         return Qt.rgba(
-            fg.r * (1.0 - t) + a.r * t,
-            fg.g * (1.0 - t) + a.g * t,
-            fg.b * (1.0 - t) + a.b * t,
+            fg.r * (1.0 - t) + m.r * t,
+            fg.g * (1.0 - t) + m.g * t,
+            fg.b * (1.0 - t) + m.b * t,
             1.0
         )
     }
@@ -153,8 +153,7 @@ MouseArea {
     readonly property color cityColor: {
         var base = fgSoft
         var a = accent
-        var t = themeIsDark ? 0.60 : 0.48
-        t = _clamp(t + 0.12 * hoverAmount, 0.30, 0.85)
+        var t = _clamp((themeIsDark ? 0.52 : 0.44) + 0.12 * hoverAmount, 0.20, 0.85)
         return Qt.rgba(
             base.r * (1.0 - t) + a.r * t,
             base.g * (1.0 - t) + a.g * t,
@@ -163,9 +162,6 @@ MouseArea {
         )
     }
 
-    // =====================================================
-    // POPUP
-    // =====================================================
     function openWeatherPopup() {
         if (!root.allowPopup) return
 
@@ -208,7 +204,7 @@ MouseArea {
         }
     }
 
-    // Aura animation phase (lo dejé tal cual lo tenías)
+    // Animaciones
     property real auraPhase: 0.0
     NumberAnimation on auraPhase {
         running: root.enableWeatherAura
@@ -219,20 +215,15 @@ MouseArea {
         easing.type: Easing.InOutSine
     }
 
-    // Heartbeat phase — SOLO escala
     property real beat: 0.0
     SequentialAnimation on beat {
         running: root.enableHeartbeat
         loops: Animation.Infinite
-
         NumberAnimation { from: 0.0; to: 1.0; duration: 110; easing.type: Easing.OutCubic }
         NumberAnimation { from: 1.0; to: 0.0; duration: 190; easing.type: Easing.OutCubic }
-
         PauseAnimation { duration: 140 }
-
         NumberAnimation { from: 0.0; to: 0.78; duration: 105; easing.type: Easing.OutCubic }
         NumberAnimation { from: 0.78; to: 0.0; duration: 220; easing.type: Easing.OutCubic }
-
         PauseAnimation { duration: 900 }
     }
 
@@ -241,13 +232,12 @@ MouseArea {
     Item {
         id: chip
         anchors.fill: parent
-
         transformOrigin: Item.Center
+
         transform: [
             Scale {
                 origin.x: chip.width / 2
                 origin.y: chip.height / 2
-
                 readonly property real s: (root.interactionsEnabled ? (1.0 + 0.0065 * root.beatAmt) : 1.0)
                 xScale: s - 0.010 * root.pressAmount
                 yScale: s - 0.010 * root.pressAmount
@@ -255,15 +245,10 @@ MouseArea {
             Translate { y: (-0.40 * root.hoverAmount) + (0.20 * root.pressAmount) }
         ]
 
-        // =================================================
-        // PLATE CRISTAL
-        // Cambio: “cuadrito” (bordes) NO visibles en idle,
-        //         y aparecen LEVES cuando haces hover.
-        // =================================================
         Rectangle {
             id: plate
             anchors.fill: parent
-            radius: root.radius
+            radius: root.vertical ? width / 2 : root.radius
             antialiasing: true
             clip: true
 
@@ -271,34 +256,39 @@ MouseArea {
             border.width: 0
             border.color: "transparent"
 
-            // Control de visibilidad de bordes (solo hover)
             readonly property real borderAmt: (root.crystalBordersOnHoverOnly ? root.hoverAmount : 1.0)
-                                            * root.crystalBorderHoverStrength
+                                           * root.crystalBorderHoverStrength
 
-            // (Opcional) tinte ultra leve
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: ColorUtils.transparentize(root.plateBase, (root.themeIsDark ? 0.35 : 0.55))
+                opacity: 0.22 + 0.12 * root.hoverAmount + 0.10 * root.pressAmount
+            }
+
             Rectangle {
                 anchors.fill: parent
                 radius: parent.radius
                 visible: root.crystalTintOpacity > 0.0
                 color: root.themeIsDark
-                    ? Qt.rgba(0, 0, 0, root.crystalTintOpacity)
-                    : Qt.rgba(1, 1, 1, root.crystalTintOpacity)
+                    ? ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.88)
+                    : ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.92)
+                opacity: root.crystalTintOpacity
             }
 
-            // 1) Borde exterior (solo al hover)
             Rectangle {
                 anchors.fill: parent
                 radius: parent.radius
                 color: "transparent"
                 border.width: 1
-                border.color: root.themeIsDark
-                    ? Qt.rgba(0, 0, 0, 0.48 * plate.borderAmt)
-                    : Qt.rgba(0, 0, 0, 0.16 * plate.borderAmt)
+                border.color: ColorUtils.transparentize(
+                    root.plateBorderBase,
+                    0.65 + (root.themeIsDark ? 0.10 : 0.18) * plate.borderAmt
+                )
                 antialiasing: true
                 visible: plate.borderAmt > 0.01
             }
 
-            // 2) Bisel interno (solo al hover)
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
@@ -306,15 +296,15 @@ MouseArea {
                 color: "transparent"
                 border.width: 1
                 border.color: Qt.rgba(
-                    1, 1, 1,
-                    (root.themeIsDark ? (0.14 + 0.06 * root.hoverAmount)
-                                      : (0.40 + 0.08 * root.hoverAmount)) * plate.borderAmt
+                    Appearance.colors.colOnLayer1.r,
+                    Appearance.colors.colOnLayer1.g,
+                    Appearance.colors.colOnLayer1.b,
+                    (root.themeIsDark ? 0.10 : 0.16) * plate.borderAmt
                 )
                 antialiasing: true
                 visible: plate.borderAmt > 0.01
             }
 
-            // 3) Accent outline sutil (solo al hover)
             Rectangle {
                 anchors.fill: parent
                 radius: parent.radius
@@ -322,33 +312,31 @@ MouseArea {
                 border.width: 1
                 border.color: Qt.rgba(
                     root.accent.r, root.accent.g, root.accent.b,
-                    ((root.themeIsDark ? 0.16 : 0.12) + 0.14 * root.hoverAmount) * plate.borderAmt
+                    ((root.themeIsDark ? 0.14 : 0.10) + 0.14 * root.hoverAmount) * plate.borderAmt
                 )
                 antialiasing: true
                 visible: plate.borderAmt > 0.01
             }
 
-            // 4) Highlight superior (solo al hover)
             Rectangle {
                 anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.topMargin: 1
-                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
-                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.6 : 1
-                height: 1
+                anchors.left: root.vertical ? (root.isRightSide ? undefined : parent.left) : parent.left
+                anchors.right: root.vertical ? (root.isRightSide ? parent.right : undefined) : parent.right
+                anchors.topMargin: root.vertical ? parent.radius / 1.6 : 1
+                anchors.leftMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
+                anchors.rightMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
+                height: root.vertical ? Math.max(2, Math.round(parent.height * 0.26)) : 1
+                width: root.vertical ? 1 : undefined
                 color: Qt.rgba(
-                    1, 1, 1,
-                    (root.themeIsDark ? (0.28 + 0.10 * root.hoverAmount)
-                                      : (0.62 + 0.10 * root.hoverAmount)) * plate.borderAmt
+                    Appearance.colors.colOnLayer1.r,
+                    Appearance.colors.colOnLayer1.g,
+                    Appearance.colors.colOnLayer1.b,
+                    (root.themeIsDark ? 0.16 : 0.20) * plate.borderAmt
                 )
                 antialiasing: true
                 visible: plate.borderAmt > 0.01
             }
 
-            // =================================================
-            // WEATHER AURA (lo dejé igual que lo tenías)
-            // =================================================
             Item {
                 anchors.fill: parent
                 visible: root.enableWeatherAura
@@ -363,9 +351,9 @@ MouseArea {
                     x: (-parent.width * 0.50) + (parent.width * 1.20 * root.auraPhase)
                     y: -parent.height * 0.20
                     gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.00) }
-                        GradientStop { position: 0.5; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.themeIsDark ? 0.10 : 0.07) }
-                        GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.00) }
+                        GradientStop { position: 0.0; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.00) }
+                        GradientStop { position: 0.5; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.themeIsDark ? 0.12 : 0.08) }
+                        GradientStop { position: 1.0; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.00) }
                     }
                     opacity: 0.9
                 }
@@ -390,8 +378,10 @@ MouseArea {
                         height: parent.height * 0.60
                         radius: 1
                         rotation: -18
-                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
-                                      root.weatherKind() === "storm" ? 0.18 : 0.14)
+                        color: Qt.rgba(
+                            root.accent.r, root.accent.g, root.accent.b,
+                            root.weatherKind() === "storm" ? 0.18 : 0.14
+                        )
                         x: (index * parent.width * 0.16) + (parent.width * 0.30 * root.auraPhase)
                         y: parent.height * 0.10 + (index % 2) * 2
                         opacity: 0.55
@@ -404,8 +394,10 @@ MouseArea {
                         width: 2 + (index % 2)
                         height: width
                         radius: 1
-                        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
-                                      root.weatherKind() === "fog" ? 0.10 : 0.16)
+                        color: Qt.rgba(
+                            root.accent.r, root.accent.g, root.accent.b,
+                            root.weatherKind() === "fog" ? 0.10 : 0.16
+                        )
                         x: (index * parent.width * 0.12 + parent.width * 0.22 * root.auraPhase) % parent.width
                         y: parent.height * (0.18 + 0.09 * (index % 4))
                            + (parent.height * 0.08 * Math.sin(6.28318 * (root.auraPhase + index * 0.14)))
@@ -428,51 +420,113 @@ MouseArea {
             }
         }
 
-        RowLayout {
-            id: row
-            anchors.centerIn: parent
-            spacing: root.gap
+        // Caja de contenido: centra el layout por tamaño implícito + aplica padding real
+        Item {
+            id: contentBox
+            anchors.fill: parent
+            anchors.margins: 0
 
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignVCenter
-                text: root.weatherIcon()
-                fill: 0
-                iconSize: Math.max(16, Appearance.font.pixelSize.small + 2)
-                color: root.accent
-                opacity: 0.92 + 0.08 * root.hoverAmount
+            GridLayout {
+                id: contentGrid
+
+                // En vez de fill, lo centramos y le damos su tamaño implícito
+                width: implicitWidth
+                height: implicitHeight
+                anchors.centerIn: parent
+
+                // El padding lo hacemos “real” con un wrapper invisible:
+                // (alternativa simple: dar márgenes al contentBox en lugar de GridLayout)
+                // Aquí lo hacemos moviendo el layout dentro del rectángulo:
+                x: (contentBox.width - width) / 2
+                y: (contentBox.height - height) / 2
+
+                // Ajuste de padding: expandimos el layout sumando pads con un Item espaciador alrededor
+                // Más simple: aumentar el tamaño del chip con implicit, y mantener layout centrado;
+                // el pad ya está en implicitWidth/Height y el layout queda centrado, sin “hueco abajo”.
+                // Si quieres padding interno real (que afecte al hitbox visual), usa un wrapper extra.
+                // Por ahora, esto corrige el “no centrado”.
+
+                columns: root.vertical ? 1 : 2
+                rows: root.vertical ? 2 : 1
+                rowSpacing: 8
+                columnSpacing: root.gap
+
+                Item {
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: root.weatherIcon()
+                        fill: 0
+                        iconSize: Math.max(16, Appearance.font.pixelSize.small + 2)
+                        color: root.accent
+                        opacity: 0.92 + 0.08 * root.hoverAmount
+                    }
+                }
+
+                Item {
+                    id: textWrapper
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+                    clip: true
+
+                    // Mantén coherente: el wrapper toma el size del contenido real
+                    Layout.preferredWidth: root.vertical ? innerRow.implicitHeight : innerRow.implicitWidth
+                    Layout.preferredHeight: root.vertical ? innerRow.implicitWidth : innerRow.implicitHeight
+
+                    Item {
+                        width: root.vertical ? textWrapper.height : textWrapper.width
+                        height: root.vertical ? textWrapper.width : textWrapper.height
+                        anchors.centerIn: parent
+                        rotation: root.vertical ? (root.isRightSide ? 90 : -90) : 0
+
+                        RowLayout {
+                            id: innerRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            StyledText {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: root.tempText
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.bold: true
+                                font.weight: Font.Bold
+                                font.features: ({ "tnum": 1 })
+                                color: root.fg
+                                renderType: Text.NativeRendering
+                            }
+
+                            StyledText {
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: root.cityText !== ""
+                                text: root.cityText
+                                font.pixelSize: (Appearance.font.pixelSize.tiny ?? Math.max(10, Appearance.font.pixelSize.small - 2)) + 1
+                                font.bold: true
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.35
+                                color: root.cityColor
+                                opacity: 0.94 + 0.05 * root.hoverAmount
+                                elide: Text.ElideRight
+                                Layout.maximumWidth: 170
+                                renderType: Text.NativeRendering
+                            }
+                        }
+                    }
+                }
             }
 
-            StyledText {
-                Layout.alignment: Qt.AlignVCenter
-                text: root.tempText
-                font.pixelSize: Appearance.font.pixelSize.small
-                font.bold: true
-                font.weight: Font.Bold
-                font.features: ({ "tnum": 1 })
-                color: root.fg
-                renderType: Text.NativeRendering
-            }
-
-            StyledText {
-                Layout.alignment: Qt.AlignVCenter
-                visible: root.cityText !== ""
-                text: root.cityText
-                font.pixelSize: (Appearance.font.pixelSize.tiny ?? Math.max(10, Appearance.font.pixelSize.small - 2)) + 1
-                font.bold: true
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.35
-                color: root.cityColor
-                opacity: 0.94 + 0.05 * root.hoverAmount
-                elide: Text.ElideRight
-                Layout.maximumWidth: 170
-                renderType: Text.NativeRendering
+            // Padding real: hacemos que el contenido “respire” sin descentrarlo
+            // (este padding afecta la zona alrededor porque el Grid está centrado)
+            // Si quieres padding interno real, dilo y te lo dejo con un wrapper que lo aplique literal.
+            onWidthChanged: {
+                // no-op (placeholder para claridad)
             }
         }
     }
 
     WeatherPopup {
         id: weatherPopup
-        // NO z: StyledPopup no es Item
     }
 }
 

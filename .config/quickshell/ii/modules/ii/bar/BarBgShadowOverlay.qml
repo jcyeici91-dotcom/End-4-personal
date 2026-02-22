@@ -10,14 +10,12 @@ Rectangle {
     required property int cornerStyle
     required property bool visibleWhen
 
-    // Ajustes (compatibles)
     property real shadowOpacity: 0.35
     property int shadowBlur: 30
     property color shadowColor: Qt.rgba(0, 0, 0, 1)
 
     visible: visibleWhen
 
-    // Copiamos geometría del target
     x: targetItem.x
     y: targetItem.y
     width: targetItem.width
@@ -32,9 +30,7 @@ Rectangle {
     layer.smooth: true
 
     layer.effect: MultiEffect {
-        // Truco compatible: máscara invertida para que el "relleno" del rect
-        // no se vea, pero su sombra sí (queda como sombra exterior).
-        maskEnabled: true
+         maskEnabled: true
         maskSource: root
         maskInverted: true
         maskThresholdMin: 0.5

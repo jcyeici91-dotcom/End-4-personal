@@ -1019,3 +1019,14 @@
 2026-02-17T23:23:55.930Z info: Current version 3.68.0
 2026-02-17T23:23:55.931Z info: Newest version 3.68.0
 2026-02-17T23:23:55.936Z info: ffprobe -of json -show_chapters -show_format -show_entries stream -i '/home/jcgomez91/Videos/recording_2026-02-17_17.23.09.mp4' -hide_banner
+2026-02-22T01:20:00.310Z info: LosslessCut version 3.68.0 { isDev: false }
+2026-02-22T01:20:00.319Z info: Initialized config store
+2026-02-22T01:20:00.321Z info: Waiting for app to become ready
+2026-02-22T01:20:00.445Z info: LosslessCut version 3.68.0 { isDev: false }
+2026-02-22T01:20:00.426Z info: CLI arguments { _: [ '/home/jcgomez91/Videos/recording_2026-02-21_08.11.27.mp4' ] }
+2026-02-22T01:20:00.496Z info: second-instance { _: [ '/home/jcgomez91/Videos/recording_2026-02-21_08.11.27.mp4' ] }
+2026-02-22T01:20:00.455Z info: Initialized config store
+2026-02-22T01:20:00.497Z info: Found running instance, quitting
+2026-02-22T01:20:00.914Z info: Current version 3.68.0
+2026-02-22T01:20:00.915Z info: Newest version 3.68.0
+2026-02-22T01:20:00.923Z info: ffmpeg -hide_banner -f lavfi -i 'nullsrc=s=256x256:d=1' -f null -

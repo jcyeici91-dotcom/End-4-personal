@@ -62,9 +62,7 @@ DraggableDesktopWidget {
   Binding {
     target: root
     property: "showCompleted"
-    value: pluginApi?.pluginSettings?.showCompleted !== undefined
-         ? pluginApi.pluginSettings.showCompleted
-         : pluginApi?.manifest?.metadata?.defaultSettings?.showCompleted || false
+    value: pluginApi?.pluginSettings?.showCompleted !== undefined ? pluginApi.pluginSettings.showCompleted : pluginApi?.manifest?.metadata?.defaultSettings?.showCompleted || false
   }
 
   Binding {
@@ -76,9 +74,7 @@ DraggableDesktopWidget {
   Binding {
     target: root
     property: "expanded"
-    value: pluginApi?.pluginSettings?.isExpanded !== undefined
-         ? pluginApi.pluginSettings.isExpanded
-         : pluginApi?.manifest?.metadata?.defaultSettings?.isExpanded || false
+    value: pluginApi?.pluginSettings?.isExpanded !== undefined ? pluginApi.pluginSettings.isExpanded : pluginApi?.manifest?.metadata?.defaultSettings?.isExpanded || false
   }
 
   Component.onCompleted: {
@@ -193,9 +189,7 @@ DraggableDesktopWidget {
           tabIndex: index
           checked: index === tabBar.currentPageIndex
 
-          color: showBackground ?
-                 (isHovered ? Color.mHover : (checked ? Color.mPrimary : Color.mOnPrimary)) :
-                 (isHovered ? Color.mHover : (checked ? "transparent" : "transparent"))
+          color: showBackground ? (isHovered ? Color.mHover : (checked ? Color.mPrimary : Color.mOnPrimary)) : (isHovered ? Color.mHover : (checked ? "transparent" : "transparent"))
 
           border.width: 0
 
@@ -268,9 +262,7 @@ DraggableDesktopWidget {
 
           Column {
             id: columnLayout
-            width: todoFlickable.width
-                   - todoFlickable.leftMargin
-                   - todoFlickable.rightMargin
+            width: todoFlickable.width - todoFlickable.leftMargin - todoFlickable.rightMargin
             spacing: scaledMarginS
 
             Repeater {
@@ -395,7 +387,8 @@ DraggableDesktopWidget {
 
   // Internal utility functions
   function updateTodo(todoId, updates) {
-    if (!mainInstance) return false;
+    if (!mainInstance)
+      return false;
     return mainInstance.updateTodo(todoId, updates);
   }
 
@@ -408,8 +401,8 @@ DraggableDesktopWidget {
 
     // Use the existing updateTodo function to update only the completion status
     return updateTodo(todoId, {
-      completed: !currentCompletedStatus
-    });
+                        completed: !currentCompletedStatus
+                      });
   }
 
   // Helper function to get priority color
@@ -438,14 +431,16 @@ DraggableDesktopWidget {
 
   // Helper function to get theme color
   function getThemeColor(priority) {
-    if (priority === "high") return Color.mError;
-    if (priority === "low") return Color.mOnSurfaceVariant;
+    if (priority === "high")
+      return Color.mError;
+    if (priority === "low")
+      return Color.mOnSurfaceVariant;
     return Color.mPrimary;
   }
 
-
   function loadTodos() {
-    if (!pluginApi) return;
+    if (!pluginApi)
+      return;
 
     filteredTodosModel.clear();
 
@@ -462,13 +457,13 @@ DraggableDesktopWidget {
         // Check if completed items should be shown
         if (currentShowCompleted || !todo.completed) {
           filteredTodosModel.append({
-            id: todo.id,
-            text: todo.text,
-            completed: todo.completed,
-            pageId: todo.pageId || 0,
-            priority: todo.priority,
-            details: todo.details
-          });
+                                      id: todo.id,
+                                      text: todo.text,
+                                      completed: todo.completed,
+                                      pageId: todo.pageId || 0,
+                                      priority: todo.priority,
+                                      details: todo.details
+                                    });
         }
       }
     }

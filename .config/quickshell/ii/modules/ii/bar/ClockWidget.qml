@@ -11,9 +11,10 @@ import Quickshell.Io
 Item {
     id: root
 
-    // =====================================================
-    // 1) THEME (igual)
-    // =====================================================
+    // Solo para que BarComponent pueda pasar `vertical: true/false`
+    // y podamos ajustar tamaño/fecha en vertical sin cambiar el diseño horizontal.
+    property bool vertical: false
+
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
@@ -22,9 +23,6 @@ Item {
     readonly property color smartShadowColor: themeIsDark ? Qt.rgba(0,0,0,0.0) : Qt.rgba(1,1,1,0.0) // PERF: no sombra
     readonly property real basePillAlpha: themeIsDark ? 0.26 : 0.15
 
-    // =====================================================
-    // 2) FLAGS
-    // =====================================================
     property bool borderless: Config.options.bar.borderless
     property bool interactionsEnabled: true
     property bool expanded: false
@@ -36,9 +34,6 @@ Item {
     property bool breatheEnabled: false
     property bool secondsPulseEnabled: false
 
-    // =====================================================
-    // 3) SHAPE / SPACING
-    // =====================================================
     property int pillRadius: 999
     property int pillPadH: 14
     property int pillPadV: 8
@@ -51,17 +46,12 @@ Item {
     // NUEVO: margen lateral del divider (reduce el hueco extra)
     property int dividerSideMargin: 0
 
-    // =====================================================
-    // 4) COLORS
-    // =====================================================
     property color tonalTime: Appearance.m3colors.m3primary
     property color tonalSec: Appearance.m3colors.m3secondary
     property color tonalDate: Appearance.m3colors.m3tertiary
     property color textColor: root.smartTextColor
 
-    // =====================================================
-    // 5) ADAPTIVE TUNING (se queda, es barato)
-    // =====================================================
+
     readonly property int barH: Math.max(24, Math.floor(Appearance.sizes.barHeight))
     readonly property real barT: {
         var t = (barH - 30) / 20.0
@@ -73,9 +63,6 @@ Item {
 
     function _rgba(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
-    // =====================================================
-    // 6) TIME MODEL
-    // =====================================================
     property string systemTime: DateTime.time
     readonly property string timeNumbers: {
         var m = (systemTime || "").match(/^(\d{1,2}:\d{2})/)
@@ -90,6 +77,10 @@ Item {
     }
 
     function _dateWithFullWeekday() {
+        if (root.vertical) {
+            return Qt.locale("en_US").toString(new Date(), "MM/dd")
+        }
+
         var ld = (DateTime.longDate || "").toString().trim()
         var numeric = ""
         var dm = ld.match(/^([A-Za-zÀ-ÿ.\u00C0-\u017F]+)\s*,\s*(.*)$/)
@@ -102,15 +93,9 @@ Item {
 
     Process { id: openCalendar; command: ["gnome-calendar"] }
 
-    // =====================================================
-    // 7) SIZE / LAYOUT  (PERF: sin animación de ancho)
-    // =====================================================
-    implicitWidth: contentRow.implicitWidth + 24
-    implicitHeight: Appearance.sizes.barHeight
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : (contentRow.implicitWidth + 24)
+    implicitHeight: root.vertical ? (contentRow.implicitHeight + 24) : Appearance.sizes.barHeight
 
-    // =====================================================
-    // 8) CONTENT
-    // =====================================================
     Item {
         id: content
         anchors.fill: parent
@@ -120,11 +105,9 @@ Item {
             id: contentRow
             anchors.centerIn: parent
 
-            // FIX: al expandir, cerramos el gap general
-            spacing: root.expanded ? root.expandedGap : root.pillGap
+               spacing: root.expanded ? root.expandedGap : root.pillGap
 
-            // --- PILL BACKGROUND (PERF: sin efectos, sin sombra) ---
-            component TonalPillBg: Rectangle {
+                  component TonalPillBg: Rectangle {
                 required property color tonal
                 radius: root.pillRadius
                 antialiasing: true

@@ -10,26 +10,54 @@ Item {
     id: root
     implicitHeight: mainLayout.implicitHeight
 
-    // --- ESTILO ---
-    readonly property color bgPill: "#303134"
-    readonly property color bgWidget: "#303134"
-    readonly property color textMain: "#e8eaed"
-    readonly property color textSub: "#9aa0a6"
-    readonly property color accent: "#8ab4f8"
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+    function _rgba(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
-    // El Salvador: UTC-6 (sin DST)
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode)
+        ? Appearance.m3colors.darkmode
+        : _isDark(Appearance.colors.colLayer0)
+
+    function _pickOn(bg) { return _isDark(bg) ? Qt.rgba(1, 1, 1, 1) : Qt.rgba(0, 0, 0, 1) }
+    function _ensureReadable(fg, bg, minDelta) {
+        var d = Math.abs(_lin(fg) - _lin(bg))
+        return (d >= (minDelta || 0.25)) ? fg : _pickOn(bg)
+    }
+
+    function _hex2(n) {
+        n = Math.max(0, Math.min(255, Math.round(n)))
+        var s = n.toString(16)
+        return (s.length === 1) ? ("0" + s) : s
+    }
+    function _toHex(c) { return "#" + _hex2(c.r * 255) + _hex2(c.g * 255) + _hex2(c.b * 255) }
+
+    readonly property color bgPill: Appearance.colors.colLayer1
+    readonly property color bgWidget: Appearance.colors.colLayer1
+
+    readonly property color _textMainRaw: Appearance.colors.colOnLayer1
+    readonly property color _textSubRaw: Appearance.colors.colOnLayer2
+
+    readonly property color textMain: _ensureReadable(_textMainRaw, bgWidget, 0.30)
+    readonly property color textSub: _ensureReadable(_textSubRaw, bgWidget, 0.22)
+
+    readonly property color accent: Appearance.colors.colPrimary
+
+    readonly property color outlineSoft: _rgba(_ensureReadable(Appearance.colors.colOnLayer1, bgWidget, 0.18), themeIsDark ? 0.14 : 0.18)
+    readonly property color surfaceSubtle: Appearance.colors.colLayer2
+    readonly property color shadowCol: Qt.rgba(0, 0, 0, themeIsDark ? 0.40 : 0.22)
+
+    readonly property color danger: (Appearance.colors.colError !== undefined) ? Appearance.colors.colError : "#ff4d4d"
+    readonly property color success: (Appearance.colors.colSuccess !== undefined) ? Appearance.colors.colSuccess : "#34A853"
+    readonly property color warn: (Appearance.colors.colWarning !== undefined) ? Appearance.colors.colWarning : "#fbbc04"
+
     readonly property int esOffsetMinutes: -6 * 60
 
     property string searchQuery: ""
     property bool inSearchMode: false
 
-    // MODELOS
     ListModel { id: newsModel }
     ListModel { id: scoresModel }
 
-    // ---------------------------------------------------------
-    // LAYOUT PRINCIPAL
-    // ---------------------------------------------------------
     ColumnLayout {
         id: mainLayout
         anchors.top: parent.top
@@ -37,9 +65,6 @@ Item {
         anchors.right: parent.right
         spacing: 16
 
-        // ---------------------------------------------------------
-        // 1) BARRA DE BÚSQUEDA
-        // ---------------------------------------------------------
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 52
@@ -51,7 +76,7 @@ Item {
                 shadowEnabled: true
                 shadowBlur: 0.8
                 shadowVerticalOffset: 2
-                shadowColor: "#60000000"
+                shadowColor: root.shadowCol
             }
 
             RowLayout {
@@ -120,13 +145,10 @@ Item {
                     }
                 }
 
-                MaterialSymbol { text: "lens_camera"; color: "#fbbc04"; font.pixelSize: 24 }
+                MaterialSymbol { text: "lens_camera"; color: root.warn; font.pixelSize: 24 }
             }
         }
 
-        // ---------------------------------------------------------
-        // 2) CARRUSEL (PARTIDOS)
-        // ---------------------------------------------------------
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 128
@@ -144,19 +166,13 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 cacheBuffer: 1200
 
-                Behavior on contentX {
-                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-                }
+                Behavior on contentX { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                 function minX() { return originX }
                 function maxX() { return Math.max(originX, originX + contentWidth - width) }
 
-                function setX(x) {
-                    contentX = clamp(x, minX(), maxX())
-                }
-
+                function setX(x) { contentX = clamp(x, minX(), maxX()) }
                 function clampNow() { setX(contentX) }
-
                 function pageStepPx() { return Math.max(160, Math.floor(width * 0.85)) }
 
                 function scrollPage(side) {
@@ -173,19 +189,12 @@ Item {
                 WheelHandler {
                     target: scoresList
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-
                     onWheel: (wheel) => {
                         var dx = 0
                         var dy = 0
 
-                        if (wheel.pixelDelta) {
-                            dx = wheel.pixelDelta.x
-                            dy = wheel.pixelDelta.y
-                        }
-                        if ((dx === 0 && dy === 0) && wheel.angleDelta) {
-                            dx = wheel.angleDelta.x
-                            dy = wheel.angleDelta.y
-                        }
+                        if (wheel.pixelDelta) { dx = wheel.pixelDelta.x; dy = wheel.pixelDelta.y }
+                        if ((dx === 0 && dy === 0) && wheel.angleDelta) { dx = wheel.angleDelta.x; dy = wheel.angleDelta.y }
 
                         var dominant = (Math.abs(dx) > Math.abs(dy)) ? dx : dy
                         var factor = wheel.pixelDelta && (wheel.pixelDelta.x !== 0 || wheel.pixelDelta.y !== 0) ? 1.0 : 0.35
@@ -204,7 +213,7 @@ Item {
                     radius: 16
                     color: root.bgWidget
                     border.width: 1
-                    border.color: "#3c4043"
+                    border.color: root.outlineSoft
 
                     ColumnLayout {
                         anchors.fill: parent
@@ -227,9 +236,9 @@ Item {
                             Rectangle {
                                 visible: model.dayLabel !== ""
                                 radius: 9
-                                color: "#202124"
+                                color: root.surfaceSubtle
                                 border.width: 1
-                                border.color: "#3c4043"
+                                border.color: root.outlineSoft
                                 height: 20
                                 width: dayText.implicitWidth + 14
 
@@ -246,7 +255,7 @@ Item {
                             Rectangle {
                                 visible: model.status === "in"
                                 width: 7; height: 7; radius: 3.5
-                                color: "#ff4d4d"
+                                color: root.danger
                                 SequentialAnimation on opacity {
                                     loops: Animation.Infinite
                                     NumberAnimation { from: 1; to: 0.2; duration: 800 }
@@ -256,7 +265,7 @@ Item {
 
                             Text {
                                 text: (model.status === "pre" && model.kickoffLocal !== "") ? model.kickoffLocal : model.statusText
-                                color: model.status === "in" ? "#ff4d4d" : root.textSub
+                                color: model.status === "in" ? root.danger : root.textSub
                                 font.pixelSize: 11
                                 font.bold: true
                             }
@@ -289,14 +298,14 @@ Item {
                             }
 
                             Rectangle {
-                                color: "#202124"
+                                color: root.surfaceSubtle
                                 radius: 10
                                 width: 72
                                 height: 30
                                 Text {
                                     anchors.centerIn: parent
                                     text: model.fullScore
-                                    color: "#fff"
+                                    color: root.textMain
                                     font.bold: true
                                     font.pixelSize: 15
                                 }
@@ -351,9 +360,6 @@ Item {
             }
         }
 
-        // ---------------------------------------------------------
-        // 3) NOTICIAS
-        // ---------------------------------------------------------
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 520
@@ -394,7 +400,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 160
                             radius: 16
-                            color: "#000"
+                            color: Appearance.colors.colLayer0
                             clip: true
 
                             Image {
@@ -408,10 +414,15 @@ Item {
                                 anchors.fill: parent
                                 visible: parent.children[0].status !== Image.Ready
                                 gradient: Gradient {
-                                    GradientStop { position: 0.0; color: "#3c4043" }
-                                    GradientStop { position: 1.0; color: "#202124" }
+                                    GradientStop { position: 0.0; color: root._rgba(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.16 : 0.12) }
+                                    GradientStop { position: 1.0; color: root._rgba(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.10 : 0.08) }
                                 }
-                                MaterialSymbol { anchors.centerIn: parent; text: "newspaper"; color: "#5f6368"; font.pixelSize: 40 }
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "newspaper"
+                                    color: root._rgba(root.textMain, 0.35)
+                                    font.pixelSize: 40
+                                }
                             }
                         }
 
@@ -424,8 +435,18 @@ Item {
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 8
-                                Rectangle { width: 7; height: 7; radius: 3.5; color: model.isSV ? "#34A853" : root.textSub }
-                                Text { text: model.source; color: root.textMain; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
+                                Rectangle {
+                                    width: 7; height: 7; radius: 3.5
+                                    color: model.isSV ? root.success : root.textSub
+                                }
+                                Text {
+                                    text: model.source
+                                    color: root.textMain
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
                                 Text { text: model.time; color: root.textSub; font.pixelSize: 11 }
                             }
 
@@ -449,9 +470,6 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
-    // COMPONENTES / UTILS
-    // ---------------------------------------------------------
     component MaterialSymbol : Text { font.family: "Material Symbols Rounded" }
 
     component CarouselEdgeArrow : Rectangle {
@@ -462,9 +480,9 @@ Item {
         signal triggered()
 
         width: 30; height: 60; radius: 15
-        color: pressed ? "#2a2b2e" : "#202124"
+        color: pressed ? root.surfaceSubtle : Appearance.colors.colLayer1
         border.width: (activeFocus || hovered || pressed) ? 1.5 : 1
-        border.color: (activeFocus || hovered || pressed) ? root.accent : "#3c4043"
+        border.color: (activeFocus || hovered || pressed) ? root.accent : root.outlineSoft
         visible: visibleWhenCount > 0
 
         anchors.verticalCenter: parent.verticalCenter
@@ -495,7 +513,7 @@ Item {
             shadowEnabled: true
             shadowBlur: (arrow.hovered || arrow.activeFocus) ? 0.9 : 0.7
             shadowVerticalOffset: 1
-            shadowColor: "#50000000"
+            shadowColor: root.shadowCol
         }
 
         MaterialSymbol {
@@ -552,7 +570,6 @@ Item {
         return v
     }
 
-    // --- Hora ES ---
     function two(n) { return (n < 10 ? "0" : "") + n }
     function epochFromIso(iso) {
         try {
@@ -585,9 +602,6 @@ Item {
         } catch (e) { return NaN }
     }
 
-    // ---------------------------------------------------------
-    // NAVEGADOR
-    // ---------------------------------------------------------
     Process {
         id: procBrowser
         function openUrl(link) {
@@ -596,11 +610,6 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
-    // NOTIFICACIÓN -> notify-send
-    //  - Mejora “texto opacado”: subimos urgencia para eventos importantes
-    //  - y agregamos hints opcionales (algunos daemons los respetan).
-    // ---------------------------------------------------------
     Process {
         id: procNotify
         property string appName: "Fútbol"
@@ -609,10 +618,9 @@ Item {
         property int timeoutMsNormal: 7000
         property int timeoutMsImportant: 9000
 
-        // Si tu daemon soporta hints (ej. dunst), mejora contraste.
         property bool useColorHints: true
-        property string hintBg: "#202124"
-        property string hintFg: "#e8eaed"
+        property string hintBg: root._toHex(Appearance.colors.colLayer0)
+        property string hintFg: root._toHex(root.textMain)
 
         function send(title, body, urgency /*"low"|"normal"|"critical"*/) {
             var u = urgency || "normal"
@@ -620,7 +628,6 @@ Item {
 
             var hints = ""
             if (useColorHints) {
-                // Nota: no todos los notification daemons respetan esto.
                 hints =
                     " -h string:bgcolor:" + escapeSh(hintBg) +
                     " -h string:fgcolor:" + escapeSh(hintFg)
@@ -640,10 +647,6 @@ Item {
         return ("" + s).replace(/\\/g, "\\\\").replace(/"/g, "\\\"")
     }
 
-    // ---------------------------------------------------------
-    // MATCH SUMMARY (ESPN) -> eventos: goles + tarjetas + cambios + alineaciones
-    //  - Unifica: en vivo (cards/subs/goals) y pre (alineaciones probables/confirmadas)
-    // ---------------------------------------------------------
     Process {
         id: procMatchSummary
 
@@ -651,15 +654,13 @@ Item {
         property bool busy: false
         property var _job: null
 
-        // Dedupe por partido:
-        property var seenEventKeysByEvent: ({})       // { eventId: { key: true } }
-        property var notifiedLineupByEvent: ({})      // { eventId: true }
-        property var lastFetchAtByEvent: ({})         // rate-limit
+        property var seenEventKeysByEvent: ({})
+        property var notifiedLineupByEvent: ({})
+        property var lastFetchAtByEvent: ({})
 
-        // Config
-        property int liveFetchCooldownMs: 20000       // en vivo: cada 20s máx
-        property int preFetchCooldownMs: 60000        // pre: cada 60s máx
-        property int lineupWindowMinutes: 120         // intentar alineación desde 2h antes
+        property int liveFetchCooldownMs: 20000
+        property int preFetchCooldownMs: 60000
+        property int lineupWindowMinutes: 120
 
         function safe(obj, path, fallback) {
             try {
@@ -737,16 +738,10 @@ Item {
             return "other"
         }
 
-        function extractClock(ev) {
-            return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || ""
-        }
-
-        function extractText(ev) {
-            return safe(ev, "text", "") || safe(ev, "shortText", "") || safe(ev, "description", "") || ""
-        }
+        function extractClock(ev) { return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || "" }
+        function extractText(ev) { return safe(ev, "text", "") || safe(ev, "shortText", "") || safe(ev, "description", "") || "" }
 
         function eventKey(ev) {
-            // key estable para dedupe (mismo evento no se repite)
             var t = safe(ev, "type.text", "") || safe(ev, "type", "")
             var clock = extractClock(ev)
             var txt = extractText(ev)
@@ -777,11 +772,9 @@ Item {
         }
 
         function stringifyLineupTeam(teamObj) {
-            // Best-effort: ESPN cambia estructuras entre ligas
             var name = safe(teamObj, "team.displayName", "") || safe(teamObj, "team.shortDisplayName", "") || ""
             var formation = safe(teamObj, "formation", "") || safe(teamObj, "team.formation", "") || ""
 
-            // Intento 1: boxscore.teams[].players -> starters
             var players = safe(teamObj, "players", [])
             var starters = []
             if (Array.isArray(players)) {
@@ -802,9 +795,7 @@ Item {
             var header = name
             if (formation) header += " (" + formation + ")"
 
-            if (starters.length >= 7) { // si hay suficientes, lo consideramos “alineación”
-                return header + ": " + starters.slice(0, 11).join(", ")
-            }
+            if (starters.length >= 7) return header + ": " + starters.slice(0, 11).join(", ")
             return ""
         }
 
@@ -814,13 +805,11 @@ Item {
             if (notifiedLineupByEvent[job.eventId] === true) return
             if (!procScores.initializedOnce) return
 
-            // Intento: boxscore.teams suele traer players/stats
             var teams = safe(json, "boxscore.teams", [])
             if (!Array.isArray(teams) || teams.length < 2) return
 
             var a = stringifyLineupTeam(teams[0])
             var b = stringifyLineupTeam(teams[1])
-
             if (!a && !b) return
 
             notifiedLineupByEvent[job.eventId] = true
@@ -842,14 +831,11 @@ Item {
 
             var seen = ensureSeenMap(job.eventId)
 
-            // Recorremos del más viejo al más nuevo para notificar en orden
             for (var i = 0; i < keyEvents.length; i++) {
                 var ev = keyEvents[i]
                 var k = eventKey(ev)
                 if (!k) continue
                 if (seen[k] === true) continue
-
-                // marcamos visto ANTES de notificar para evitar duplicados si falla algo
                 seen[k] = true
 
                 var typeText = safe(ev, "type.text", "") || ""
@@ -860,8 +846,6 @@ Item {
                 if (kind === "yellow") notifyCard(job, "yellow", txt || typeText, clock)
                 else if (kind === "red") notifyCard(job, "red", txt || typeText, clock)
                 else if (kind === "sub") notifySub(job, txt || typeText, clock)
-                // goles ya los manejas con tu procGoalDetails (más detallado).
-                // Si quieres también por aquí, dime y lo unificamos.
             }
         }
 
@@ -872,15 +856,9 @@ Item {
 
                 try {
                     var json = JSON.parse(text)
-
-                    // 1) Alineaciones (pre)
                     procMatchSummary.maybeNotifyLineups(job, json)
-
-                    // 2) Eventos (en vivo principalmente: tarjetas/cambios)
                     procMatchSummary.processKeyEvents(job, json)
-                } catch (e) {
-                    // silencioso: si falla JSON, no spameamos
-                }
+                } catch (e) { }
 
                 procMatchSummary.busy = false
                 procMatchSummary.pump()
@@ -888,9 +866,6 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
-    // DETALLES DEL GOL (anotador) (como lo tenías)
-    // ---------------------------------------------------------
     Process {
         id: procGoalDetails
 
@@ -976,9 +951,7 @@ Item {
                    ""
         }
 
-        function extractClock(ev) {
-            return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || ""
-        }
+        function extractClock(ev) { return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || "" }
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -1033,9 +1006,6 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
-    // PARTIDOS: recordatorio + goles + final + (NUEVO) tarjetas/cambios/alineaciones
-    // ---------------------------------------------------------
     Process {
         id: procScores
 
@@ -1065,7 +1035,6 @@ Item {
         property var notifiedFinalByEvent: ({})
         property var lastStateByEvent: ({})
 
-        // Config
         property int preNotifyMinutes: 10
         property int preWindowMs: 90000
         property int goalCooldownMs: 5000
@@ -1283,22 +1252,18 @@ Item {
                         var prevState = procScores.lastStateByEvent[eid] || ""
                         procScores.lastStateByEvent[eid] = state
 
-                        // Recordatorio pre-partido
                         if (state === "pre" && eventDate !== "") {
                             procScores.maybeNotifyPreKickoff(eid, lg.name, homeName, awayName, eventDate, kickoffLocal)
                         }
 
-                        // Goles
                         if (state === "in") {
                             procScores.maybeNotifyGoal(eid, lg.key, lg.name, homeName, awayName, hs, as, shortDetail)
                         }
 
-                        // Final
                         if (state === "post" && prevState !== "post") {
                             procScores.maybeNotifyFinal(eid, lg.name, homeName, awayName, hs, as)
                         }
 
-                        // NUEVO: tarjetas/cambios (en vivo) + alineaciones (pre cercano)
                         procMatchSummary.request(
                             lg.key, eid, lg.name,
                             homeName, awayName,
@@ -1313,7 +1278,7 @@ Item {
                             "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName)
                         )
 
-                        procScores.pendingScores.push({
+                            procScores.pendingScores.push({
                             "id": eid,
                             "league": lg.name,
                             "dayLabel": procScores.dayLabelFromOffset(off),
@@ -1345,9 +1310,6 @@ Item {
         }
     }
 
-    // ---------------------------------------------------------
-    // NOTICIAS RSS (igual)
-    // ---------------------------------------------------------
     Process {
         id: procNews
 
@@ -1479,9 +1441,6 @@ Item {
             .replace(/&#39;/g, "'")
     }
 
-    // ---------------------------------------------------------
-    // TIMERS / INICIO
-    // ---------------------------------------------------------
     Timer {
         interval: 15000
         running: true

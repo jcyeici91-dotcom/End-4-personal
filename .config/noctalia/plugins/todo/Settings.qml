@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
-import qs.Widgets
 import qs.Services.UI
+import qs.Widgets
 
 ColumnLayout {
   id: root
@@ -21,7 +21,6 @@ ColumnLayout {
 
   // Reference to Main.qml instance for centralized data management
   readonly property var mainInstance: pluginApi?.mainInstance
-
 
   spacing: Style.marginL
 
@@ -338,7 +337,7 @@ ColumnLayout {
     var lowerName = name.toLowerCase().trim();
     for (var i = 0; i < pages.length; i++) {
       if (i !== excludeIndex && pages[i].name.toLowerCase().trim() === lowerName) {
-      return false;
+        return false;
       }
     }
     return true;

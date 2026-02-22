@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
+
 import qs
 import qs.services
 import qs.modules.common
@@ -18,10 +19,10 @@ Scope {
         id: barVariant
 
         readonly property var variantModel: {
-            const screens = Quickshell.screens;
-            const list = Config?.options?.bar?.screenList;
-            if (!list || list.length === 0) return screens;
-            return screens.filter(screen => list.includes(screen.name));
+            const screens = Quickshell.screens
+            const list = Config?.options?.bar?.screenList
+            if (!list || list.length === 0) return screens
+            return screens.filter(screen => list.includes(screen.name))
         }
 
         model: variantModel
@@ -37,9 +38,6 @@ Scope {
                 id: barRoot
                 screen: barLoader.modelData
 
-                // --------------------------
-                // Helpers / config
-                // --------------------------
                 property int monitorIndex: barLoader.monitorIndex
 
                 readonly property bool isBottom: !!Config?.options?.bar?.bottom
@@ -62,33 +60,36 @@ Scope {
                     (barBackgroundStyle === 2 && barRoot.hasActiveWindows)
                 )
 
-                readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
-                readonly property color barBackgroundColorForCorners: (barBackgroundStyle === 0)
-                    ? _glassTint
-                    : Appearance.colors.colLayer0
+                readonly property color _solidBase: Appearance.colors.colLayer0
+
+               readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
+
+              readonly property color barBackgroundColorForCorners: !barRoot.showBarBackground
+                    ? "transparent"
+                    : ((barBackgroundStyle === 0) ? _glassTint : _solidBase)
 
                 function recomputeHasActiveWindows() {
-                    const screenName = barRoot.screen?.name;
+                    const screenName = barRoot.screen?.name
 
-                    let monitor = null;
+                    let monitor = null
                     if (screenName) {
-                        monitor = HyprlandData.monitors.find(m => m && m.name === screenName) ?? null;
+                        monitor = HyprlandData.monitors.find(m => m && m.name === screenName) ?? null
                     }
                     if (!monitor) {
-                        monitor = HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) ?? null;
+                        monitor = HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) ?? null
                     }
 
-                    const wsId = monitor?.activeWorkspace?.id;
+                    const wsId = monitor?.activeWorkspace?.id
                     barRoot.hasActiveWindows = wsId
                         ? HyprlandData.windowList.some(w => w.workspace?.id === wsId && !w.floating)
-                        : false;
+                        : false
                 }
 
                 Connections {
                     enabled: barRoot.barBackgroundStyle === 2
                     target: HyprlandData
-                    function onWindowListChanged() { barRoot.recomputeHasActiveWindows(); }
-                    function onMonitorsChanged() { barRoot.recomputeHasActiveWindows(); }
+                    function onWindowListChanged() { barRoot.recomputeHasActiveWindows() }
+                    function onMonitorsChanged() { barRoot.recomputeHasActiveWindows() }
                 }
 
                 // Super show / hover show
@@ -105,13 +106,13 @@ Scope {
                 Connections {
                     target: GlobalStates
                     function onSuperDownChanged() {
-                        if (!(Config?.options?.bar?.autoHide?.showWhenPressingSuper?.enable === true)) return;
+                        if (!(Config?.options?.bar?.autoHide?.showWhenPressingSuper?.enable === true)) return
 
                         if (GlobalStates.superDown) {
-                            showBarTimer.restart();
+                            showBarTimer.restart()
                         } else {
-                            showBarTimer.stop();
-                            barRoot.superShow = false;
+                            showBarTimer.stop()
+                            barRoot.superShow = false
                         }
                     }
                 }
@@ -132,10 +133,10 @@ Scope {
 
                 // Positioning (TOP/BOTTOM)
                 function applyWindowAnchors() {
-                    barRoot.anchors.top = !barRoot.isBottom;
-                    barRoot.anchors.bottom = barRoot.isBottom;
-                    barRoot.anchors.left = true;
-                    barRoot.anchors.right = true;
+                    barRoot.anchors.top = !barRoot.isBottom
+                    barRoot.anchors.bottom = barRoot.isBottom
+                    barRoot.anchors.left = true
+                    barRoot.anchors.right = true
                 }
 
                 anchors { top: true; bottom: false; left: true; right: true }
@@ -148,16 +149,13 @@ Scope {
                 }
 
                 Component.onCompleted: {
-                    applyWindowAnchors();
-                    barRoot.recomputeHasActiveWindows();
-                    GlobalFocusGrab.addPersistent(barRoot);
+                    applyWindowAnchors()
+                    barRoot.recomputeHasActiveWindows()
+                    GlobalFocusGrab.addPersistent(barRoot)
                 }
 
                 Component.onDestruction: GlobalFocusGrab.removePersistent(barRoot)
 
-                // =========================================================
-                // Hover region + content
-                // =========================================================
                 MouseArea {
                     id: hoverRegion
                     hoverEnabled: true
@@ -183,6 +181,9 @@ Scope {
 
                         monitorIndex: barRoot.monitorIndex
                         screen: barRoot.screen
+
+                        property bool showBackground: barRoot.showBarBackground
+                        property int backgroundStyle: barRoot.barBackgroundStyle
 
                         anchors {
                             left: parent.left
@@ -223,13 +224,8 @@ Scope {
                         }
                     }
 
-                    // =========================================================
-                    // Hug decorators
-                    // =========================================================
                     readonly property bool isHugStyleHere: (Config?.options?.bar?.cornerStyle === 0)
 
-                    // En hybrid NO podemos “pegar” con Rectangles planos (se ve parchado).
-                    // Esos bridges deben ir dentro de BarContent usando el mismo efecto.
                     readonly property bool allowFlatHugPaintingHere: (!barRoot.useHybridGroups)
 
                     readonly property int seamOverlapPx: 2
@@ -237,23 +233,19 @@ Scope {
                     // Solo válido en no-hybrid:
                     readonly property color effectiveCornerColor: barRoot.barBackgroundColorForCorners
 
-                    // =========================================================
-                    // (DESACTIVADO) Edge fillers en Hybrid para evitar parches feos
-                    // =========================================================
-                    Item {
+                      Item {
                         id: edgeFillers
-                        visible: false // <-- intencional: se debe implementar “bien” en BarContent para Hybrid+Hug
+                        visible: false // intencional: implementar “bien” en BarContent para Hybrid+Hug
                     }
 
-                    // =========================================================
-                    // Rounded decorators (Hug) — solo NO-HYBRID
-                    // =========================================================
-                    Loader {
+                      Loader {
                         id: roundDecorators
 
+                        // Si corner color es transparente (adaptive sin ventanas), no cargues nada.
                         active: hoverRegion.isHugStyleHere
                                 && hoverRegion.allowFlatHugPaintingHere
                                 && barRoot.showBarBackground
+                                && (hoverRegion.effectiveCornerColor !== "transparent")
 
                         height: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
 

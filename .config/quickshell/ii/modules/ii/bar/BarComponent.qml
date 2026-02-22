@@ -94,21 +94,16 @@ Item {
     // ---------------------------------------------------------
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
+
+        // CAMBIO: ya no usamos VerticalMedia.qml; usamos Media.qml adaptativo en ambas orientaciones
         "music_player": [musicPlayerComp, musicPlayerCompVert],
 
-        // --- AQUÍ VA EL HÍBRIDO RESOURCES <-> UTILBUTTONS (HORIZONTAL) ---
-        // Vertical se mantiene como Resources vertical (como lo tenías).
         "system_monitor": [hybridResUtilComp, systemMonitorCompVert],
-
-        // --- HÍBRIDO RELOJ <-> CLIMA (HORIZONTAL) ---
-        // Vertical se mantiene como reloj vertical (como lo tenías).
         "clock": [hybridClockComp, clockCompVert],
 
         "battery": [batteryComp, batteryCompVert],
 
-        // IMPORTANTE:
-        // Si tu layout aún incluye "utility_buttons", se vería otro grupo aparte.
-        // Para evitar duplicado, aquí lo “anulamos”. (Recomendado si no vas a tocar el layout.)
+        // Evita duplicado si aún existe en layout
         "utility_buttons": [unknownComp, unknownComp],
 
         "system_tray": [systemTrayComp, systemTrayComp],
@@ -227,25 +222,22 @@ Item {
 
     Component { id: activeWindowComp; ActiveWindow { vertical: rootItem.vertical } }
 
-    // Originales (se mantienen para vertical y/o fallback)
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
 
-    Component { id: musicPlayerComp; Media {} }
-    Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
+    // CAMBIO: Media adaptativo en ambas orientaciones (sin VerticalMedia.qml)
+    Component { id: musicPlayerComp; Media { vertical: rootItem.vertical } }
+    Component { id: musicPlayerCompVert; Media { vertical: rootItem.vertical } }
 
     Component { id: utilityButtonsComp; UtilButtons { vertical: rootItem.vertical } }
 
     Component { id: batteryComp; BatteryIndicator {} }
     Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
 
-    // Híbrido reloj/clima (ya lo tenías)
     Component { id: hybridClockComp; HybridClockWeather {} }
 
-    // Híbrido Resources/UtilButtons (NUEVO)
     Component { id: hybridResUtilComp; HybridResourcesUtilButtons {} }
 
-    // Componentes antiguos (necesarios para el modo vertical)
     Component { id: clockComp; ClockWidget {} }
     Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
 

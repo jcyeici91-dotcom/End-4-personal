@@ -7,6 +7,9 @@ import QtQuick.Layouts
 Item {
     id: root
 
+    // --- NUEVO: Orientación ---
+    property bool vertical: false
+
     readonly property bool pRunning: TimerService.pomodoroRunning ?? false
     readonly property bool sRunning: TimerService.stopwatchRunning ?? false
     readonly property bool hasStop: TimerService.stopwatchTime > 0
@@ -15,8 +18,8 @@ Item {
     property bool showPomodoro: Config.options.bar.timers.showPomodoro
     property bool showStopwatch: Config.options.bar.timers.showStopwatch
 
-    implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 5
-    implicitHeight: Appearance.sizes.barHeight
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : gridLayout.implicitWidth + gridLayout.columnSpacing * 5
+    implicitHeight: root.vertical ? gridLayout.implicitHeight + gridLayout.rowSpacing * 5 : Appearance.sizes.barHeight
 
     property bool compVisible: ((hasStop || sRunning) && root.showStopwatch) || ((pRunning || hasPomo) && root.showPomodoro)
 
@@ -24,6 +27,11 @@ Item {
     Component.onCompleted: rootItem.toggleVisible(compVisible)
 
     Behavior on implicitWidth {
+        enabled: !root.vertical
+        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+    }
+    Behavior on implicitHeight {
+        enabled: root.vertical
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 
@@ -34,15 +42,22 @@ Item {
         (time%100).toString().padStart(2,'0')
     }
 
-    RowLayout {
-        id: rowLayout
+    GridLayout {
+        id: gridLayout
         anchors.centerIn: parent
-        spacing: 4
+        
+        // FIX: GridLayout usa columnSpacing y rowSpacing
+        columnSpacing: 4
+        rowSpacing: 4
+        
+        columns: root.vertical ? 1 : 3
+        rows: root.vertical ? 3 : 1
 
         Loader {
             active: hasStop && showStopwatch
             visible: active
-            Layout.preferredWidth: 90 // we have to enter a fixed size or else it will jitter as the time changes
+            Layout.preferredWidth: root.vertical ? -1 : 90 // fixed solo en horizontal
+            Layout.alignment: Qt.AlignCenter
             sourceComponent: RowLayout {
                 MaterialSymbol {
                     text: root.sRunning ? "timer" : "timer_pause"
@@ -68,14 +83,16 @@ Item {
 
         Item {
             visible: hasStop && hasPomo
-            Layout.preferredWidth: hasStop && hasPomo ? 2 : 0
+            Layout.preferredWidth: root.vertical ? 0 : (hasStop && hasPomo ? 2 : 0)
+            Layout.preferredHeight: root.vertical ? (hasStop && hasPomo ? 2 : 0) : 0
         }
 
         Loader {
             active: hasPomo && showPomodoro
             visible: active
-            Layout.preferredWidth: 60
-            Layout.rightMargin: 5
+            Layout.preferredWidth: root.vertical ? -1 : 60
+            Layout.rightMargin: root.vertical ? 0 : 5
+            Layout.alignment: Qt.AlignCenter
             sourceComponent: RowLayout {
                 MaterialSymbol {
                     text: root.pRunning ? "search_activity" : "pause_circle"
@@ -101,6 +118,5 @@ Item {
                 }
             } 
         }
-
     }
 }

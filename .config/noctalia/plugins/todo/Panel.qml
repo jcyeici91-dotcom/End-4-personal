@@ -39,9 +39,7 @@ Item {
   Binding {
     target: root
     property: "showCompleted"
-    value: pluginApi?.pluginSettings?.showCompleted !== undefined
-         ? pluginApi.pluginSettings.showCompleted
-         : pluginApi?.manifest?.metadata?.defaultSettings?.showCompleted || false
+    value: pluginApi?.pluginSettings?.showCompleted !== undefined ? pluginApi.pluginSettings.showCompleted : pluginApi?.manifest?.metadata?.defaultSettings?.showCompleted || false
   }
 
   Binding {
@@ -164,7 +162,6 @@ Item {
               }
             }
           }
-
 
           ColumnLayout {
             Layout.fillWidth: true
@@ -315,8 +312,8 @@ Item {
                 function saveEdit() {
                   if (mainInstance && todoTextEdit.text.trim() !== "") {
                     updateTodo(modelData.id, {
-                      text: todoTextEdit.text.trim()
-                    });
+                                 text: todoTextEdit.text.trim()
+                               });
                   }
                   editing = false;
                 }
@@ -331,9 +328,9 @@ Item {
 
                 // Watch for editing property changes to handle focus
                 onEditingChanged: {
-                    if (editing) {
-                        // Use a timer to delay the focus operation
-                        var timer = Qt.createQmlObject("
+                  if (editing) {
+                    // Use a timer to delay the focus operation
+                    var timer = Qt.createQmlObject("
                             import QtQuick 2.0;
                             Timer {
                                 interval: 50;
@@ -344,7 +341,7 @@ Item {
                                     }
                                 }
                             }", delegateItem);
-                    }
+                  }
                 }
 
                 // Position binding for non-dragging state
@@ -444,12 +441,20 @@ Item {
 
                         transitions: [
                           Transition {
-                            from: "*"; to: "hovered"
-                            NumberAnimation { properties: "opacity"; duration: 150 }
+                            from: "*"
+                            to: "hovered"
+                            NumberAnimation {
+                              properties: "opacity"
+                              duration: 150
+                            }
                           },
                           Transition {
-                            from: "hovered"; to: "*"
-                            NumberAnimation { properties: "opacity"; duration: 150 }
+                            from: "hovered"
+                            to: "*"
+                            NumberAnimation {
+                              properties: "opacity"
+                              duration: 150
+                            }
                           }
                         ]
                       }
@@ -464,32 +469,32 @@ Item {
                         z: 1000
 
                         onPressed: mouse => {
-                                      delegateItem.dragStartIndex = delegateItem.index;
-                                      delegateItem.dragTargetIndex = delegateItem.index;
-                                      delegateItem.dragStartY = delegateItem.y;
-                                      delegateItem.dragging = true;
-                                      delegateItem.z = 999;
+                                     delegateItem.dragStartIndex = delegateItem.index;
+                                     delegateItem.dragTargetIndex = delegateItem.index;
+                                     delegateItem.dragStartY = delegateItem.y;
+                                     delegateItem.dragging = true;
+                                     delegateItem.z = 999;
 
-                                      // Signal that interaction started (prevents panel close)
-                                      preventStealing = true;
-                                    }
+                                     // Signal that interaction started (prevents panel close)
+                                     preventStealing = true;
+                                   }
 
                         onPositionChanged: mouse => {
-                                              if (delegateItem.dragging) {
-                                                var dy = mouse.y - dragHandle.height / 2;
-                                                var newY = delegateItem.y + dy;
+                                             if (delegateItem.dragging) {
+                                               var dy = mouse.y - dragHandle.height / 2;
+                                               var newY = delegateItem.y + dy;
 
-                                                // Constrain within bounds
-                                                newY = Math.max(0, Math.min(newY, todoListView.contentHeight - delegateItem.height));
-                                                delegateItem.y = newY;
+                                               // Constrain within bounds
+                                               newY = Math.max(0, Math.min(newY, todoListView.contentHeight - delegateItem.height));
+                                               delegateItem.y = newY;
 
-                                                // Calculate target index (but don't apply yet)
-                                                var targetIndex = Math.floor((newY + delegateItem.height / 2) / (delegateItem.height + delegateItem.itemSpacing));
-                                                targetIndex = Math.max(0, Math.min(targetIndex, todoListView.count - 1));
+                                               // Calculate target index (but don't apply yet)
+                                               var targetIndex = Math.floor((newY + delegateItem.height / 2) / (delegateItem.height + delegateItem.itemSpacing));
+                                               targetIndex = Math.max(0, Math.min(targetIndex, todoListView.count - 1));
 
-                                                delegateItem.dragTargetIndex = targetIndex;
-                                              }
-                                            }
+                                               delegateItem.dragTargetIndex = targetIndex;
+                                             }
+                                           }
 
                         onReleased: {
                           // Apply the model change now that drag is complete
@@ -650,7 +655,7 @@ Item {
                           // Set focus when visible
                           onVisibleChanged: {
                             if (visible) {
-                              Qt.callLater(function() {
+                              Qt.callLater(function () {
                                 todoTextEdit.forceActiveFocus();
                               });
                             }
@@ -700,12 +705,20 @@ Item {
 
                               transitions: [
                                 Transition {
-                                  from: "*"; to: "hovered"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "*"
+                                  to: "hovered"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 },
                                 Transition {
-                                  from: "hovered"; to: "*"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "hovered"
+                                  to: "*"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 }
                               ]
                             }
@@ -780,12 +793,20 @@ Item {
 
                           transitions: [
                             Transition {
-                              from: "*"; to: "hovered"
-                              NumberAnimation { properties: "opacity"; duration: 150 }
+                              from: "*"
+                              to: "hovered"
+                              NumberAnimation {
+                                properties: "opacity"
+                                duration: 150
+                              }
                             },
                             Transition {
-                              from: "hovered"; to: "*"
-                              NumberAnimation { properties: "opacity"; duration: 150 }
+                              from: "hovered"
+                              to: "*"
+                              NumberAnimation {
+                                properties: "opacity"
+                                duration: 150
+                              }
                             }
                           ]
                         }
@@ -839,12 +860,20 @@ Item {
 
                               transitions: [
                                 Transition {
-                                  from: "*"; to: "hovered"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "*"
+                                  to: "hovered"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 },
                                 Transition {
-                                  from: "hovered"; to: "*"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "hovered"
+                                  to: "*"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 }
                               ]
                             }
@@ -887,12 +916,20 @@ Item {
 
                               transitions: [
                                 Transition {
-                                  from: "*"; to: "hovered"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "*"
+                                  to: "hovered"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 },
                                 Transition {
-                                  from: "hovered"; to: "*"
-                                  NumberAnimation { properties: "opacity"; duration: 150 }
+                                  from: "hovered"
+                                  to: "*"
+                                  NumberAnimation {
+                                    properties: "opacity"
+                                    duration: 150
+                                  }
                                 }
                               ]
                             }
@@ -961,12 +998,20 @@ Item {
 
                         transitions: [
                           Transition {
-                            from: "*"; to: "hovered"
-                            NumberAnimation { properties: "opacity"; duration: 150 }
+                            from: "*"
+                            to: "hovered"
+                            NumberAnimation {
+                              properties: "opacity"
+                              duration: 150
+                            }
                           },
                           Transition {
-                            from: "hovered"; to: "*"
-                            NumberAnimation { properties: "opacity"; duration: 150 }
+                            from: "hovered"
+                            to: "*"
+                            NumberAnimation {
+                              properties: "opacity"
+                              duration: 150
+                            }
                           }
                         ]
                       }
@@ -1004,19 +1049,19 @@ Item {
     }
   }
 
-   // Dialog for displaying todo details
-   Popup {
-     id: detailDialog
+  // Dialog for displaying todo details
+  Popup {
+    id: detailDialog
 
-     property var todoId: 0
-     property string todoText: ""
-     property bool todoCompleted: false
-     property string todoCreatedAt: ""
-     property int todoPageId: 0
-      property string todoPriority: "medium"
-      property string todoDetails: ""
+    property var todoId: 0
+    property string todoText: ""
+    property bool todoCompleted: false
+    property string todoCreatedAt: ""
+    property int todoPageId: 0
+    property string todoPriority: "medium"
+    property string todoDetails: ""
 
-     x: (parent.width - width) / 2
+    x: (parent.width - width) / 2
     y: (parent.height - height) / 2
     width: 500 * Style.uiScaleRatio
     height: 300 * Style.uiScaleRatio
@@ -1099,109 +1144,109 @@ Item {
             Layout.fillWidth: true
           }
 
-            // Details section with add/edit button
-            ColumnLayout {
+          // Details section with add/edit button
+          ColumnLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+
+            // Divider before details
+            Rectangle {
+              height: 1
+              color: Color.mOutline
+              opacity: 0.3
+              Layout.fillWidth: true
+            }
+
+            // Label + Add/Edit button row
+            RowLayout {
               Layout.fillWidth: true
               spacing: Style.marginS
 
-              // Divider before details
-              Rectangle {
-                height: 1
-                color: Color.mOutline
-                opacity: 0.3
-                Layout.fillWidth: true
-              }
-
-              // Label + Add/Edit button row
-              RowLayout {
-                Layout.fillWidth: true
-                spacing: Style.marginS
-
-                NText {
-                  text: pluginApi?.tr("panel.todo_details.label_details")
-                  font.pointSize: Style.fontSizeS
-                  color: Color.mOnSurfaceVariant
-                  Layout.preferredWidth: 80 * Style.uiScaleRatio
-                  Layout.alignment: Qt.AlignVCenter
-                }
-
-                // Spacer to push button to the right
-                Item {
-                  Layout.fillWidth: true
-                }
-
-                NButton {
-                  text: detailDialog.todoDetails.length > 0 ?
-                        pluginApi?.tr("panel.todo_details.button_edit_details"):
-                        pluginApi?.tr("panel.todo_details.button_add_details")
-                  icon: "pencil"
-                  backgroundColor: Color.mSurfaceVariant
-                  textColor: Color.mOnSurface
-                  fontSize: Style.fontSizeS
-                  outlined: true
-                  onClicked: {
-                    detailsEditMode = true;
-                    Qt.callLater(function() {
-                      detailsTextArea.text = detailDialog.todoDetails;
-                      detailsTextArea.forceActiveFocus();
-                    });
-                  }
-                }
-              }
-
-              // View mode (show details if not empty)
               NText {
-                text: detailDialog.todoDetails
+                text: pluginApi?.tr("panel.todo_details.label_details")
                 font.pointSize: Style.fontSizeS
-                color: Color.mOnSurface
-                wrapMode: Text.Wrap
-                Layout.fillWidth: true
-                visible: detailDialog.todoDetails.length > 0 && !detailsEditMode
+                color: Color.mOnSurfaceVariant
+                Layout.preferredWidth: 80 * Style.uiScaleRatio
+                Layout.alignment: Qt.AlignVCenter
               }
 
-              // Edit mode (TextArea)
-              TextArea {
-                id: detailsTextArea
-                visible: detailsEditMode
-                text: detailDialog.todoDetails
+              // Spacer to push button to the right
+              Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 100
-                wrapMode: TextArea.Wrap
-                color: Color.mOnSurface
-                background: Rectangle {
-                  color: Color.mSurfaceVariant
-                  radius: Style.iRadiusS
+              }
+
+              NButton {
+                text: detailDialog.todoDetails.length > 0 ? pluginApi?.tr("panel.todo_details.button_edit_details") : pluginApi?.tr("panel.todo_details.button_add_details")
+                icon: "pencil"
+                backgroundColor: Color.mSurfaceVariant
+                textColor: Color.mOnSurface
+                fontSize: Style.fontSizeS
+                outlined: true
+                onClicked: {
+                  detailsEditMode = true;
+                  Qt.callLater(function () {
+                    detailsTextArea.text = detailDialog.todoDetails;
+                    detailsTextArea.forceActiveFocus();
+                  });
                 }
-                Keys.onEscapePressed: {
+              }
+            }
+
+            // View mode (show details if not empty)
+            NText {
+              text: detailDialog.todoDetails
+              font.pointSize: Style.fontSizeS
+              color: Color.mOnSurface
+              wrapMode: Text.Wrap
+              Layout.fillWidth: true
+              visible: detailDialog.todoDetails.length > 0 && !detailsEditMode
+            }
+
+            // Edit mode (TextArea)
+            TextArea {
+              id: detailsTextArea
+              visible: detailsEditMode
+              text: detailDialog.todoDetails
+              Layout.fillWidth: true
+              Layout.preferredHeight: 100
+              wrapMode: TextArea.Wrap
+              color: Color.mOnSurface
+              background: Rectangle {
+                color: Color.mSurfaceVariant
+                radius: Style.iRadiusS
+              }
+              Keys.onEscapePressed: {
+                detailsEditMode = false;
+              }
+            }
+
+            // Save/Cancel buttons for details edit
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+              visible: detailsEditMode
+
+              NButton {
+                text: pluginApi?.tr("panel.todo_details.button_save")
+                backgroundColor: Color.mPrimary
+                onClicked: {
+                  updateTodo(detailDialog.todoId, {
+                               details: detailsTextArea.text
+                             });
+                  detailDialog.todoDetails = detailsTextArea.text;
                   detailsEditMode = false;
                 }
               }
 
-              // Save/Cancel buttons for details edit
-              RowLayout {
-                Layout.fillWidth: true
-                spacing: Style.marginS
-                visible: detailsEditMode
-
-                NButton {
-                  text: pluginApi?.tr("panel.todo_details.button_save")
-                  backgroundColor: Color.mPrimary
-                  onClicked: {
-                    updateTodo(detailDialog.todoId, { details: detailsTextArea.text });
-                    detailDialog.todoDetails = detailsTextArea.text;
-                    detailsEditMode = false;
-                  }
-                }
-
-                NButton {
-                  text: pluginApi?.tr("panel.todo_details.button_cancel")
-                  backgroundColor: Color.mSurfaceVariant
-                  onClicked: {
-                    detailsEditMode = false;
-                  }
+              NButton {
+                text: pluginApi?.tr("panel.todo_details.button_cancel")
+                backgroundColor: Color.mSurfaceVariant
+                onClicked: {
+                  detailsEditMode = false;
                 }
               }
             }
+          }
 
           // Divider
           Rectangle {
@@ -1252,9 +1297,7 @@ Item {
               }
 
               NText {
-                text: detailDialog.todoCompleted ?
-                       pluginApi?.tr("panel.todo_details.status_completed") :
-                       pluginApi?.tr("panel.todo_details.status_pending")
+                text: detailDialog.todoCompleted ? pluginApi?.tr("panel.todo_details.status_completed") : pluginApi?.tr("panel.todo_details.status_pending")
                 font.pointSize: Style.fontSizeS
                 font.weight: Font.Medium
                 color: detailDialog.todoCompleted ? Color.mPrimary : Color.mError
@@ -1300,7 +1343,9 @@ Item {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                      updateTodo(detailDialog.todoId, { priority: "high" });
+                      updateTodo(detailDialog.todoId, {
+                                   priority: "high"
+                                 });
                       detailDialog.todoPriority = "high";
                     }
                   }
@@ -1327,7 +1372,9 @@ Item {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                      updateTodo(detailDialog.todoId, { priority: "medium" });
+                      updateTodo(detailDialog.todoId, {
+                                   priority: "medium"
+                                 });
                       detailDialog.todoPriority = "medium";
                     }
                   }
@@ -1354,7 +1401,9 @@ Item {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                      updateTodo(detailDialog.todoId, { priority: "low" });
+                      updateTodo(detailDialog.todoId, {
+                                   priority: "low"
+                                 });
                       detailDialog.todoPriority = "low";
                     }
                   }
@@ -1392,7 +1441,8 @@ Item {
 
   function addTodo() {
     var text = newTodoInput.text.trim();
-    if (!text || !mainInstance) return;
+    if (!text || !mainInstance)
+      return;
 
     var currentPageId = pluginApi?.pluginSettings?.current_page_id || 0;
     mainInstance.createTodo(text, priorityGroup.currentPriority, currentPageId);
@@ -1401,7 +1451,8 @@ Item {
 
   // Internal utility functions
   function updateTodo(todoId, updates) {
-    if (!mainInstance) return false;
+    if (!mainInstance)
+      return false;
     return mainInstance.updateTodo(todoId, updates);
   }
 
@@ -1423,8 +1474,8 @@ Item {
 
     // Use the existing updateTodo function to update only the completion status
     return updateTodo(todoId, {
-      completed: !currentCompletedStatus
-    });
+                        completed: !currentCompletedStatus
+                      });
   }
 
   // Helper function to clear completed todos for the current page
@@ -1480,8 +1531,10 @@ Item {
 
   // Helper function to get theme color
   function getThemeColor(priority) {
-    if (priority === "high") return Color.mError;
-    if (priority === "low") return Color.mOnSurfaceVariant;
+    if (priority === "high")
+      return Color.mError;
+    if (priority === "low")
+      return Color.mOnSurfaceVariant;
     return Color.mPrimary;
   }
 
@@ -1496,7 +1549,7 @@ Item {
     return "Unknown";
   }
 
-   // Function to open the detailed view for a todo item
+  // Function to open the detailed view for a todo item
   function openTodoDetails(todo) {
     detailsEditMode = false;
 
@@ -1546,7 +1599,7 @@ Item {
 
     // Restore the scroll position and visible item
     if (todoListView) {
-      Qt.callLater(function() {
+      Qt.callLater(function () {
         if (currentVisibleIndex >= 0 && currentVisibleIndex < filteredTodosModel.count) {
           todoListView.positionViewAtIndex(currentVisibleIndex, ListView.Beginning);
         } else if (currentScrollPos > 0) {
@@ -1560,7 +1613,7 @@ Item {
 
     // Restore the scroll position
     if (todoListView) {
-      Qt.callLater(function() {
+      Qt.callLater(function () {
         todoListView.contentY = currentScrollPos;
       });
     }
@@ -1568,5 +1621,4 @@ Item {
     // Check if the model is empty
     root.showEmptyState = (filteredTodosModel.count === 0);
   }
-
 }
