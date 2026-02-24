@@ -13,6 +13,7 @@ Item {
 
     // Solo para que BarComponent pueda pasar `vertical: true/false`
     property bool vertical: false
+property bool forceNoContainer: false
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
@@ -106,20 +107,35 @@ Item {
 
                spacing: root.expanded ? root.expandedGap : root.pillGap
 
-                  component TonalPillBg: Rectangle {
-                required property color tonal
-                radius: root.pillRadius
-                antialiasing: true
+      component TonalPillBg: Rectangle {
 
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: root._rgba(tonal, root.pillAlphaIdle + 0.04) }
-                    GradientStop { position: 1.0; color: root._rgba(tonal, root.pillAlphaIdle) }
-                }
+    required property color tonal
 
-                border.width: 1
-                border.color: Qt.rgba(root.themeIsDark ? 1 : 0, root.themeIsDark ? 1 : 0, root.themeIsDark ? 1 : 0, 0.12)
-            }
+    // 🔥 BarGroup podrá apagar las cápsulas internas
+    visible: !root.forceNoContainer
+    opacity: visible ? 1 : 0
 
+    Behavior on opacity {
+        NumberAnimation { duration: 120 }
+    }
+
+    radius: root.pillRadius
+    antialiasing: true
+
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: root._rgba(tonal, root.pillAlphaIdle + 0.04) }
+        GradientStop { position: 1.0; color: root._rgba(tonal, root.pillAlphaIdle) }
+    }
+
+    border.width: 1
+    border.color: Qt.rgba(
+        root.themeIsDark ? 1 : 0,
+        root.themeIsDark ? 1 : 0,
+        root.themeIsDark ? 1 : 0,
+        0.12
+    )
+}
+      
             // --- TIME PILL ---
             RowLayout {
                 Layout.alignment: Qt.AlignVCenter

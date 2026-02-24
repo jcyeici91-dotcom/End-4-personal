@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "scheme-fidelity"
+            "type": "saffron_latte"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/08.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/39.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 2859.296875,
-                "y": 235.02734375
+                "x": 349.41015625000045,
+                "y": 194.33984375
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2850.61328125,
-                "y": 1705.859375
+                "x": 2788.34375,
+                "y": 1377.1875
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 239.3437499999999,
-                "y": 131.73046875
+                "x": 198.2421875,
+                "y": 1428.1171875
             }
         }
     },
@@ -213,7 +213,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -462,7 +462,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 4882,
+            "colorTemperature": 4819,
             "from": "19:00",
             "to": "06:30"
         }

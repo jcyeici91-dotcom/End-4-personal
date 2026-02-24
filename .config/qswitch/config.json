@@ -1,9 +1,0 @@
-{
-  "flavours": ["ii", "noctalia"],
- "unbinds": true,
-  "keybinds": {
-    "ii": "default",
-    "noctalia": "noctalia.conf"
-      },
-  "panel_keybind": "Super+Alt, P"
-}

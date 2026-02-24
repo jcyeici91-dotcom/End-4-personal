@@ -1,33 +1,31 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import QtCore
 
 import Quickshell
-import Quickshell.Io
-import Quickshell.Widgets
-import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Wayland
+import Quickshell.Widgets
 
 import qs
-import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
-
-// Imports solicitados
 import qs.modules.ii.ui 1.0
-import "." as Bar
+import qs.services
+
+import "../bar" as Bar
 
 Scope {
     id: root
 
-    // =========================================================================
-    // 0) QUALITY + AUTO-HZ
-    // =========================================================================
-    property string qualityPreset: "auto"   // "auto" | "low" | "normal" | "high"
+    property int dockHeightNudge: 4
+
+    property string qualityPreset: "auto"
     property bool manualOverrides: false
 
     readonly property real detectedRefreshRateHz: {
@@ -36,10 +34,38 @@ Scope {
         if (!hz || hz < 1) return 60
         return hz
     }
-    readonly property bool highRefresh: detectedRefreshRateHz >= 90
 
+    readonly property bool highRefresh: detectedRefreshRateHz >= 90
     readonly property int revealAnimMs: highRefresh ? 190 : 240
     readonly property int waveformIntervalMs: highRefresh ? 22 : 33
+
+    readonly property bool barIsBottom: (Config.options?.bar?.bottom ?? false)
+    readonly property bool dockAtTop: barIsBottom
+    readonly property string dockEdge: dockAtTop ? "top" : "bottom"
+
+    // Estética / cristal (dock)
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode !== undefined)
+        ? Appearance.m3colors.darkmode
+        : _isDark(Appearance.colors.colLayer0)
+
+    readonly property color dockMarqueeFadeBg: Qt.rgba(
+        Appearance.colors.colLayer0.r,
+        Appearance.colors.colLayer0.g,
+        Appearance.colors.colLayer0.b,
+        themeIsDark ? 0.22 : 0.14
+    )
+
+    readonly property color dockDividerCol: themeIsDark
+        ? Qt.rgba(1, 1, 1, 0.14)
+        : Qt.rgba(0, 0, 0, 0.14)
+
+    readonly property int dockInnerPadX: 10
+
+    readonly property bool dockUseScreenCaptureBlur: true
+    readonly property int dockCaptureIntervalMs: 120
+    readonly property string dockCapturePath: "/tmp/quickshell_dock_backdrop.png"
 
     function _resolvedPreset() {
         if (qualityPreset === "auto") return highRefresh ? "high" : "normal"
@@ -72,7 +98,7 @@ Scope {
             animMarquee = true
             animRevealTransitions = true
             animWaveform = true
-        } else { // normal
+        } else {
             premiumDock = true
             premiumDockGlass = true
             premiumDockGlow = true
@@ -89,12 +115,10 @@ Scope {
         applyQualityPreset()
         initDockSettingsPersistence()
     }
+
     onQualityPresetChanged: applyQualityPreset()
     onManualOverridesChanged: applyQualityPreset()
 
-    // =========================================================================
-    // 1) PREMIUM SWITCHES + anim switches
-    // =========================================================================
     property bool premiumDock: true
     property bool premiumDockGlass: true
     property bool premiumDockGlow: true
@@ -104,17 +128,6 @@ Scope {
     property bool animMarquee: true
     property bool animRevealTransitions: true
     property bool animWaveform: true
-
-    // =========================================================================
-    // NUEVO: DETECCIÓN DE CRISTAL (Sincronizado con la barra)
-    // =========================================================================
-    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
-    function _isDark(c) { return _lin(c) < 0.65 }
-    readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
-
-    readonly property color glassTint: themeIsDark
-        ? Qt.rgba(0.02, 0.02, 0.03, 0.42)
-        : Qt.rgba(0.98, 0.98, 1.00, 0.58)
 
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
@@ -142,11 +155,6 @@ Scope {
         return _styleFromConfig(barBackgroundStyleFromConfig)
     }
 
-    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
-
-    // =========================================================================
-    // 2) ⚙️ CONFIGURACIÓN Y PERSISTENCIA (Settings diferido)
-    // =========================================================================
     property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
 
     Loader {
@@ -172,7 +180,7 @@ Scope {
                 Qt.application.organizationName = "quickshell"
             if (!Qt.application.organizationDomain || Qt.application.organizationDomain.length === 0)
                 Qt.application.organizationDomain = "local"
-        } catch (e) { /* silent */ }
+        } catch (e) {}
 
         const hasOrg = (Qt.application.organizationName && Qt.application.organizationName.length > 0)
         const hasDomain = (Qt.application.organizationDomain && Qt.application.organizationDomain.length > 0)
@@ -183,52 +191,70 @@ Scope {
         if (dockSettingsLoader.item) dockSettingsLoader.item.pinned = pinned
     }
 
-    // =========================================================================
-    // 3) 📏 CONSTANTES DE DISEÑO
-    // =========================================================================
     readonly property int kDockPadding: 5
     readonly property int kDockSpacing: 3
     readonly property int kPinButtonSize: 35
 
-    readonly property int kMediaTopMargin: 20
-    readonly property int kMediaLeftMargin: 5
-    readonly property int kMediaExtraWidth: 28
+    // Más compacto
+    readonly property int kMediaTopMargin: 5
+    readonly property int kMediaLeftMargin: 6
+    readonly property int kMediaExtraWidth: 6
 
     readonly property int kAlbumSize: 40
     readonly property int kAlbumRadius: 8
 
-    readonly property int kInfoWidth: 260
+    // base de info menor
+    readonly property int kInfoWidth: 210
     readonly property int kArtistLineHeight: 14
     readonly property int kTitleLineHeight: 16
-    readonly property int kFadeWidth: 25
+    readonly property int kFadeWidth: 18
 
     readonly property real kVolumeStep: 0.04
 
-    // =========================================================================
-    // 4) 🎵 MediaPlayerWidget
-    // =========================================================================
+    component DockConditionalSeparator: Rectangle {
+        property bool show: false
+        visible: show
+        width: 1
+        Layout.fillHeight: true
+        Layout.topMargin: dockRow.padding + 6
+        Layout.bottomMargin: dockRow.padding + 6
+        radius: 1
+        color: root.dockDividerCol
+        opacity: 0.9
+        antialiasing: true
+    }
+
     component MediaPlayerWidget: Item {
         id: media
 
         Layout.fillHeight: true
         Layout.topMargin: root.kMediaTopMargin
         Layout.leftMargin: root.kMediaLeftMargin
-        Layout.bottomMargin: Appearance.sizes.hyprlandGapsOut + (dockRow?.padding ?? 0)
+        Layout.bottomMargin: 0
+
+        readonly property int kBtn: 28
+        readonly property int kGap: 6
+        readonly property int kTimeW: 110
+
+        readonly property int minControlsW: kTimeW + (kBtn * 3) + (kGap * 4)
+
+        readonly property int maxColumnW: 200
+        readonly property int minColumnW: 190
 
         property var activePlayer: MprisController.activePlayer
 
         property string trackTitle: activePlayer?.trackTitle ?? ""
-        property string trackArtist: activePlayer?.trackArtist ?? "Unknown Artist"
+        property string trackArtist: activePlayer?.trackArtist ?? ""
         property string artUrl: activePlayer?.trackArtUrl ?? ""
         property bool isPlaying: activePlayer?.playbackState === MprisPlaybackState.Playing
 
-        readonly property bool canSeek: (activePlayer?.canSeek ?? false) && (activePlayer?.length ?? 0) > 0
         readonly property bool canGoNext: activePlayer?.canGoNext ?? true
         readonly property bool canGoPrevious: activePlayer?.canGoPrevious ?? true
 
-        readonly property real trackLen: Math.max(0, activePlayer?.length ?? 0)
-        readonly property real trackPos: Math.max(0, activePlayer?.position ?? 0)
-        readonly property real ratio: (trackLen > 0) ? Math.max(0, Math.min(1, trackPos / trackLen)) : 0
+        readonly property bool compactHeight: height < 58
+
+        readonly property string safeTitle: (trackTitle && trackTitle.length > 0) ? trackTitle : "No Title"
+        readonly property string safeArtist: (trackArtist && trackArtist.length > 0) ? trackArtist : "Unknown Artist"
 
         function friendlyTime(sec) {
             sec = Math.max(0, Math.floor(sec || 0))
@@ -236,21 +262,37 @@ Scope {
             const s = sec % 60
             return m + ":" + (s < 10 ? "0" + s : s)
         }
-        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)) }
 
         function setVolumeDelta(dir) {
             if (!media.activePlayer) return
-            // Algunos players NO exponen volume por MPRIS: en ese caso no hay manera aquí.
             if (media.activePlayer.volume === undefined) return
-
             let v = media.activePlayer.volume + dir * root.kVolumeStep
             v = Math.max(0.0, Math.min(1.0, v))
             media.activePlayer.volume = v
         }
 
-        visible: activePlayer !== null && trackTitle !== ""
-        implicitWidth: visible ? (mediaRow.implicitWidth + root.kMediaExtraWidth) : 0
-        implicitHeight: parent?.height ?? 0
+        visible: activePlayer !== null
+
+        TextMetrics { id: titleMetrics; text: media.safeTitle; font: titleText.font }
+        TextMetrics { id: artistMetrics; text: media.safeArtist; font: artistText.font }
+
+        readonly property int computedTitleW: Math.ceil(Math.min(maxColumnW, Math.max(minColumnW, titleMetrics.width + 6)))
+        readonly property int computedArtistW: Math.ceil(Math.min(maxColumnW, Math.max(minColumnW, artistMetrics.width + 6)))
+
+        readonly property int columnW: Math.min(
+            maxColumnW,
+            Math.max(minControlsW, Math.max(root.kInfoWidth, computedTitleW, computedArtistW))
+        )
+
+        readonly property int desiredW: root.kAlbumSize + 10 + columnW + root.kMediaExtraWidth
+
+        width: visible ? desiredW : 0
+        height: parent ? parent.height : 0
+        clip: true
+
+        Layout.preferredWidth: visible ? desiredW : 0
+        Layout.minimumWidth: visible ? desiredW : 0
+        Layout.maximumWidth: visible ? desiredW : 0
 
         Timer {
             interval: Config.options.resources.updateInterval
@@ -272,25 +314,16 @@ Scope {
         }
 
         Rectangle {
-            id: mediaBg
             anchors.fill: parent
             radius: Appearance.rounding.normal
-
-            // ✅ sin overlay/círculo al hover
-            HoverHandler { id: hoverH }
             color: "transparent"
+            clip: true
 
-            // ✅ sin tooltip
-            ToolTip.visible: false
-
-            // ✅ Volumen con rueda (MUY compatible): MouseArea.onWheel
             MouseArea {
-                id: wheelArea
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 hoverEnabled: true
                 propagateComposedEvents: true
-
                 onWheel: (wheel) => {
                     if (!media.visible) return
                     const dir = wheel.angleDelta.y > 0 ? 1 : -1
@@ -300,16 +333,9 @@ Scope {
             }
 
             RowLayout {
-                id: mediaRow
-                // ✅ SUBE un poquito TODO el bloque del reproductor
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: -3
-
+                anchors.fill: parent
                 spacing: 10
-                z: 2
 
-                // Album
                 Item {
                     Layout.alignment: Qt.AlignVCenter
                     width: root.kAlbumSize
@@ -355,27 +381,10 @@ Scope {
                     }
                 }
 
-                // Text + controls
                 Column {
                     Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: root.kInfoWidth
+                    width: media.columnW
                     spacing: 2
-
-                    Item {
-                        width: parent.width
-                        height: root.kArtistLineHeight
-                        clip: true
-
-                        StyledText {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            horizontalAlignment: Text.AlignLeft
-                            elide: Text.ElideRight
-                            color: Appearance.colors.colSubtext
-                            text: media.trackArtist
-                            font.pixelSize: 11
-                        }
-                    }
 
                     Item {
                         id: titleMarquee
@@ -383,91 +392,100 @@ Scope {
                         height: root.kTitleLineHeight
                         clip: true
 
-                        property bool shouldScroll: titleText.contentWidth > width - 10
-                        function resetMarquee() { titleText.x = 0 }
+                        HoverHandler { id: titleHover }
+                        readonly property bool hovered: titleHover.hovered
+                        readonly property bool shouldScroll: titleMetrics.width > width - 10
 
+                        function resetMarquee() { titleText.x = 0 }
                         onWidthChanged: resetMarquee()
+                        onHoveredChanged: resetMarquee()
                         onShouldScrollChanged: if (!shouldScroll) resetMarquee()
 
                         StyledText {
                             id: titleText
                             anchors.verticalCenter: parent.verticalCenter
-
-                            // ✅ más visible
-                            color: "white"
-                            opacity: 1.0
-
-                            text: media.trackTitle !== "" ? media.trackTitle : "No Title"
+                            color: Appearance.colors.colOnLayer0
+                            opacity: 0.98
+                            text: media.safeTitle
                             font.weight: Font.Medium
                             font.pixelSize: 14
 
+                            elide: (!root.animEnabled || !root.animMarquee || !titleMarquee.hovered)
+                                   ? Text.ElideRight
+                                   : Text.ElideNone
+
                             SequentialAnimation on x {
-                                running: root.animEnabled && root.animMarquee && titleMarquee.shouldScroll && media.visible
+                                running: root.animEnabled
+                                         && root.animMarquee
+                                         && media.visible
+                                         && titleMarquee.hovered
+                                         && titleMarquee.shouldScroll
                                 loops: Animation.Infinite
                                 onRunningChanged: titleMarquee.resetMarquee()
 
-                                PauseAnimation { duration: 1500 }
+                                PauseAnimation { duration: 450 }
                                 NumberAnimation {
-                                    to: titleMarquee.width - titleText.contentWidth - 5
-                                    duration: Math.max(3000, titleText.contentWidth * 50)
+                                    to: titleMarquee.width - titleMetrics.width - 6
+                                    duration: Math.max(2100, titleMetrics.width * 32)
                                     easing.type: Easing.Linear
                                 }
-                                PauseAnimation { duration: 800 }
-                                NumberAnimation { to: 0; duration: 600; easing.type: Easing.OutCubic }
-                            }
-                        }
-
-                        Rectangle {
-                            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                            width: root.kFadeWidth
-                            visible: titleMarquee.shouldScroll
-                            gradient: Gradient {
-                                orientation: Gradient.Horizontal
-                                GradientStop { position: 0.0; color: Appearance.colors.colLayer0 }
-                                GradientStop { position: 1.0; color: "transparent" }
-                            }
-                        }
-
-                        Rectangle {
-                            anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
-                            width: root.kFadeWidth
-                            visible: titleMarquee.shouldScroll
-                            gradient: Gradient {
-                                orientation: Gradient.Horizontal
-                                GradientStop { position: 0.0; color: "transparent" }
-                                GradientStop { position: 1.0; color: Appearance.colors.colLayer0 }
+                                PauseAnimation { duration: 420 }
+                                NumberAnimation { to: 0; duration: 420; easing.type: Easing.OutCubic }
                             }
                         }
                     }
 
-                    // Controls row
+                    Item {
+                        width: parent.width
+                        height: root.kArtistLineHeight
+                        visible: !media.compactHeight
+                        clip: true
+
+                        StyledText {
+                            id: artistText
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            horizontalAlignment: Text.AlignLeft
+                            elide: Text.ElideRight
+                            color: Appearance.colors.colSubtext
+                            text: media.safeArtist
+                            font.pixelSize: 11
+                        }
+                    }
+
                     Item {
                         width: parent.width
                         height: 26
 
                         RowLayout {
                             anchors.fill: parent
-                            spacing: 8
+                            spacing: media.kGap
 
                             StyledText {
                                 Layout.alignment: Qt.AlignVCenter
-                                font.pixelSize: 13
-                                color: Qt.rgba(1, 1, 1, 0.90)
-                                opacity: 1.0
-                                text: media.friendlyTime(media.trackPos) + " / " + media.friendlyTime(media.trackLen)
+                                font.pixelSize: 12
+                                color: Appearance.colors.colOnLayer0
+                                opacity: 0.92
+                                text: media.friendlyTime(media.activePlayer?.position ?? 0)
+                                      + " / "
+                                      + media.friendlyTime(media.activePlayer?.length ?? 0)
+                                elide: Text.ElideRight
+                                Layout.preferredWidth: media.kTimeW
                             }
 
-                            // Prev
                             Item {
                                 Layout.alignment: Qt.AlignVCenter
-                                width: 28; height: 28
+                                width: media.kBtn
+                                height: media.kBtn
+
                                 MaterialSymbol {
                                     anchors.centerIn: parent
                                     text: "skip_previous"
-                                    iconSize: 24
+                                    iconSize: 23
                                     color: Appearance.colors.colOnLayer1
                                     opacity: (media.activePlayer && media.canGoPrevious) ? 1.0 : 0.35
                                 }
+
                                 MouseArea {
                                     anchors.fill: parent
                                     enabled: !!media.activePlayer && media.canGoPrevious
@@ -476,17 +494,19 @@ Scope {
                                 }
                             }
 
-                            // Play/Pause
                             Item {
                                 Layout.alignment: Qt.AlignVCenter
-                                width: 28; height: 28
+                                width: media.kBtn
+                                height: media.kBtn
+
                                 MaterialSymbol {
                                     anchors.centerIn: parent
                                     text: media.isPlaying ? "pause" : "play_arrow"
-                                    iconSize: 24
+                                    iconSize: 23
                                     color: Appearance.colors.colOnLayer1
                                     opacity: media.activePlayer ? 1.0 : 0.35
                                 }
+
                                 MouseArea {
                                     anchors.fill: parent
                                     enabled: !!media.activePlayer
@@ -495,194 +515,19 @@ Scope {
                                 }
                             }
 
-                            // miniBar: onda + “sonido” (más visible)
-                            Item {
-                                id: miniBar
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                implicitHeight: 16
-
-                                // Ajustes del efecto (más fuerte/visible)
-                                property real phase: 0.0
-                                property real waveAmpMin: 0.35
-                                property real waveAmpMax: 5.2
-                                property real waveRampPow: 1.8
-                                property real wavePxPerCycle: 20.0
-                                property real waveSpeed: 1.35
-                                property real playheadHeightPad: 4
-
-                                // “sonido” tipo barras (más visible)
-                                property bool audioBarsEnabled: true
-                                property real barsStepPx: 2
-                                property real barsMaxHalfHeight: 4
-
-                                function seekToRatio(r) {
-                                    if (!media.activePlayer || !media.canSeek || media.trackLen <= 0) return
-                                    r = media.clamp(r, 0, 1)
-                                    media.activePlayer.position = r * media.trackLen
-                                }
-
-                                NumberAnimation on phase {
-                                    from: 0
-                                    to: Math.PI * 2
-                                    duration: Math.max(160, 1050 / Math.max(0.01, miniBar.waveSpeed))
-                                    loops: Animation.Infinite
-                                    running: root.animEnabled && media.visible && media.isPlaying
-                                }
-
-                                onPhaseChanged: barCanvas.requestPaint()
-
-                                Rectangle {
-                                    id: track
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: parent.width
-                                    height: 4
-                                    radius: 8
-                                    color: Appearance.colors.colLayer1
-                                    opacity: 0.95
-                                }
-
-                                Canvas {
-                                    id: barCanvas
-                                    anchors.fill: parent
-                                    antialiasing: true
-
-                                    Connections {
-                                        target: media.activePlayer
-                                        enabled: media.activePlayer !== null
-                                        function onPositionChanged() { barCanvas.requestPaint() }
-                                        function onLengthChanged() { barCanvas.requestPaint() }
-                                    }
-
-                                    onWidthChanged: requestPaint()
-                                    onHeightChanged: requestPaint()
-                                    Component.onCompleted: requestPaint()
-
-                                    onPaint: {
-                                        const ctx = getContext("2d")
-                                        ctx.reset?.()
-                                        ctx.clearRect(0, 0, width, height)
-                                        if (media.trackLen <= 0) return
-
-                                        const xPlay = media.clamp(track.width * media.ratio, 0, track.width)
-                                        const yMid = track.y + track.height / 2
-
-                                        // 0) “Audio bars” dentro del progreso (0..xPlay)
-                                        if (miniBar.audioBarsEnabled && media.isPlaying && xPlay > 2) {
-                                            ctx.save()
-                                            ctx.fillStyle = Qt.rgba(
-                                                Appearance.m3colors.m3primary.r,
-                                                Appearance.m3colors.m3primary.g,
-                                                Appearance.m3colors.m3primary.b,
-                                                0.38
-                                            )
-
-                                            const step = Math.max(4, miniBar.barsStepPx)
-                                            for (let x = 0; x <= xPlay; x += step) {
-                                                const t = xPlay > 0 ? (x / xPlay) : 0
-                                                const ramp = Math.pow(t, 1.55)
-
-                                                const e =
-                                                    0.55
-                                                    + 0.45 * Math.sin((x / 10.0) + miniBar.phase * 2.6)
-                                                const hh = miniBar.barsMaxHalfHeight * ramp * Math.max(0.18, e)
-
-                                                ctx.fillRect(x, yMid - hh, 2.2, hh * 2.0)
-                                            }
-                                            ctx.restore()
-                                        }
-
-                                        // 1) Onda integrada dentro del progreso (de 0 a xPlay)
-                                        if (xPlay > 1) {
-                                            ctx.save()
-
-                                            ctx.strokeStyle = Qt.rgba(
-                                                Appearance.m3colors.m3primary.r,
-                                                Appearance.m3colors.m3primary.g,
-                                                Appearance.m3colors.m3primary.b,
-                                                0.98
-                                            )
-                                            ctx.lineWidth = 3.4
-                                            ctx.lineCap = "round"
-                                            ctx.lineJoin = "round"
-
-                                            ctx.shadowColor = "rgba(0,0,0,0.22)"
-                                            ctx.shadowBlur = 5
-                                            ctx.shadowOffsetX = 0
-                                            ctx.shadowOffsetY = 0
-
-                                            ctx.beginPath()
-
-                                            const step = 1.0
-                                            for (let x = 0; x <= xPlay; x += step) {
-                                                const t = xPlay > 0 ? (x / xPlay) : 0
-                                                const ramp = Math.pow(t, miniBar.waveRampPow)
-                                                const amp = miniBar.waveAmpMin + (miniBar.waveAmpMax - miniBar.waveAmpMin) * ramp
-
-                                                const ang = (x / miniBar.wavePxPerCycle) * (Math.PI * 2) + miniBar.phase
-                                                const y = yMid + Math.sin(ang) * amp
-
-                                                if (x === 0) ctx.moveTo(x, y)
-                                                else ctx.lineTo(x, y)
-                                            }
-
-                                            ctx.stroke()
-                                            ctx.restore()
-                                        }
-
-                                        // 2) Playhead fino
-                                        ctx.save()
-                                        ctx.strokeStyle = "rgba(245,245,245,0.95)"
-                                        ctx.lineWidth = 2.0
-                                        ctx.shadowColor = "rgba(0,0,0,0.40)"
-                                        ctx.shadowBlur = 6
-                                        ctx.beginPath()
-                                        ctx.moveTo(xPlay + 0.5, track.y - miniBar.playheadHeightPad)
-                                        ctx.lineTo(xPlay + 0.5, track.y + track.height + miniBar.playheadHeightPad)
-                                        ctx.stroke()
-                                        ctx.restore()
-                                    }
-                                }
-
-                                // Seek arrastrando con mouse
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: media.canSeek
-                                    hoverEnabled: true
-                                    acceptedButtons: Qt.LeftButton
-                                    cursorShape: Qt.PointingHandCursor
-                                    preventStealing: true
-
-                                    function _seekAt(x) { miniBar.seekToRatio(x / miniBar.width) }
-                                    onPressed: (mouse) => _seekAt(mouse.x)
-                                    onPositionChanged: (mouse) => { if (pressed) _seekAt(mouse.x) }
-                                }
-
-                                TapHandler {
-                                    enabled: media.canSeek
-                                    onTapped: (ev) => miniBar.seekToRatio(ev.position.x / miniBar.width)
-                                }
-
-                                DragHandler {
-                                    enabled: media.canSeek
-                                    onTranslationChanged: {
-                                        const p = centroid.position
-                                        miniBar.seekToRatio(p.x / miniBar.width)
-                                    }
-                                }
-                            }
-
-                            // Next
                             Item {
                                 Layout.alignment: Qt.AlignVCenter
-                                width: 28; height: 28
+                                width: media.kBtn
+                                height: media.kBtn
+
                                 MaterialSymbol {
                                     anchors.centerIn: parent
                                     text: "skip_next"
-                                    iconSize: 24
+                                    iconSize: 23
                                     color: Appearance.colors.colOnLayer1
                                     opacity: (media.activePlayer && media.canGoNext) ? 1.0 : 0.35
                                 }
+
                                 MouseArea {
                                     anchors.fill: parent
                                     enabled: !!media.activePlayer && media.canGoNext
@@ -697,9 +542,6 @@ Scope {
         }
     }
 
-    // =========================================================================
-    // 5) 🖥️ PANEL PRINCIPAL
-    // =========================================================================
     Variants {
         model: Quickshell.screens
 
@@ -712,12 +554,76 @@ Scope {
             color: "transparent"
             WlrLayershell.namespace: "quickshell:dock"
 
+           property bool hasActiveWindows: false
+
+            function resolveMonitorForThisDock() {
+                if (!HyprlandData) return null
+                const scrName = dockRoot.screen?.name
+                if (scrName) {
+                    const byName = HyprlandData.monitors.find(m => m.name === scrName)
+                    if (byName) return byName
+                }
+                return null
+            }
+
+            function recomputeHasWindows() {
+                if (!HyprlandData) {
+                    dockRoot.hasActiveWindows = false
+                    return
+                }
+                const monitor = resolveMonitorForThisDock()
+                const wsId = monitor?.activeWorkspace?.id ?? null
+                if (!wsId) {
+                    dockRoot.hasActiveWindows = false
+                    return
+                }
+                dockRoot.hasActiveWindows = HyprlandData.windowList.some(w =>
+                    (w.workspace?.id === wsId) && !w.floating
+                )
+            }
+
+            Timer {
+                id: hyprRecomputeTimerDock
+                interval: 60
+                repeat: false
+                onTriggered: dockRoot.recomputeHasWindows()
+            }
+
+            Connections {
+                target: HyprlandData
+                enabled: root.resolvedStyle === "adaptive"
+                function schedule() { hyprRecomputeTimerDock.restart() }
+                function onWindowListChanged() { schedule() }
+                function onMonitorsChanged() { schedule() }
+            }
+
+            onScreenChanged: if (root.resolvedStyle === "adaptive") hyprRecomputeTimerDock.restart()
+
+            // Resuelve adaptive (solid/glass) por monitor
+            readonly property string styleAfterAdaptive: {
+                if (root.resolvedStyle === "adaptive")
+                    return dockRoot.hasActiveWindows ? "solid" : "glass"
+                return root.resolvedStyle
+            }
+
+            //  Regla final para el dock:
+            //    - crystal => crystal
+            readonly property string effectiveStyle: (styleAfterAdaptive === "crystal") ? "crystal" : "solid"
+
+            readonly property bool effIsSolid: effectiveStyle === "solid"
+            readonly property bool effIsCrystal: effectiveStyle === "crystal"
+
             property bool reveal: root.pinned
                                   || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
                                   || dockApps.requestDockShow
                                   || (!ToplevelManager.activeToplevel?.activated)
 
-            anchors { bottom: true; left: true; right: true }
+                    anchors {
+                top: root.dockAtTop
+                bottom: !root.dockAtTop
+                left: true
+                right: true
+            }
 
             exclusiveZone: root.pinned
                 ? implicitHeight - Appearance.sizes.hyprlandGapsOut
@@ -725,18 +631,16 @@ Scope {
                 : 0
 
             implicitHeight: (Config.options?.dock.height ?? 70)
+                            + root.dockHeightNudge
                             + Appearance.sizes.elevationMargin
                             + Appearance.sizes.hyprlandGapsOut
 
-            implicitWidth: dockBackground.implicitWidth
             mask: Region { item: dockMouseArea }
 
             MouseArea {
                 id: dockMouseArea
                 height: parent.height
                 hoverEnabled: true
-                implicitWidth: dockHoverRegion.implicitWidth + Appearance.sizes.elevationMargin * 2
-
                 acceptedButtons: Qt.NoButton
 
                 anchors {
@@ -745,12 +649,20 @@ Scope {
                     horizontalCenter: parent.horizontalCenter
                 }
 
+                width: dockHoverRegion.width + Appearance.sizes.elevationMargin * 2
+
                 function topMarginForState() {
-                    if (dockRoot.reveal) return 0
-                    if (Config.options?.dock.hoverToReveal) {
-                        return dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight
+                 if (dockRoot.reveal) return 0
+
+                      if (Config.options?.dock.hoverToReveal) {
+                        if (!root.dockAtTop)
+                            return dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight
+                        return -(dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight)
                     }
-                    return dockRoot.implicitHeight + 1
+
+                    if (!root.dockAtTop)
+                        return dockRoot.implicitHeight + 1
+                    return -(dockRoot.implicitHeight + 1)
                 }
 
                 Behavior on anchors.topMargin {
@@ -761,17 +673,16 @@ Scope {
                 Item {
                     id: dockHoverRegion
                     anchors.fill: parent
-                    implicitWidth: dockBackground.implicitWidth
+                    width: dockBackground.width
 
                     Item {
                         id: dockBackground
                         anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
-                        implicitWidth: dockRow.implicitWidth + root.kDockPadding * 2
+
+                        width: dockRow.implicitWidth + root.kDockPadding * 2 + root.dockInnerPadX * 2
                         height: parent.height - Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut
 
-                        StyledRectangularShadow { target: dockVisualBackground }
-
-                        Rectangle {
+                        Item {
                             id: dockVisualBackground
                             anchors {
                                 fill: parent
@@ -779,123 +690,136 @@ Scope {
                                 bottomMargin: Appearance.sizes.hyprlandGapsOut
                             }
 
-                            radius: Appearance.rounding.large
-                            antialiasing: true
-
-                            // ==============================================================
-                            // FIX MAESTRO: Si es cristal, fondo y borde son transparentes
-                            // ==============================================================
-                            color: root.bgIsCrystal ? "transparent" : Appearance.colors.colLayer0
-                            border.width: root.bgIsCrystal ? 0 : 1
-                            border.color: root.bgIsCrystal ? "transparent" : Appearance.colors.colLayer0Border
-
-                            // ==============================================================
-                            // MAGIA CRISTAL EXACTA (IDÉNTICA A BARCONTENT.QML)
-                            // ==============================================================
-                            Item {
-                                anchors.fill: parent
-                                visible: root.bgIsCrystal
-
-                                // 1. Tinte Base
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: parent.radius
-                                    color: root.glassTint
-                                }
-
-                                // 2. Luz Superior Fija (15 px)
-                                Rectangle {
-                                    anchors.top: parent.top
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: 15
-                                    radius: parent.radius
-                                    gradient: Gradient {
-                                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.18 : 0.35) }
-                                        GradientStop { position: 1.0; color: "transparent" }
-                                    }
-                                }
-
-                                // 3. Sombra Inferior Fija (30 px)
-                                Rectangle {
-                                    anchors.bottom: parent.bottom
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: 30
-                                    radius: parent.radius
-                                    gradient: Gradient {
-                                        GradientStop { position: 0.0; color: "transparent" }
-                                        GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.30 : 0.15) }
-                                    }
-                                }
-
-                                // 4. Borde Exterior
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: parent.radius
-                                    color: "transparent"
-                                    border.width: 1
-                                    border.color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.15)
-                                }
-
-                                // 5. Bisel Interno Apple
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: 1
-                                    radius: Math.max(0, parent.radius - 1)
-                                    color: "transparent"
-                                    border.width: 1
-                                    border.color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.18 : 0.45)
-                                }
-
-                                // 6. Línea de Luz Apple (Filo brillante de 1px)
-                                Rectangle {
-                                    anchors.top: parent.top
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
-                                    anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
-                                    anchors.topMargin: 1
-                                    height: 1
-                                    color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.40 : 0.85)
-                                }
-                            }
-
-                            // ==============================================================
-                            // DISEÑO ORIGINAL (Se oculta en modo Cristal)
-                            // ==============================================================
-                            layer.enabled: !root.bgIsCrystal && root.premiumDock && root.premiumDockGlow
-                            layer.effect: MultiEffect {
-                                shadowEnabled: true
-                                shadowBlur: 0.7
-                                shadowOpacity: dockRoot.reveal ? 0.22 : 0.12
-                                shadowColor: Appearance.colors.colPrimary
-                                shadowHorizontalOffset: 0
-                                shadowVerticalOffset: 0
-                            }
+                            property int cornerStyle: 1
+                            property int radiusPx: Appearance.rounding.large
+                            readonly property int cancelOuterMargin: Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0))
 
                             Rectangle {
+                                id: dockShadowShape
                                 anchors.fill: parent
-                                radius: parent.radius
-                                visible: !root.bgIsCrystal && root.premiumDock && root.premiumDockGlass
-                                opacity: dockRoot.reveal ? 0.22 : 0.14
-                                gradient: Gradient {
-                                    orientation: Gradient.Horizontal
-                                    GradientStop { position: 0.0; color: "transparent" }
-                                    GradientStop { position: 0.55; color: Qt.rgba(1, 1, 1, 0.18) }
-                                    GradientStop { position: 1.0; color: "transparent" }
+                                radius: dockVisualBackground.radiusPx
+                                color: "transparent"
+                                antialiasing: true
+                            }
+
+                            StyledRectangularShadow { target: dockShadowShape }
+
+                            Loader {
+                                id: bgLoader
+                                anchors.fill: parent
+                                sourceComponent: dockRoot.effIsCrystal ? crystalBgComponent : solidBgComponent
+                            }
+
+                            Component {
+                                id: solidBgComponent
+                                Item {
+                                    anchors.fill: parent
+
+                                    Rectangle {
+                                        id: solidBase
+                                        anchors.fill: parent
+                                        anchors.margins: 0
+                                        radius: dockVisualBackground.radiusPx
+                                        antialiasing: true
+                                        color: Appearance.colors.colLayer0
+                                        border.width: 1
+                                        border.color: Appearance.colors.colLayer0Border
+                                    }
+
+                                    Rectangle {
+                                        anchors.fill: solidBase
+                                        radius: solidBase.radius
+                                        visible: root.premiumDock && root.premiumDockGlass
+                                        opacity: dockRoot.reveal ? 0.22 : 0.14
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0.0; color: "transparent" }
+                                            GradientStop { position: 0.55; color: Qt.rgba(1, 1, 1, 0.18) }
+                                            GradientStop { position: 1.0; color: "transparent" }
+                                        }
+                                    }
+
+                                    layer.enabled: root.premiumDock && root.premiumDockGlow
+                                    layer.effect: MultiEffect {
+                                        shadowEnabled: true
+                                        shadowBlur: 0.7
+                                        shadowOpacity: dockRoot.reveal ? 0.22 : 0.12
+                                        shadowColor: Appearance.colors.colPrimary
+                                        shadowHorizontalOffset: 0
+                                        shadowVerticalOffset: 0
+                                    }
+                                }
+                            }
+
+                            Component {
+                                id: crystalBgComponent
+                                Item {
+                                    anchors.fill: parent
+
+                                    Bar.BarBgOverlayGlassBlur {
+                                        anchors.fill: parent
+                                        anchors.margins: -dockVisualBackground.cancelOuterMargin
+
+                                      position: root.dockEdge
+                                        cornerStyle: dockVisualBackground.cornerStyle
+
+                                        useGlassMode: root.premiumDock && root.premiumDockGlass
+                                        showSolidBackground: false
+                                        backgroundColor: Appearance.colors.colLayer0
+
+                                        enableRealBlur: true
+                                        useScreenCaptureBlur: root.dockUseScreenCaptureBlur
+                                        captureIntervalMs: root.dockCaptureIntervalMs
+                                        captureOutputPath: root.dockCapturePath
+
+                                        tintOpacity: root.themeIsDark ? 0.18 : 0.14
+                                        blurRadius: 56
+                                        blurSaturation: root.themeIsDark ? 1.55 : 1.65
+                                        blurContrast: 1.08
+                                        blurBrightness: root.themeIsDark ? 1.12 : 1.10
+
+                                        basePadding: 0
+                                        enableMask: true
+                                        content: [ Item { } ]
+                                    }
+
+                                    Bar.BarBgCrystalOverlay {
+                                        anchors.fill: parent
+                                        anchors.margins: -dockVisualBackground.cancelOuterMargin
+
+                                        // === AJUSTE: idem para el cristal ===
+                                        position: root.dockEdge
+                                        cornerStyle: dockVisualBackground.cornerStyle
+                                        useGlassMode: true
+                                        showSolidBackground: false
+                                        backgroundColor: "transparent"
+                                        overlayStrength: Appearance.colors.isDark ? 1.0 : 0.95
+                                        visible: true
+                                    }
+
+                                    layer.enabled: root.premiumDock && root.premiumDockGlow
+                                    layer.effect: MultiEffect {
+                                        shadowEnabled: true
+                                        shadowBlur: 0.7
+                                        shadowOpacity: dockRoot.reveal ? 0.22 : 0.12
+                                        shadowColor: Appearance.colors.colPrimary
+                                        shadowHorizontalOffset: 0
+                                        shadowVerticalOffset: 0
+                                    }
                                 }
                             }
                         }
 
                         RowLayout {
                             id: dockRow
-                            anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                            anchors.fill: dockVisualBackground
                             spacing: root.kDockSpacing
                             property real padding: root.kDockPadding
 
+                            Item { width: root.dockInnerPadX; height: 1 }
+
                             VerticalButtonGroup {
-                                Layout.topMargin: Appearance.sizes.hyprlandGapsOut
+                                Layout.topMargin: 0
 
                                 GroupButton {
                                     baseWidth: root.kPinButtonSize
@@ -915,23 +839,23 @@ Scope {
                                 }
                             }
 
-                            DockSeparator {}
+                            DockConditionalSeparator { show: true }
 
                             DockApps {
                                 id: dockApps
                                 buttonPadding: dockRow.padding
                             }
 
-                            DockSeparator {}
+                            DockConditionalSeparator { show: mediaPlayerItem.visible }
 
                             MediaPlayerWidget { id: mediaPlayerItem }
 
-                            DockSeparator { visible: mediaPlayerItem.visible }
+                            DockConditionalSeparator { show: mediaPlayerItem.visible }
 
                             DockButton {
                                 Layout.fillHeight: true
-                                topInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
-                                bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
+                                topInset: dockRow.padding
+                                bottomInset: dockRow.padding
 
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
 
@@ -947,10 +871,18 @@ Scope {
                                     color: Appearance.colors.colOnLayer0
                                 }
                             }
+
+                            Item { width: root.dockInnerPadX; height: 1 }
                         }
                     }
                 }
             }
+
+            Component.onCompleted: {
+                if (root.resolvedStyle === "adaptive") hyprRecomputeTimerDock.restart()
+                else dockRoot.recomputeHasWindows()
+            }
         }
     }
 }
+

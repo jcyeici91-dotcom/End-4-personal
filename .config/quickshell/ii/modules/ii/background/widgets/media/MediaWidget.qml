@@ -1,24 +1,77 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
+
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtQuick.Shapes
+import Qt5Compat.GraphicalEffects
+
 import qs
 import qs.services
-import Qt5Compat.GraphicalEffects
 import qs.modules.common
 import qs.modules.common.models
 import qs.modules.common.functions
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.ii.background.widgets
-import QtQuick.Shapes
+
+//  estilo global 
+import qs.modules.ii.ui 1.0
 
 AbstractBackgroundWidget {
     id: root
 
     configEntryName: "media"
+    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
+    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _styleFromUIState() {
+        const s = (typeof UIState !== "undefined" && UIState) ? UIState.surfaceStyle : ""
+        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
+    }
+
+    readonly property string resolvedStyle: {
+        if (followGlobalBarStyle) {
+            const s = _styleFromUIState()
+            if (s !== "") return s
+        }
+        return _styleFromConfig(barBackgroundStyleFromConfig)
+    }
+
+    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
+
+    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
+    function _isDark(c) { return _lin(c) < 0.65 }
+
+    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode !== undefined)
+        ? Appearance.m3colors.darkmode
+        : _isDark(Appearance.colors.colLayer0)
+
+      readonly property color bgShapeColor: bgIsCrystal
+        ? Qt.rgba(Appearance.colors.colPrimaryContainer.r,
+                  Appearance.colors.colPrimaryContainer.g,
+                  Appearance.colors.colPrimaryContainer.b,
+                  themeIsDark ? 0.28 : 0.22)
+        : Appearance.colors.colPrimaryContainer
+
+    readonly property color crystalTint: themeIsDark
+        ? Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 0.18)
+        : Qt.rgba(1, 1, 1, 0.14)
+
+    readonly property color crystalRimOuter: themeIsDark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.14)
+    readonly property color crystalRimInner: themeIsDark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.28)
 
     readonly property bool useAlbumColors: Config.options.background.widgets.media.useAlbumColors
     readonly property bool useDynamicColors: root.useAlbumColors && root.currentPlayer !== null
@@ -124,8 +177,8 @@ AbstractBackgroundWidget {
     property string artFileName: (root.effectiveArtUrl !== "" ? Qt.md5(root.effectiveArtUrl) : "")
     property string artFilePath: (root.artFileName !== "" ? (root.artDownloadLocation + "/" + root.artFileName) : "")
 
-    // ✅ Igual que el original: cuando no hay player / no hay art => NO imagen, solo placeholder
-    property string currentImageToShow: ""     // <- antes era wallpaper, ahora vacío por diseño
+    //  cuando no hay player / no hay art => NO imagen, solo placeholder
+    property string currentImageToShow: ""
     property string displayedArtFilePath: ""
 
     function isFileLikeUrl(u) {
@@ -141,7 +194,6 @@ AbstractBackgroundWidget {
         return str
     }
 
-    // Cuando se logra una ruta válida => la mostramos
     onDisplayedArtFilePathChanged: {
         if (root.displayedArtFilePath && root.displayedArtFilePath !== "" && root.displayedArtFilePath !== "file://") {
             root.currentImageToShow = root.displayedArtFilePath
@@ -153,14 +205,12 @@ AbstractBackgroundWidget {
     function refreshArt() {
         var u = root.effectiveArtUrl
 
-        // Sin player => vacío (se verá music_off por el loader)
         if (!root.currentPlayer) {
             root.displayedArtFilePath = ""
             root.currentImageToShow = ""
             return
         }
 
-        // Con player pero sin URL => vacío (se verá hourglass_bottom por el loader)
         if (!u || ("" + u).trim() === "") {
             root.displayedArtFilePath = ""
             root.currentImageToShow = ""
@@ -202,7 +252,6 @@ AbstractBackgroundWidget {
             if (exitCode === 0) {
                 root.displayedArtFilePath = Qt.resolvedUrl(coverArtDownloader.artFilePath)
             } else {
-                // falla => vacío (placeholder)
                 root.displayedArtFilePath = ""
                 root.currentImageToShow = ""
             }
@@ -220,7 +269,6 @@ AbstractBackgroundWidget {
     }
 
     function forceTrackRefresh() {
-        // ✅ como el original: reset a vacío antes de recalcular
         root.currentImageToShow = ""
         root.displayedArtFilePath = ""
         root.artUrlFallback = ""
@@ -387,7 +435,6 @@ AbstractBackgroundWidget {
         onExited: function() { playerctlNext.running = false }
     }
 
-
     property real braveSystemVolume: 0.0
     property bool braveSystemVolumeValid: false
 
@@ -520,7 +567,7 @@ AbstractBackgroundWidget {
         root.lastTrackKey = ""
         resolvePlayerctlId()
 
-          if (!root.currentPlayer) {
+        if (!root.currentPlayer) {
             root.displayedArtFilePath = ""
             root.currentImageToShow = ""
             return
@@ -536,13 +583,12 @@ AbstractBackgroundWidget {
         root.currentPlayer = MprisController.activePlayer
     }
 
-
     Item {
         id: contentItem
         implicitWidth: root.widgetSize
         implicitHeight: root.widgetSize
 
-        // Glow blur (solo si hay imagen)
+        // Glow blur 
         Image {
             id: blurredArt
             anchors.fill: parent
@@ -577,8 +623,7 @@ AbstractBackgroundWidget {
             onClicked: root.toggleFirefoxBrave()
         }
 
-        // ✅ PLACEHOLDER ORIGINAL (music_off / hourglass_bottom)
-        FadeLoader {
+          FadeLoader {
             z: 20
             anchors.centerIn: parent
             shown: (root.currentPlayer === null) || (root.currentPlayer !== null && root.currentImageToShow === "")
@@ -598,14 +643,100 @@ AbstractBackgroundWidget {
             id: artBackground
             anchors.fill: parent
             radius: Appearance.rounding.full
-            color: Appearance.colors.colPrimaryContainer
 
+            // SOLID:  CRYSTAL: 
+            color: root.bgShapeColor
+
+            // recorte circular 
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Rectangle {
                     width: artBackground.width
                     height: artBackground.height
                     radius: artBackground.radius
+                }
+            }
+
+           // Crystal overlay 
+                Loader {
+                id: crystalOverlayLoader
+                anchors.fill: parent
+                z: 0.5
+                active: root.bgIsCrystal
+                asynchronous: false
+
+                sourceComponent: Item {
+                    anchors.fill: parent
+
+                    // máscara independiente 
+                    Rectangle {
+                        id: overlayMaskRect
+                        width: artBackground.width
+                        height: artBackground.height
+                        radius: artBackground.radius
+                        visible: false
+                    }
+
+                    ShaderEffectSource {
+                        id: maskSource
+                        sourceItem: overlayMaskRect
+                        live: true
+                        hideSource: false
+                        visible: false
+                    }
+
+                    Item {
+                        id: overlaySource
+                        anchors.fill: parent
+                        visible: false
+
+                        Rectangle { anchors.fill: parent; color: root.crystalTint }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.20 : 0.30) }
+                                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.12) }
+                                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.14 : 0.08) }
+                            }
+                            opacity: 0.95
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.10 : 0.16) }
+                                GradientStop { position: 1.0; color: "transparent" }
+                            }
+                            transform: Rotation {
+                                origin.x: overlaySource.width / 2
+                                origin.y: overlaySource.height / 2
+                                angle: -18
+                            }
+                            opacity: 0.85
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            border.width: 1
+                            border.color: root.crystalRimOuter
+                        }
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 1
+                            color: "transparent"
+                            border.width: 1
+                            border.color: root.crystalRimInner
+                        }
+                    }
+
+                    OpacityMask {
+                        anchors.fill: parent
+                        source: overlaySource
+                        maskSource: maskSource
+                    }
                 }
             }
 

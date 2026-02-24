@@ -24,7 +24,7 @@ Scope {
     }
 
     // ==========================
-    // LÓGICA DE ESTILO (igual que derecha)
+    // LÓGICA DE ESTILO
     // ==========================
     readonly property bool safeNoEffects: false
     readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
@@ -80,6 +80,35 @@ Scope {
     readonly property string sidebarStyle: _effectiveSidebarStyle(requestedStyle)
     readonly property bool bgIsVisible: sidebarStyle === "visible"
     readonly property bool bgIsCrystal: sidebarStyle === "crystal"
+    readonly property bool useCrystalEffects: bgIsCrystal && !safeNoEffects
+
+    // ==========================
+    // BLUR REAL (SCREEN CAPTURE)
+    // ==========================
+    readonly property bool enableSidebarRealBlur: true
+    readonly property bool enableSidebarScreenCaptureBlur: true
+    readonly property int sidebarCaptureIntervalMs: 140
+
+    // ==========================
+    // TUNING “COMO LA BARRA”
+    // (evita el look opaco)
+    // ==========================
+    readonly property real sidebarBlurRadius: 56
+    readonly property real sidebarBlurSaturation: Appearance.colors.isDark ? 1.55 : 1.65
+    readonly property real sidebarBlurContrast: 1.08
+    readonly property real sidebarBlurBrightness: Appearance.colors.isDark ? 1.12 : 1.10
+
+    // CLAVE: bajar el tint (esto es lo que más cambia la “opacidad”)
+    readonly property real sidebarTintOpacity: Appearance.colors.isDark ? 0.22 : 0.18
+
+    // RUTAS DISTINTAS para evitar pisarse si existen sidebars left/right
+    readonly property string sidebarCapturePathDocked: root.isOnLeft
+        ? "/tmp/quickshell_sidebar_left_backdrop.png"
+        : "/tmp/quickshell_sidebar_right_backdrop.png"
+
+    readonly property string sidebarCapturePathDetached: root.isOnLeft
+        ? "/tmp/quickshell_sidebar_left_backdrop_detached.png"
+        : "/tmp/quickshell_sidebar_right_backdrop_detached.png"
 
     function toggleDetach() { root.detach = !root.detach; }
 
@@ -150,22 +179,19 @@ Scope {
             property bool extend: false
             readonly property real sidebarWidth: {
                 const p = Config.options.policies;
-                const allFeatures = p.ai !== 0 && p.weeb == 1 && p.wallpapers !== 0 && p.translator !== 0;
+                const allFeatures = (p?.ai !== 0) && (p?.weeb === 1) && (p?.wallpapers !== 0) && (p?.translator !== 0);
 
                 if (panelWindow.extend) return Appearance.sizes.sidebarWidthExtended;
                 return allFeatures ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
             }
 
-            // Contenedor interno
             property var contentParent: sidebarLeftContentContainer
-
             function hide() { GlobalStates.sidebarLeftOpen = false }
 
             exclusionMode: ExclusionMode.Normal
             exclusiveZone: root.pin ? sidebarWidth : 0
             implicitWidth: Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
 
-            // Namespace correcto para tus layerrules
             WlrLayershell.namespace: root.isOnLeft ? "quickshell:sidebarLeft" : "quickshell:sidebarRight"
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             color: "transparent"
@@ -177,7 +203,6 @@ Scope {
                 bottom: true
             }
 
-            // Recorte por máscara
             mask: Region { item: sidebarLeftBackground }
 
             onVisibleChanged: {
@@ -202,11 +227,8 @@ Scope {
                 antialiasing: true
                 clip: true
 
-                // EXACTO como tu sidebar derecho:
-                // - Visible: sólido normal
-                // - Crystal: 100% transparente (sin neblina)
+                // En cristal debe ser transparente para que se vea el blur capturado
                 color: root.bgIsVisible ? Appearance.colors.colLayer0 : "transparent"
-
                 border.width: root.bgIsVisible ? 1 : 0
                 border.color: Appearance.colors.colLayer0Border
 
@@ -218,14 +240,54 @@ Scope {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
                 }
 
-                // ==============================================================
-                // CRISTAL INVISIBLE 100% PURO (igual que el derecho)
-                // ==============================================================
+                // ===== Fondo “vidrio” con BLUR REAL (screen capture) =====
+                Bar.BarBgOverlayGlassBlur {
+                    id: sidebarGlassBase
+                    anchors.fill: parent
+                    z: 0
+
+                    // required:
+                    useGlassMode: root.useCrystalEffects
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0
+                    cornerStyle: 0
+
+                    // BLUR REAL:
+                    enableRealBlur: root.enableSidebarRealBlur
+                    useScreenCaptureBlur: root.enableSidebarScreenCaptureBlur
+                    captureIntervalMs: root.sidebarCaptureIntervalMs
+                    captureOutputPath: root.sidebarCapturePathDocked
+
+                    // TUNING (para que NO quede opaco)
+                    blurRadius: root.sidebarBlurRadius
+                    blurSaturation: root.sidebarBlurSaturation
+                    blurContrast: root.sidebarBlurContrast
+                    blurBrightness: root.sidebarBlurBrightness
+                    tintOpacity: root.sidebarTintOpacity
+
+                    // evita doble-máscara (el padre ya hace clip con radius)
+                    enableMask: false
+                    basePadding: 0
+                }
+
+                // ===== Brillos/bordes de cristal =====
+                Bar.BarBgCrystalOverlay {
+                    id: sidebarCrystalOverlay
+                    anchors.fill: parent
+                    z: 1
+
+                    useGlassMode: root.useCrystalEffects
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0
+                    cornerStyle: 0
+                }
+
+                // ===== Cristal “puro” (bordes) =====
                 Item {
                     anchors.fill: parent
-                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    visible: root.useCrystalEffects
+                    z: 2
 
-                    // 1) Borde exterior
                     Rectangle {
                         anchors.fill: parent
                         radius: parent.radius
@@ -236,7 +298,6 @@ Scope {
                             : Qt.rgba(0, 0, 0, 0.15)
                     }
 
-                    // 2) Bisel interno
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 1
@@ -246,7 +307,6 @@ Scope {
                         border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
                     }
 
-                    // 3) Highlight superior
                     Rectangle {
                         anchors.top: parent.top
                         anchors.left: parent.left
@@ -259,10 +319,10 @@ Scope {
                     }
                 }
 
-                // CONTENEDOR INTERNO PARA EL CONTENIDO
                 Item {
                     id: sidebarLeftContentContainer
                     anchors.fill: parent
+                    z: 10
                 }
 
                 state: root.isOnLeft ? "left" : "right"
@@ -335,10 +395,44 @@ Scope {
                 border.width: root.bgIsVisible ? 1 : 0
                 border.color: Appearance.colors.colLayer0Border
 
-                // Cristal puro también en modo detach
+                Bar.BarBgOverlayGlassBlur {
+                    anchors.fill: parent
+                    z: 0
+
+                    useGlassMode: root.useCrystalEffects
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0
+                    cornerStyle: 0
+
+                    enableRealBlur: root.enableSidebarRealBlur
+                    useScreenCaptureBlur: root.enableSidebarScreenCaptureBlur
+                    captureIntervalMs: root.sidebarCaptureIntervalMs
+                    captureOutputPath: root.sidebarCapturePathDetached
+
+                    // TUNING (mismo que docked)
+                    blurRadius: root.sidebarBlurRadius
+                    blurSaturation: root.sidebarBlurSaturation
+                    blurContrast: root.sidebarBlurContrast
+                    blurBrightness: root.sidebarBlurBrightness
+                    tintOpacity: root.sidebarTintOpacity
+
+                    enableMask: false
+                    basePadding: 0
+                }
+
+                Bar.BarBgCrystalOverlay {
+                    anchors.fill: parent
+                    z: 1
+                    useGlassMode: root.useCrystalEffects
+                    showSolidBackground: root.bgIsVisible
+                    backgroundColor: Appearance.colors.colLayer0
+                    cornerStyle: 0
+                }
+
                 Item {
                     anchors.fill: parent
-                    visible: root.bgIsCrystal && !root.safeNoEffects
+                    visible: root.useCrystalEffects
+                    z: 2
 
                     Rectangle {
                         anchors.fill: parent
@@ -374,6 +468,7 @@ Scope {
                 Item {
                     id: detachedSidebarContentContainer
                     anchors.fill: parent
+                    z: 10
                 }
 
                 Keys.onPressed: (event) => {

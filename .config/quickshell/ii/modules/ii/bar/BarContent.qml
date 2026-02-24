@@ -9,12 +9,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
-
 import qs.modules.ii.ui 1.0
-
 import "." as Bar
-import "parts" as Parts
-import "utils/centerSplit.js" as CenterSplit
 
 Item {
     id: root
@@ -22,142 +18,356 @@ Item {
     property var screen: root.QsWindow?.window?.screen ?? null
     property int monitorIndex: -1
 
-    property var brightnessMonitor: null
-    function recomputeBrightnessMonitor() {
-        root.brightnessMonitor = Brightness.getMonitorForScreen(root.screen)
-    }
-
-    Parts.BarAdaptiveWindows {
-        id: adaptiveWindows
+    readonly property Bar.BarState state: Bar.BarState {
         screen: root.screen
         monitorIndex: root.monitorIndex
-        enabled: style.bgIsAdaptive
     }
 
-    property bool hasActiveWindows: adaptiveWindows.hasActiveWindows
-
-    Parts.BarStyle {
-        id: style
-        hasActiveWindows: root.hasActiveWindows
+    readonly property Bar.PositionSystem positionSys: Bar.PositionSystem {
         screen: root.screen
     }
 
-    // Re-export (para compatibilidad)
-    readonly property bool followGlobalBarStyle: style.followGlobalBarStyle
-    readonly property int barBackgroundStyleFromConfig: style.barBackgroundStyleFromConfig
-    readonly property string resolvedStyle: style.resolvedStyle
-
-    readonly property bool bgIsGlass: style.bgIsGlass
-    readonly property bool bgIsSolid: style.bgIsSolid
-    readonly property bool bgIsAdaptive: style.bgIsAdaptive
-    readonly property bool bgIsCrystal: style.bgIsCrystal
-
-    readonly property bool showSolidBackground: style.showSolidBackground
-    readonly property bool useGlassMode: style.useGlassMode
-    readonly property bool useOverlayBg: style.useOverlayBg
-
-    readonly property bool useHybridGroups: style.useHybridGroups
-    readonly property int cornerStyle: style.cornerStyle
-    readonly property bool isBottom: style.isBottom
-
-    readonly property bool allowFullBarBackgroundInHybrid: style.allowFullBarBackgroundInHybrid
-    readonly property bool shouldDrawBackground: style.shouldDrawBackground
-
-    readonly property int hybridResizeMs: style.hybridResizeMs
-
-    readonly property bool themeIsDark: style.themeIsDark
-    readonly property color glassTint: style.glassTint
-    readonly property color glassRim: style.glassRim
-    readonly property color glassRimInner: style.glassRimInner
-
-    readonly property color barBgColor: style.barBgColor
-
-    readonly property color onBarStrong: style.onBarStrong
-    readonly property color onBar: style.onBar
-    readonly property color onBarMuted: style.onBarMuted
-    readonly property color onBarIcon: style.onBarIcon
-
-    readonly property color chipBg: style.chipBg
-    readonly property color chipBorder: style.chipBorder
-
-    property real useShortenedForm: style.useShortenedForm
-    readonly property int centerSideModuleWidth: style.centerSideModuleWidth
-
-    // Split center -> JS
-    property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
-    property var leftList: []
-    property var centerList: []
-    property var rightList: []
-
-    function recomputeCenterSplit() {
-        const res = CenterSplit.split(root.fullModel)
-        root.leftList = res.leftList
-        root.centerList = res.centerList
-        root.rightList = res.rightList
-    }
-    onFullModelChanged: recomputeCenterSplit()
-
-    Parts.BarBackground {
-        id: background
-        shouldDrawBackground: root.shouldDrawBackground
-        useOverlayBg: root.useOverlayBg
-        showSolidBackground: root.showSolidBackground
-        useGlassMode: root.useGlassMode
-        bgIsCrystal: root.bgIsCrystal
-        themeIsDark: root.themeIsDark
-        glassTint: root.glassTint
-        glassRim: root.glassRim
-        glassRimInner: root.glassRimInner
+    readonly property Bar.GroupStyleSystem groups: Bar.GroupStyleSystem {
+        state: root.state
     }
 
-    Parts.BarBridges {
-        useHybridGroups: root.useHybridGroups
-        cornerStyle: root.cornerStyle
-        allowFullBarBackgroundInHybrid: root.allowFullBarBackgroundInHybrid
-        isBottom: root.isBottom
-        bgIsCrystal: root.bgIsCrystal
-        glassTint: root.glassTint
+    function sendWrappedFrameState() {
+        try {
+            Quickshell.Io.Ipc.call("wrappedFrame", "setBarState", [
+                backgroundSystem.resolvedStyle,
+                root.state.hasActiveWindows,
+                root.groups.isHybrid,
+                cornerSystem.cornerStyleValue
+            ])
+        } catch (e) {
+        }
     }
 
-    // === Secciones ===
-    Parts.BarLeftSection {
-        id: leftSection
-        useHybridGroups: root.useHybridGroups
-        hybridResizeMs: root.hybridResizeMs
+    Connections {
+        target: root.state
+        function onHasActiveWindowsChanged() { root.sendWrappedFrameState() }
+    }
+
+    Bar.BarSizeSystem {
+        id: sizeSystem
+        screen: root.screen
+    }
+
+    Bar.BarBackgroundSystem {
+        id: backgroundSystem
+        anchors.fill: parent
+        state: root.state
+    }
+
+    Bar.CornerStyleSystem {
+        id: cornerSystem
+        anchors.fill: parent
+        state: root.state
+    }
+
+    FocusedScrollMouseArea {
+        id: barLeftSideMouseArea
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         anchors.left: parent.left
+        anchors.right: middleSection.left
+        implicitHeight: sizeSystem.baseBarHeight
+
+        onScrollDown: if (root.state.brightnessMonitor) root.state.brightnessMonitor.setBrightness(root.state.brightnessMonitor.brightness - 0.05)
+        onScrollUp: if (root.state.brightnessMonitor) root.state.brightnessMonitor.setBrightness(root.state.brightnessMonitor.brightness + 0.05)
+        onMovedAway: GlobalStates.osdBrightnessOpen = false
+        onPressed: event => {
+            if (event.button === Qt.LeftButton)
+                GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
+        }
+
+        ScrollHint {
+            reveal: barLeftSideMouseArea.hovered
+            icon: "light_mode"
+            tooltipText: Translation.tr("Scroll to change brightness")
+            side: "left"
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 
-    Parts.BarCenterSection {
+    Item {
+        id: leftStopper
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.leftMargin: root.groups.screenMargin
+        width: 1
+    }
+
+    Loader {
+        id: leftContent
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: leftStopper.right
+        active: true
+        sourceComponent: root.groups.isHybrid ? leftHybridComponent : leftClassicComponent
+    }
+
+    Component {
+        id: leftClassicComponent
+        RowLayout {
+            spacing: root.groups.spacing
+            Repeater {
+                model: Config.options.bar.layouts.left
+                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
+            }
+        }
+    }
+
+    Component {
+        id: leftHybridComponent
+        Bar.BarGroup {
+            vertical: false
+            spacing: root.groups.spacing
+            isContainer: true
+            autoHide: false
+            padding: root.groups.padding
+            edgeInset: root.groups.edgeInset
+            attachScreenLeft: true
+            width: implicitWidth
+
+            Behavior on width { NumberAnimation { duration: root.groups.hybridResizeMs; easing.type: Easing.OutCubic } }
+
+            Repeater {
+                model: Config.options.bar.layouts.left
+                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
+            }
+        }
+    }
+
+    Item {
         id: middleSection
-        useHybridGroups: root.useHybridGroups
-        hybridResizeMs: root.hybridResizeMs
-        leftList: root.leftList
-        centerList: root.centerList
-        rightList: root.rightList
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        Loader {
+            anchors.fill: parent
+            active: true
+            sourceComponent: root.groups.isHybrid ? middleHybridComponent : middleClassicComponent
+        }
+
+        Component {
+            id: middleClassicComponent
+            Item {
+                anchors.fill: parent
+
+                RowLayout {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: centerCenter.left
+                    anchors.rightMargin: root.groups.spacing
+                    Repeater {
+                        model: root.groups.leftList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                RowLayout {
+                    id: centerCenter
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: root.groups.spacing
+                    Repeater {
+                        model: root.groups.centerList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                RowLayout {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: centerCenter.right
+                    anchors.leftMargin: root.groups.spacing
+                    Repeater {
+                        model: root.groups.rightList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+            }
+        }
+
+        Component {
+            id: middleHybridComponent
+            Item {
+                anchors.fill: parent
+
+                Loader {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: centerCenterGroup.left
+                    anchors.rightMargin: root.groups.spacing
+                    active: (root.groups.leftList && root.groups.leftList.length > 0)
+                    visible: active
+                    sourceComponent: Bar.BarGroup {
+                        vertical: false
+                        spacing: root.groups.spacing
+                        isContainer: true
+                        autoHide: true
+                        padding: root.groups.padding
+                        edgeInset: root.groups.edgeInset
+                        width: implicitWidth
+                        Behavior on width { NumberAnimation { duration: root.groups.hybridResizeMs; easing.type: Easing.OutCubic } }
+                        Repeater {
+                            model: root.groups.leftList
+                            delegate: BarComponent {
+                                list: Config.options.bar.layouts.center
+                                barSection: 1
+                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                            }
+                        }
+                    }
+                }
+
+                Bar.BarGroup {
+                    id: centerCenterGroup
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    vertical: false
+                    spacing: root.groups.spacing
+                    isContainer: true
+                    autoHide: true
+                    padding: root.groups.padding
+                    edgeInset: root.groups.edgeInset
+                    width: implicitWidth
+                    Behavior on width { NumberAnimation { duration: root.groups.hybridResizeMs; easing.type: Easing.OutCubic } }
+                    Repeater {
+                        model: root.groups.centerList
+                        delegate: BarComponent {
+                            list: Config.options.bar.layouts.center
+                            barSection: 1
+                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: centerCenterGroup.right
+                    anchors.leftMargin: root.groups.spacing
+                    active: (root.groups.rightList && root.groups.rightList.length > 0)
+                    visible: active
+                    sourceComponent: Bar.BarGroup {
+                        vertical: false
+                        spacing: root.groups.spacing
+                        isContainer: true
+                        autoHide: true
+                        padding: root.groups.padding
+                        edgeInset: root.groups.edgeInset
+                        width: implicitWidth
+                        Behavior on width { NumberAnimation { duration: root.groups.hybridResizeMs; easing.type: Easing.OutCubic } }
+                        Repeater {
+                            model: root.groups.rightList
+                            delegate: BarComponent {
+                                list: Config.options.bar.layouts.center
+                                barSection: 1
+                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    Parts.BarRightSection {
-        id: rightSection
-        useHybridGroups: root.useHybridGroups
-        hybridResizeMs: root.hybridResizeMs
+    Item {
+        id: rightStopper
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         anchors.right: parent.right
+        width: 1
     }
 
-    // Mouse areas 
-    Parts.BarSideMouseAreas {
-        brightnessMonitor: root.brightnessMonitor
-        middleSection: middleSection
+    Loader {
+        id: rightContent
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: rightStopper.left
+        anchors.rightMargin: root.groups.screenMargin
+        active: true
+        sourceComponent: root.groups.isHybrid ? rightHybridComponent : rightClassicComponent
+    }
+
+    Component {
+        id: rightClassicComponent
+        RowLayout {
+            spacing: root.groups.spacing
+            Repeater {
+                model: Config.options.bar.layouts.right
+                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
+            }
+        }
+    }
+
+    Component {
+        id: rightHybridComponent
+        Bar.BarGroup {
+            vertical: false
+            spacing: root.groups.spacing
+            isContainer: true
+            autoHide: false
+            padding: root.groups.padding
+            edgeInset: root.groups.edgeInset
+            attachScreenRight: true
+            width: implicitWidth
+            Behavior on width { NumberAnimation { duration: root.groups.hybridResizeMs; easing.type: Easing.OutCubic } }
+            Repeater {
+                model: Config.options.bar.layouts.right
+                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
+            }
+        }
+    }
+
+    FocusedScrollMouseArea {
+        id: barRightSideMouseArea
+        z: -1
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: middleSection.right
+        anchors.right: parent.right
+        implicitHeight: sizeSystem.baseBarHeight
+
+        onScrollDown: Audio.decrementVolume()
+        onScrollUp: Audio.incrementVolume()
+        onMovedAway: GlobalStates.osdVolumeOpen = false
+        onPressed: event => {
+            if (event.button === Qt.LeftButton)
+                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+        }
+
+        ScrollHint {
+            reveal: barRightSideMouseArea.hovered
+            icon: "volume_up"
+            tooltipText: Translation.tr("Scroll to change volume")
+            side: "right"
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 
     Component.onCompleted: {
-        recomputeBrightnessMonitor()
-        recomputeCenterSplit()
-        adaptiveWindows.kick()
-    }
-
-    onScreenChanged: {
-        recomputeBrightnessMonitor()
-        adaptiveWindows.kick()
+        root.state.recomputeBrightnessMonitor()
+        sendWrappedFrameState()
     }
 }
-
