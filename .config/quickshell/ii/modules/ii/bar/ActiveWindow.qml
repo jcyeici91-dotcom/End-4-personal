@@ -47,7 +47,7 @@ Item {
         }
     }
 
-    property bool hideBackground: resolvedStyle === "crystal" || resolvedStyle === "line"
+    property bool hideBackground: true
 
     property bool parallaxEnabled: true
     property bool prismaticBorder: true

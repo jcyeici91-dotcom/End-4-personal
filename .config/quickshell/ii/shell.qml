@@ -10,6 +10,9 @@ import "modules/common"
 import "services"
 import "panelFamilies"
 
+// 🔥 IMPORTAMOS TU MENÚ DESLIZABLE AQUÍ (Ruta relativa desde shell.qml)
+import "modules/ii/session" as SessionMod
+
 import QtQuick
 import QtQuick.Window
 import Quickshell
@@ -18,8 +21,6 @@ import Quickshell.Hyprland
 
 ShellRoot {
     id: root
-
-    
 
     // Stuff for every panel family
     ReloadPopup {}
@@ -75,5 +76,7 @@ ShellRoot {
 
         onPressed: root.cyclePanelFamily()
     }
-}
 
+    // 🔥 AQUÍ VIVE TU MENÚ DE SESIÓN. Es su propia ventana, no molestará a nadie.
+    SessionMod.SessionWrapper {}
+}

@@ -1,4 +1,3 @@
-// BarBackgroundSystem.qml
 import QtQuick
 import qs
 import qs.modules.common 
@@ -12,16 +11,14 @@ Item {
     // Solo recibe estado ambiental del BarState
     required property Bar.BarState state
 
-    // =========================================================
     // 1. LECTURA DE CONFIGURACIÓN Y ESTILOS
-    // =========================================================
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
     
-    // Corner style es necesario aquí para saber si dibujar sombra o bordes rectos/flotantes
     readonly property int cornerStyle: Config?.options?.bar?.cornerStyle ?? 0
 
-    // Función interna para mapear el número de configuración al nombre de estilo
+   readonly property string barPosition: Config?.options?.bar?.position ?? (Config?.options?.bar?.bottom ? "bottom" : "top")
+
     function _styleFromConfig(v) {
         switch (v) {
         case 0: return "glass"
@@ -50,21 +47,15 @@ Item {
     readonly property bool bgIsAdaptive: resolvedStyle === "adaptive"
     readonly property bool bgIsCrystal: resolvedStyle === "crystal"
 
-    // Comportamiento Adaptativo
-    // - Con ventanas -> Solid (Visible)
-    // - Sin ventanas -> Glass
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && state.hasActiveWindows)
     readonly property bool useGlassMode: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !state.hasActiveWindows)
     readonly property bool useOverlayBg: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !state.hasActiveWindows)
 
-    // Necesario para saber si no dibujar el fondo si el grupo es híbrido
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
     readonly property bool allowFullBarBackgroundInHybrid: (useHybridGroups && showSolidBackground)
     readonly property bool shouldDrawBackground: (!useHybridGroups) || allowFullBarBackgroundInHybrid
 
-    // =========================================================
-    // 2. CÁLCULO DE COLORES Y MATERIALES
-    // =========================================================
+      // 2. CÁLCULO DE COLORES Y MATERIALES
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
 
@@ -137,7 +128,6 @@ Item {
                 Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
                 Behavior on border.color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
 
-                // Tratamiento Glass
                 Item {
                     anchors.fill: parent
                     visible: sys.useGlassMode
@@ -182,7 +172,7 @@ Item {
                         anchors.fill: parent
                         radius: barBackground.radius
                         color: "transparent"
-                        border.width: 1
+                      border.width: (sys.cornerStyle === 0) ? 0 : 1 
                         antialiasing: true
                         border.color: sys.glassRim
                     }
@@ -192,13 +182,12 @@ Item {
                         anchors.margins: 1
                         radius: Math.max(0, barBackground.radius - 1)
                         color: "transparent"
-                        border.width: 1
+                        border.width: (sys.cornerStyle === 0) ? 0 : 1 
                         antialiasing: true
                         border.color: sys.glassRimInner
                     }
                 }
 
-                // Border sólido
                 Rectangle {
                     anchors.fill: parent
                     radius: barBackground.radius
@@ -237,7 +226,7 @@ Item {
                 id: normalBaseComponent
                 Bar.BarBgOverlay {
                     anchors.fill: parent
-                    position: state.edge
+                    position: sys.barPosition 
                     cornerStyle: sys.cornerStyle
                     useGlassMode: sys.useGlassMode
                     showSolidBackground: sys.showSolidBackground
@@ -249,7 +238,7 @@ Item {
                 id: crystalBaseComponent
                 Bar.BarBgOverlayGlassBlur {
                     anchors.fill: parent
-                    position: state.edge
+                    position: sys.barPosition
                     cornerStyle: sys.cornerStyle
                     useGlassMode: sys.useGlassMode
                     showSolidBackground: sys.showSolidBackground
@@ -268,7 +257,7 @@ Item {
                 id: crystalTopComponent
                 Bar.BarBgCrystalOverlay {
                     anchors.fill: parent
-                    position: state.edge
+                    position: sys.barPosition
                     cornerStyle: sys.cornerStyle
                     useGlassMode: sys.useGlassMode
                     showSolidBackground: sys.showSolidBackground

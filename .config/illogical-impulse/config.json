@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "saffron_latte"
+            "type": "smoke_blue"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/39.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/Luffy_from_One_Piece_5160x2160.jpeg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 349.41015625000045,
-                "y": 194.33984375
+                "x": 260.48437500000045,
+                "y": 219.07421875
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2788.34375,
-                "y": 1377.1875
+                "x": 2772.3906250000005,
+                "y": 1362.1875
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 198.2421875,
-                "y": 1428.1171875
+                "x": 2636.4062500000005,
+                "y": 203.12890625
             }
         }
     },
@@ -208,7 +208,7 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 3,
+        "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
@@ -422,8 +422,6 @@
         ],
         "monochromeIcons": true,
         "pinnedApps": [
-            "org.kde.dolphin",
-            "kitty"
         ],
         "pinnedOnStartup": true
     },

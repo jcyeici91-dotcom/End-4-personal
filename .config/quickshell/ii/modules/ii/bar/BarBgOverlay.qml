@@ -6,14 +6,13 @@ import qs.modules.common
 Item {
     id: root
 
-     property string position: "top" // "top" | "bottom"
+    property string position: "top" // "top" | "bottom"
 
     required property bool useGlassMode
     required property bool showSolidBackground
     required property color backgroundColor
     required property int cornerStyle
 
-    // Ajustes finos
     property int basePadding: 4
     property bool enableMask: true
 
@@ -23,7 +22,6 @@ Item {
 
     readonly property int radiusPx: (cornerStyle === 1) ? Appearance.rounding.windowRounding : 0
 
-    // Slot para contenido
     default property alias content: contentContainer.data
 
     Rectangle {
@@ -49,7 +47,6 @@ Item {
             ColorAnimation { duration: 220; easing.type: Easing.InOutQuad }
         }
 
-        // Rim / highlight cuando está en "glass"
         Item {
             anchors.fill: parent
             visible: root.useGlassMode
@@ -80,7 +77,7 @@ Item {
                 anchors.fill: parent
                 radius: bg.radius
                 color: "transparent"
-                border.width: 1
+                border.width: (root.cornerStyle === 0) ? 0 : 1
                 antialiasing: true
                 border.color: Appearance.colors.isDark
                     ? Qt.rgba(1, 1, 1, 0.18)
@@ -92,7 +89,7 @@ Item {
                 anchors.margins: 1
                 radius: Math.max(0, bg.radius - 1)
                 color: "transparent"
-                border.width: 1
+                border.width: (root.cornerStyle === 0) ? 0 : 1
                 antialiasing: true
                 border.color: Appearance.colors.isDark
                     ? Qt.rgba(0, 0, 0, 0.26)
@@ -101,14 +98,12 @@ Item {
         }
     }
 
-    // Contenido con padding 
     Item {
         id: contentContainer
         anchors.fill: parent
         anchors.margins: root.outerMargin + root.basePadding
     }
 
-    // Máscara para recortar 
     layer.enabled: root.enableMask
     layer.effect: MultiEffect {
         maskEnabled: true
@@ -117,4 +112,3 @@ Item {
         maskSpreadAtMin: 1.0
     }
 }
-

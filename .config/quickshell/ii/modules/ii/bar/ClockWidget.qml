@@ -111,7 +111,7 @@ property bool forceNoContainer: false
 
     required property color tonal
 
-    // 🔥 BarGroup podrá apagar las cápsulas internas
+    //  BarGroup podrá apagar las cápsulas internas
     visible: !root.forceNoContainer
     opacity: visible ? 1 : 0
 

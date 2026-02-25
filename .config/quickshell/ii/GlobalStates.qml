@@ -27,6 +27,10 @@ Singleton {
     property bool screenLockContainsCharacters: false
     property bool screenUnlockFailed: false
     property bool sessionOpen: false
+    
+    // 🔥 AQUÍ ESTÁ TU NUEVA VARIABLE PARA EL MENÚ DESLIZABLE
+    property bool sessionVisible: false 
+
     property bool superDown: false
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
