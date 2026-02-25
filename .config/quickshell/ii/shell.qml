@@ -1,16 +1,7 @@
-//@ pragma UseQApplication
-//@ pragma Env QS_NO_RELOAD_POPUP=1
-//@ pragma Env QT_QUICK_CONTROLS_STYLE=Basic
-//@ pragma Env QT_QUICK_FLICKABLE_WHEEL_DECELERATION=10000
-
-// Remove two slashes below and adjust the value to change the UI scale
-////@ pragma Env QT_SCALE_FACTOR=1
-
 import "modules/common"
 import "services"
 import "panelFamilies"
 
-// 🔥 IMPORTAMOS TU MENÚ DESLIZABLE AQUÍ (Ruta relativa desde shell.qml)
 import "modules/ii/session" as SessionMod
 
 import QtQuick
@@ -77,6 +68,5 @@ ShellRoot {
         onPressed: root.cyclePanelFamily()
     }
 
-    // 🔥 AQUÍ VIVE TU MENÚ DE SESIÓN. Es su propia ventana, no molestará a nadie.
     SessionMod.SessionWrapper {}
 }

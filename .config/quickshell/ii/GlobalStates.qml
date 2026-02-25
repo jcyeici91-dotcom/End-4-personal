@@ -28,7 +28,7 @@ Singleton {
     property bool screenUnlockFailed: false
     property bool sessionOpen: false
     
-    // 🔥 AQUÍ ESTÁ TU NUEVA VARIABLE PARA EL MENÚ DESLIZABLE
+    // VARIABLE PARA EL MENÚ DESLIZABLE
     property bool sessionVisible: false 
 
     property bool superDown: false
