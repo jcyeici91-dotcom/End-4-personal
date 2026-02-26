@@ -16,9 +16,7 @@ QtObject {
     readonly property bool isSolid: surfaceStyle === "solid"
     readonly property bool isAdaptive: surfaceStyle === "adaptive"
 
-    // ----------------------------------------------------------
     // Ventanas (para "adaptive")
-    // ----------------------------------------------------------
     function _safeLen(x) {
         if (x === null || x === undefined) return 0
         if (typeof x === "number") return x
@@ -28,9 +26,7 @@ QtObject {
     }
 
     function _windowCount() {
-        // Probamos varias APIs típicas (depende de la versión/runtime)
-        // Si una existe, se usa.
-        try {
+            try {
             const h = Hyprland
             if (!h) return 0
 

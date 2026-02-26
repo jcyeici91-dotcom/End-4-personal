@@ -63,10 +63,6 @@ Scope {
 
     readonly property int dockInnerPadX: 10
 
-    readonly property bool dockUseScreenCaptureBlur: true
-    readonly property int dockCaptureIntervalMs: 120
-    readonly property string dockCapturePath: "/tmp/quickshell_dock_backdrop.png"
-
     function _resolvedPreset() {
         if (qualityPreset === "auto") return highRefresh ? "high" : "normal"
         if (qualityPreset === "low") return "low"
@@ -554,7 +550,7 @@ Scope {
             color: "transparent"
             WlrLayershell.namespace: "quickshell:dock"
 
-           property bool hasActiveWindows: false
+            property bool hasActiveWindows: false
 
             function resolveMonitorForThisDock() {
                 if (!HyprlandData) return null
@@ -606,8 +602,7 @@ Scope {
                 return root.resolvedStyle
             }
 
-            //  Regla final para el dock:
-            //    - crystal => crystal
+             //    - crystal => crystal
             readonly property string effectiveStyle: (styleAfterAdaptive === "crystal") ? "crystal" : "solid"
 
             readonly property bool effIsSolid: effectiveStyle === "solid"
@@ -618,7 +613,7 @@ Scope {
                                   || dockApps.requestDockShow
                                   || (!ToplevelManager.activeToplevel?.activated)
 
-                    anchors {
+            anchors {
                 top: root.dockAtTop
                 bottom: !root.dockAtTop
                 left: true
@@ -760,26 +755,14 @@ Scope {
                                         anchors.fill: parent
                                         anchors.margins: -dockVisualBackground.cancelOuterMargin
 
-                                      position: root.dockEdge
+                                        position: root.dockEdge
                                         cornerStyle: dockVisualBackground.cornerStyle
 
                                         useGlassMode: root.premiumDock && root.premiumDockGlass
                                         showSolidBackground: false
                                         backgroundColor: Appearance.colors.colLayer0
 
-                                        enableRealBlur: true
-                                        useScreenCaptureBlur: root.dockUseScreenCaptureBlur
-                                        captureIntervalMs: root.dockCaptureIntervalMs
-                                        captureOutputPath: root.dockCapturePath
-
-                                        tintOpacity: root.themeIsDark ? 0.18 : 0.14
-                                        blurRadius: 56
-                                        blurSaturation: root.themeIsDark ? 1.55 : 1.65
-                                        blurContrast: 1.08
-                                        blurBrightness: root.themeIsDark ? 1.12 : 1.10
-
                                         basePadding: 0
-                                        enableMask: true
                                         content: [ Item { } ]
                                     }
 
@@ -885,4 +868,3 @@ Scope {
         }
     }
 }
-

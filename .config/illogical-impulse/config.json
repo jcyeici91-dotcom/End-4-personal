@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "scheme-auto"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/39.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 260.48437500000045,
-                "y": 219.07421875
+                "x": 967.1250000000003,
+                "y": 593.0234375
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2819.9296875,
-                "y": 1630.984375
+                "x": 2001.265625,
+                "y": 1152.43359375
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2769.39453125,
-                "y": 240.0703125
+                "x": 2210.41796875,
+                "y": 478.0390625
             }
         }
     },
@@ -208,12 +208,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -460,7 +460,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 4819,
+            "colorTemperature": 5111,
             "from": "19:00",
             "to": "06:30"
         }
@@ -690,6 +690,30 @@
                     {
                         "size": 1,
                         "type": "musicRecognition"
+                    },
+                    {
+                        "size": 1,
+                        "type": "bluetooth"
+                    },
+                    {
+                        "size": 1,
+                        "type": "easyEffects"
+                    },
+                    {
+                        "size": 1,
+                        "type": "colorPicker"
+                    },
+                    {
+                        "size": 1,
+                        "type": "onScreenKeyboard"
+                    },
+                    {
+                        "size": 1,
+                        "type": "notifications"
+                    },
+                    {
+                        "size": 1,
+                        "type": "gameMode"
                     }
                 ]
             },

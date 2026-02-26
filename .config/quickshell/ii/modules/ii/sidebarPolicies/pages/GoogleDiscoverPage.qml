@@ -60,11 +60,6 @@ Item {
     readonly property color success: (Appearance.colors.colSuccess !== undefined) ? Appearance.colors.colSuccess : "#34A853"
     readonly property color warn: (Appearance.colors.colWarning !== undefined) ? Appearance.colors.colWarning : "#fbbc04"
 
-    // ==========================
-    // FIX "cuadrito negro" (cards de partidos)
-    // - No hacemos blur real por-card (costoso y puede verse raro).
-    // - Sí aplicamos el mismo "look" cristal: tint + crystal overlay.
-    // ==========================
     readonly property bool useCrystalCards: true
     readonly property real cardTintOpacity: themeIsDark ? 0.18 : 0.14
 
@@ -230,8 +225,6 @@ Item {
                     height: 118
                     radius: 16
 
-                    // FIX: antes era sólido (bgWidget) y podía verse "negro" dependiendo tema/colores.
-                    // Ahora el fondo base es transparente, y el look lo da el overlay cristal.
                     color: "transparent"
                     clip: true
 
@@ -246,23 +239,17 @@ Item {
                         shadowColor: root.shadowCol
                     }
 
-                    // ===== Cristal (tint + overlay) SIN blur real por-card =====
-                    Bar.BarBgOverlayGlassBlur {
+                        Bar.BarBgOverlayGlassBlur {
                         anchors.fill: parent
                         z: 0
 
                         useGlassMode: root.useCrystalCards
                         showSolidBackground: false
-                        backgroundColor: "transparent"
+                        backgroundColor: Appearance.colors.colLayer0
                         cornerStyle: 0
-
-                        enableRealBlur: false
-                        useScreenCaptureBlur: false
-
-                        tintOpacity: root.cardTintOpacity
-
-                        enableMask: false
+                        
                         basePadding: 0
+                        content: [ Item { } ]
                     }
 
                     Bar.BarBgCrystalOverlay {
@@ -546,7 +533,6 @@ Item {
         height: 60
         radius: 15
 
-        // FIX: si esto se ve muy "sólido/oscuro", le ponemos el mismo overlay cristal.
         readonly property color baseBg: root.bgWidget
         readonly property color hoverBg: root.surfaceSubtle
         readonly property color fg: root._ensureReadable(root.textMain, (pressed ? hoverBg : baseBg), 0.30)
@@ -587,24 +573,20 @@ Item {
             shadowColor: root.shadowCol
         }
 
-        // Overlay cristal para que no quede "cuadro" sólido
         Item {
             anchors.fill: parent
             visible: root.useCrystalCards
             clip: true
 
-            Bar.BarBgOverlayGlassBlur {
+                Bar.BarBgOverlayGlassBlur {
                 anchors.fill: parent
                 z: 0
                 useGlassMode: true
                 showSolidBackground: false
-                backgroundColor: "transparent"
+                backgroundColor: Appearance.colors.colLayer0
                 cornerStyle: 0
-                enableRealBlur: false
-                useScreenCaptureBlur: false
-                tintOpacity: root.cardTintOpacity
-                enableMask: false
                 basePadding: 0
+                content: [ Item { } ]
             }
 
             Bar.BarBgCrystalOverlay {
@@ -896,7 +878,7 @@ Item {
             var header = name
             if (formation) header += " (" + formation + ")"
 
-            if (starters.length >= 7) return header + ": " + starters.slice(0, 11).join(", ")
+            if (starters.length >= 7) return header + ":\n- " + starters.slice(0, 11).join("\n- ")
             return ""
         }
 
@@ -915,8 +897,9 @@ Item {
 
             notifiedLineupByEvent[job.eventId] = true
 
-            var title = "Posibles alineaciones"
-            var body = job.homeName + " vs " + job.awayName + "\nHora (ES): " + (fmtTimeES(job.eventDateIso) || "") + "\n" + job.leagueName
+            // ALINEACIONES ===
+            var title = "Alineaciones Confirmadas"
+            var body = job.homeName + " vs " + job.awayName + "\n" + job.leagueName
             if (a) body += "\n\n" + a
             if (b) body += "\n\n" + b
 
@@ -1412,6 +1395,45 @@ Item {
     }
 
     Process {
+        id: procTransfers
+        property var seenTransfers: ({})
+        
+        property string rssUrl: "https://news.google.com/rss/search?q=fichaje+OR+traspaso+OR+oficial+(f%C3%BAtbol+OR+premier+OR+liga+OR+serie+a)&hl=es-419&gl=ES&ceid=ES:es-419"
+
+        function checkTransfers() {
+            command = ["curl", "-s", "-L", rssUrl]
+            running = true
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (text && text.length > 80) {
+                    var items = parseXMLToItems(text, false)
+                    for (var i = 0; i < items.length; i++) {
+                        var it = items[i]
+                        var titleLower = it.title.toLowerCase()
+                        
+                        //  notificar
+                        var isTransfer = titleLower.includes("oficial") || 
+                                         titleLower.includes("fichaje") || 
+                                         titleLower.includes("acuerdo") ||
+                                         titleLower.includes("traspaso");
+                                         
+                        if (isTransfer) {
+                               if (procTransfers.seenTransfers[it.link] !== true) {
+                                procTransfers.seenTransfers[it.link] = true
+                                
+                                procNotify.send("Mercado de Fichajes", it.title + "\n\nFuente: " + it.source, "normal")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    Process {
         id: procNews
 
         property var queue: []
@@ -1550,15 +1572,25 @@ Item {
     }
 
     Timer {
-        interval: 300000
+        interval: 300000 // Cada 5 minutos
         running: true
         repeat: true
         onTriggered: procNews.loadNews()
+    }
+    
+    // Timer para revisar los fichajes
+    Timer {
+        interval: 600000 // Cada 10 minutos 
+        running: true
+        repeat: true
+        onTriggered: procTransfers.checkTransfers()
     }
 
     Component.onCompleted: {
         procNews.loadNews()
         procScores.startLoadScores()
+        
+        // Ejecutamos la búsqueda de traspasos al iniciar
+        procTransfers.checkTransfers()
     }
 }
-

@@ -29,44 +29,31 @@ Item {
         antialiasing: true
         color: "transparent"
         clip: true
+        visible: root.useGlassMode && !root.showSolidBackground
 
-        // Difusión superior suave 
         Rectangle {
             anchors.fill: parent
             radius: shell.radius
             antialiasing: true
             gradient: Gradient {
                 orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, themeIsDark ? 0.18 : 0.35) }
-                GradientStop { position: 0.3; color: Qt.rgba(1, 1, 1, 0.00) }
+                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.08 : 0.25) }
+                GradientStop { position: 0.4; color: "transparent" }
+                GradientStop { position: 0.8; color: "transparent" }
+                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, root.themeIsDark ? 0.35 : 0.06) }
             }
             opacity: root.overlayStrength
         }
 
-        // SOMBRA INFERIOR 
-        Rectangle {
-            anchors.fill: parent
-            radius: shell.radius
-            antialiasing: true
-            gradient: Gradient {
-                orientation: Gradient.Vertical
-                GradientStop { position: 0.6; color: Qt.rgba(0, 0, 0, 0.00) }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, themeIsDark ? 0.15 : 0.05) }
-            }
-            opacity: root.overlayStrength
-        }
-
-        // BORDE EXTERIOR 
         Rectangle {
             anchors.fill: parent
             radius: shell.radius
             antialiasing: true
             color: "transparent"
             border.width: 1
-            border.color: themeIsDark ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(0, 0, 0, 0.15)
+            border.color: root.themeIsDark ? Qt.rgba(0, 0, 0, 0.70) : Qt.rgba(0, 0, 0, 0.18)
         }
 
-        // Bisel de iOS
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
@@ -74,21 +61,27 @@ Item {
             antialiasing: true
             color: "transparent"
             border.width: 1
-            border.color: Qt.rgba(1, 1, 1, themeIsDark ? 0.25 : 0.50)
+            border.color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.12 : 0.60)
         }
 
-        // El filo de luz brillante de Apple
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.leftMargin: root.rad > 0 ? root.rad / 1.2 : 1
-            anchors.rightMargin: root.rad > 0 ? root.rad / 1.2 : 1
+            anchors.leftMargin: root.rad > 0 ? root.rad : 2
+            anchors.rightMargin: root.rad > 0 ? root.rad : 2
             anchors.topMargin: 1
             height: 1
-            color: Qt.rgba(1, 1, 1, themeIsDark ? 0.35 : 0.80)
             opacity: root.overlayStrength
             antialiasing: true
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 0.2; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.20 : 0.60) }
+                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.40 : 0.95) }
+                GradientStop { position: 0.8; color: Qt.rgba(1, 1, 1, root.themeIsDark ? 0.20 : 0.60) }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
         }
     }
 }
