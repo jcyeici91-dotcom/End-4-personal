@@ -9,8 +9,9 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 
-Item { // Notification item area
+Item {
     id: root
+
     property var notificationObject
     property bool expanded: false
     property bool onlyNotification: false
@@ -18,13 +19,40 @@ Item { // Notification item area
     property real padding: onlyNotification ? 0 : 8
     property real summaryElideRatio: 0.85
 
-    property real dragConfirmThreshold: 70 // Drag further to discard notification
-    property real dismissOvershoot: notificationIcon.implicitWidth + 20 // Account for gaps and bouncy animations
-    property var qmlParent: root?.parent?.parent // There's something between this and the parent ListView
+    property bool crystalMode: false
+    property real crystalTextBoost: 0.0
+
+    readonly property color textStrong: crystalMode
+        ? Appearance.colors.colOnLayer1
+        : Appearance.colors.colOnLayer3
+
+    readonly property color textMuted: crystalMode
+        ? ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.18 - Math.min(0.12, Math.max(0.0, crystalTextBoost)))
+        : Appearance.colors.colSubtext
+
+    readonly property color itemBgColor: (expanded && !onlyNotification)
+        ? ((notificationObject.urgency == NotificationUrgency.Critical)
+            ? ColorUtils.mix(Appearance.colors.colSecondaryContainer, Appearance.colors.colLayer2, 0.35)
+            : Appearance.colors.colLayer3)
+        : ColorUtils.transparentize(Appearance.colors.colLayer3)
+
+    readonly property color crystalContrastTint: Appearance.colors.isDark
+        ? Qt.rgba(0, 0, 0, 0.22 + Math.min(0.18, Math.max(0.0, crystalTextBoost)))
+        : Qt.rgba(1, 1, 1, 0.26 + Math.min(0.18, Math.max(0.0, crystalTextBoost)))
+
+    readonly property color actionIconColor: crystalMode
+        ? Appearance.colors.colOnLayer1
+        : ((notificationObject.urgency == NotificationUrgency.Critical)
+            ? Appearance.m3colors.m3onSurfaceVariant
+            : Appearance.m3colors.m3onSurface)
+
+    property real dragConfirmThreshold: 70
+    property real dismissOvershoot: notificationIcon.implicitWidth + 20
+    property var qmlParent: root?.parent?.parent
     property var parentDragIndex: qmlParent?.dragIndex ?? -1
     property var parentDragDistance: qmlParent?.dragDistance ?? 0
     property var dragIndexDiff: Math.abs(parentDragIndex - index)
-    property real xOffset: dragIndexDiff == 0 ? parentDragDistance : 
+    property real xOffset: dragIndexDiff == 0 ? parentDragDistance :
         Math.abs(parentDragDistance) > dragConfirmThreshold ? 0 :
         dragIndexDiff == 1 ? (parentDragDistance * 0.3) :
         dragIndexDiff == 2 ? (parentDragDistance * 0.1) : 0
@@ -33,7 +61,7 @@ Item { // Notification item area
 
     function destroyWithAnimation(left = false) {
         root.qmlParent.resetDrag()
-        background.anchors.leftMargin = background.anchors.leftMargin; // Break binding
+        background.anchors.leftMargin = background.anchors.leftMargin;
         destroyAnimation.left = left;
         destroyAnimation.running = true;
     }
@@ -44,7 +72,7 @@ Item { // Notification item area
         text: root.notificationObject.summary || ""
     }
 
-    SequentialAnimation { // Drag finish animation
+    SequentialAnimation {
         id: destroyAnimation
         property bool left: true
         running: false
@@ -62,7 +90,7 @@ Item { // Notification item area
         }
     }
 
-    DragManager { // Drag manager
+    DragManager {
         id: dragManager
         anchors.fill: root
         anchors.leftMargin: root.expanded ? -notificationIcon.implicitWidth : 0
@@ -89,12 +117,12 @@ Item { // Notification item area
         onDragReleased: (diffX, diffY) => {
             if (Math.abs(diffX) > root.dragConfirmThreshold)
                 root.destroyWithAnimation(diffX < 0);
-            else 
+            else
                 dragManager.resetDrag();
         }
     }
 
-    NotificationAppIcon { // App icon
+    NotificationAppIcon {
         id: notificationIcon
         opacity: (!onlyNotification && notificationObject.image != "" && expanded) ? 1 : 0
         visible: opacity > 0
@@ -109,7 +137,7 @@ Item { // Notification item area
         anchors.rightMargin: 10
     }
 
-    Rectangle { // Background of notification item
+    Rectangle {
         id: background
         width: parent.width
         anchors.left: parent.left
@@ -125,18 +153,21 @@ Item { // Notification item area
             }
         }
 
-        color: (expanded && !onlyNotification) ? 
-            (notificationObject.urgency == NotificationUrgency.Critical) ? 
-                ColorUtils.mix(Appearance.colors.colSecondaryContainer, Appearance.colors.colLayer2, 0.35) :
-                (Appearance.colors.colLayer3) :
-            ColorUtils.transparentize(Appearance.colors.colLayer3)
+        color: itemBgColor
 
         implicitHeight: expanded ? (contentColumn.implicitHeight + padding * 2) : summaryRow.implicitHeight
         Behavior on implicitHeight {
             animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
         }
 
-        ColumnLayout { // Content column
+        Rectangle {
+            anchors.fill: parent
+            radius: background.radius
+            visible: root.crystalMode
+            color: root.crystalContrastTint
+        }
+
+        ColumnLayout {
             id: contentColumn
             anchors.fill: parent
             anchors.margins: expanded ? root.padding : 0
@@ -146,31 +177,37 @@ Item { // Notification item area
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
 
-            RowLayout { // Summary row
+            RowLayout {
                 id: summaryRow
                 visible: !root.onlyNotification || !root.expanded
                 Layout.fillWidth: true
                 implicitHeight: summaryText.implicitHeight
+
                 StyledText {
                     id: summaryText
                     Layout.fillWidth: summaryTextMetrics.width >= summaryRow.implicitWidth * root.summaryElideRatio
                     visible: !root.onlyNotification
                     font.pixelSize: root.fontSize
-                    color: Appearance.colors.colOnLayer3
+                    font.bold: root.crystalMode
+                    color: root.textStrong
                     elide: Text.ElideRight
                     text: root.notificationObject.summary || ""
                 }
+
                 StyledText {
                     opacity: !root.expanded ? 1 : 0
                     visible: opacity > 0
                     Layout.fillWidth: true
+
                     Behavior on opacity {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
+
                     font.pixelSize: root.fontSize
-                    color: Appearance.colors.colSubtext
+                    font.bold: root.crystalMode
+                    color: root.textMuted
                     elide: Text.ElideRight
-                    wrapMode: Text.Wrap // Needed for proper eliding????
+                    wrapMode: Text.Wrap
                     maximumLineCount: 1
                     textFormat: Text.StyledText
                     text: {
@@ -179,25 +216,28 @@ Item { // Notification item area
                 }
             }
 
-            ColumnLayout { // Expanded content
+            ColumnLayout {
                 id: expandedContentColumn
                 Layout.fillWidth: true
                 opacity: root.expanded ? 1 : 0
                 visible: opacity > 0
 
-                StyledText { // Notification body (expanded)
+                StyledText {
                     id: notificationBodyText
+
                     Behavior on opacity {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
+
                     Layout.fillWidth: true
                     font.pixelSize: root.fontSize
-                    color: Appearance.colors.colSubtext
+                    font.bold: root.crystalMode
+                    color: root.textMuted
                     wrapMode: Text.Wrap
                     elide: Text.ElideRight
                     textFormat: Text.RichText
                     text: {
-                        return `<style>img{max-width:${expandedContentColumn.width}px;}</style>` + 
+                        return `<style>img{max-width:${expandedContentColumn.width}px;}</style>` +
                             `${NotificationUtils.processNotificationBody(notificationObject.body, notificationObject.appName || notificationObject.summary).replace(/\n/g, "<br/>")}`
                     }
 
@@ -205,7 +245,7 @@ Item { // Notification item area
                         Qt.openUrlExternally(link)
                         GlobalStates.sidebarRightOpen = false
                     }
-                    
+
                     PointingHandLinkHover {}
                 }
 
@@ -228,7 +268,7 @@ Item { // Notification item area
                         vertical: false
                     }
 
-                    StyledFlickable { // Notification actions
+                    StyledFlickable {
                         id: actionsFlickable
                         anchors.fill: parent
                         implicitHeight: actionRowLayout.implicitHeight
@@ -252,18 +292,16 @@ Item { // Notification item area
                                 Layout.fillWidth: true
                                 buttonText: Translation.tr("Close")
                                 urgency: notificationObject.urgency
-                                implicitWidth: (notificationObject.actions.length == 0) ? ((actionsFlickable.width - actionRowLayout.spacing) / 2) : 
-                                    (contentItem.implicitWidth + leftPadding + rightPadding)
+                                implicitWidth: (notificationObject.actions.length == 0)
+                                    ? ((actionsFlickable.width - actionRowLayout.spacing) / 2)
+                                    : (contentItem.implicitWidth + leftPadding + rightPadding)
 
-                                onClicked: {
-                                    root.destroyWithAnimation()
-                                }
+                                onClicked: root.destroyWithAnimation()
 
                                 contentItem: MaterialSymbol {
                                     iconSize: Appearance.font.pixelSize.larger
                                     horizontalAlignment: Text.AlignHCenter
-                                    color: (notificationObject.urgency == NotificationUrgency.Critical) ? 
-                                        Appearance.m3colors.m3onSurfaceVariant : Appearance.m3colors.m3onSurface
+                                    color: root.actionIconColor
                                     text: "close"
                                 }
                             }
@@ -272,22 +310,20 @@ Item { // Notification item area
                                 id: actionRepeater
                                 model: notificationObject.actions
                                 NotificationActionButton {
-                                    id: notifAction
                                     required property var modelData
                                     Layout.fillWidth: true
                                     buttonText: modelData.text
                                     urgency: notificationObject.urgency
-                                    onClicked: {
-                                        Notifications.attemptInvokeAction(notificationObject.notificationId, modelData.identifier);
-                                    }
+                                    onClicked: Notifications.attemptInvokeAction(notificationObject.notificationId, modelData.identifier);
                                 }
                             }
 
                             NotificationActionButton {
                                 Layout.fillWidth: true
                                 urgency: notificationObject.urgency
-                                implicitWidth: (notificationObject.actions.length == 0) ? ((actionsFlickable.width - actionRowLayout.spacing) / 2) : 
-                                    (contentItem.implicitWidth + leftPadding + rightPadding)
+                                implicitWidth: (notificationObject.actions.length == 0)
+                                    ? ((actionsFlickable.width - actionRowLayout.spacing) / 2)
+                                    : (contentItem.implicitWidth + leftPadding + rightPadding)
 
                                 onClicked: {
                                     Quickshell.clipboardText = notificationObject.body
@@ -299,21 +335,17 @@ Item { // Notification item area
                                     id: copyIconTimer
                                     interval: 1500
                                     repeat: false
-                                    onTriggered: {
-                                        copyIcon.text = "content_copy"
-                                    }
+                                    onTriggered: copyIcon.text = "content_copy"
                                 }
 
                                 contentItem: MaterialSymbol {
                                     id: copyIcon
                                     iconSize: Appearance.font.pixelSize.larger
                                     horizontalAlignment: Text.AlignHCenter
-                                    color: (notificationObject.urgency == NotificationUrgency.Critical) ? 
-                                        Appearance.m3colors.m3onSurfaceVariant : Appearance.m3colors.m3onSurface
+                                    color: root.actionIconColor
                                     text: "content_copy"
                                 }
                             }
-                            
                         }
                     }
                 }
@@ -321,3 +353,4 @@ Item { // Notification item area
         }
     }
 }
+
