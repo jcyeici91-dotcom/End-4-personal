@@ -62,16 +62,13 @@ Item {
     readonly property bool useOverlayBg: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
 
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
-    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0) // 0 Hug | 1 Float | 2 Rect
     readonly property bool isBottom: (Config?.options?.bar?.bottom ?? false)
 
     readonly property bool allowFullBarBackgroundInHybrid: (useHybridGroups && showSolidBackground)
     readonly property bool shouldDrawBackground: (!useHybridGroups) || allowFullBarBackgroundInHybrid
 
     readonly property int hybridResizeMs: 85
-
-    // ---> Margen vertical para despegar los módulos flotantes del techo/suelo
-    readonly property int floatingYMargin: root.useHybridGroups ? 6 : 0
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
@@ -428,7 +425,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        anchors.leftMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
+       anchors.leftMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
         width: 1
     }
 
@@ -436,22 +433,35 @@ Item {
         id: leftContent
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        
-        // ---> MÁRGENES APLICADOS AQUÍ PARA DESPEGAR DEL BORDE Y FLOTAR
-        anchors.topMargin: root.floatingYMargin
-        anchors.bottomMargin: root.floatingYMargin
-        
         anchors.left: leftStopper.right
         active: true
-        
-        // ---> SIEMPRE usamos "Classic" (RowLayout) para que los widgets sean independientes
-        sourceComponent: leftClassicComponent 
+        sourceComponent: root.useHybridGroups ? leftHybridComponent : leftClassicComponent
     }
 
     Component {
         id: leftClassicComponent
         RowLayout {
-            spacing: 6 // Espacio entre cada pastilla individual
+            spacing: 4
+            Repeater {
+                model: Config.options.bar.layouts.left
+                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
+            }
+        }
+    }
+
+    Component {
+        id: leftHybridComponent
+        Bar.BarGroup {
+        forcePillStyle: true
+            vertical: false
+            spacing: 4
+            isContainer: true
+            autoHide: false
+            padding: 6
+            edgeInset: 2
+            attachScreenLeft: false // Esto evita el efecto notch en el lado izquierdo
+            width: implicitWidth
+            Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
             Repeater {
                 model: Config.options.bar.layouts.left
                 delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
@@ -522,8 +532,7 @@ Item {
             Item {
                 anchors.fill: parent
 
-                // Puente dinámico SOLO para el módulo central
-                Rectangle {
+                   Rectangle {
                     id: middleTopBridge
                     z: -9
                     visible: (!root.isBottom) && root.bridgeEnabled
@@ -640,23 +649,35 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.right: rightStopper.left
-        
-        anchors.rightMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
-        
-        // ---> MÁRGENES APLICADOS AQUÍ PARA DESPEGAR DEL BORDE Y FLOTAR
-        anchors.topMargin: root.floatingYMargin
-        anchors.bottomMargin: root.floatingYMargin
-        
+      anchors.rightMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
         active: true
-        
-        // ---> SIEMPRE usamos "Classic" (RowLayout) para que los widgets sean independientes
-        sourceComponent: rightClassicComponent
+        sourceComponent: root.useHybridGroups ? rightHybridComponent : rightClassicComponent
     }
 
     Component {
         id: rightClassicComponent
         RowLayout {
-            spacing: 6 // Espacio entre cada pastilla individual
+            spacing: 4
+            Repeater {
+                model: Config.options.bar.layouts.right
+                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
+            }
+        }
+    }
+
+    Component {
+        id: rightHybridComponent
+        Bar.BarGroup {
+        forcePillStyle: true
+            vertical: false
+            spacing: 4
+            isContainer: true
+            autoHide: false
+            padding: 6
+            edgeInset: 2
+            attachScreenRight: false 
+            width: implicitWidth
+            Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
             Repeater {
                 model: Config.options.bar.layouts.right
                 delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }

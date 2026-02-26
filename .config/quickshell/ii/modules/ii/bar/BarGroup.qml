@@ -11,12 +11,7 @@ Item {
     property int padding: unifyInside ? 0 : 6
     property int edgeInset: 2
 
-   property bool forcePillStyle: false
-
-    readonly property bool isActuallyHybrid: useHybridBg && !forcePillStyle
-
-    readonly property bool useUnifiedLayout:
-        root.bgIsCrystal && (isActuallyHybrid || root.useLineBg)
+    readonly property bool useUnifiedLayout: root.bgIsCrystal && (root.useHybridBg || root.useLineBg)
 
     property int spacing: useUnifiedLayout ? 0 : 4
 
@@ -55,12 +50,13 @@ Item {
     readonly property int styleIntFromConfig: Config.options?.bar?.barBackgroundStyle ?? 1
     readonly property bool bgIsCrystal: styleIntFromConfig === 3
 
-    readonly property var rawCornerStyle: Config.options?.bar?.cornerStyle
-    readonly property bool cornerIsFloat: rawCornerStyle === "float" || rawCornerStyle === 1
-    readonly property bool cornerIsRect: rawCornerStyle === "rect" || rawCornerStyle === 2
+    readonly property string cornerStyle: (Config.options?.bar?.cornerStyle ?? "hug")
+    readonly property bool cornerIsFloat: cornerStyle === "float"
+    readonly property bool cornerIsRect: cornerStyle === "rect"
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
+
     readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
 
     readonly property bool isBorderless: (Config.options?.bar?.borderless ?? false)
@@ -99,40 +95,42 @@ Item {
         return pillRadius
     }
 
-    readonly property bool allowFlatten: isActuallyHybrid && !cornerIsFloat
+    property bool forcePillStyle: false
+
+    readonly property bool allowFlatten: useHybridBg && !cornerIsFloat && !forcePillStyle
+
     readonly property bool flattenTop: allowFlatten && !vertical && !isBottom
     readonly property bool flattenBottom: allowFlatten && !vertical && isBottom
     readonly property bool allowAttach: allowFlatten && !cornerIsFloat
 
     readonly property real finalRTL: {
-        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!isActuallyHybrid) return baseRadius
+        if (!useHybridBg) return baseRadius
         if (flattenTop || (allowAttach && attachScreenLeft)) return 0
         return baseRadius
     }
+
     readonly property real finalRTR: {
-        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!isActuallyHybrid) return baseRadius
+        if (!useHybridBg) return baseRadius
         if (flattenTop || (allowAttach && attachScreenRight)) return 0
         return baseRadius
     }
+
     readonly property real finalRBL: {
-        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!isActuallyHybrid) return baseRadius
+        if (!useHybridBg) return baseRadius
         if (flattenBottom || (allowAttach && attachScreenLeft)) return 0
         return baseRadius
     }
+
     readonly property real finalRBR: {
-        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!isActuallyHybrid) return baseRadius
+        if (!useHybridBg) return baseRadius
         if (flattenBottom || (allowAttach && attachScreenRight)) return 0
         return baseRadius
     }
@@ -152,6 +150,7 @@ Item {
 
         return root.colBackground
     }
+
     readonly property color effectiveBorderColor: {
         if (Appearance.colors.isDark) return Qt.rgba(1, 1, 1, root.borderOpacity)
         return Qt.rgba(0, 0, 0, 0.14)
@@ -202,21 +201,13 @@ Item {
 
         anchors.margins: root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0)
 
-        anchors.topMargin: {
-            if (forcePillStyle) return root.effectiveEdgeInset;
-            if (root.bridgeMode) return 0;
-            if (root.cornerIsFloat) return root.effectiveEdgeInset;
-            if (isActuallyHybrid && !vertical && !isBottom) return 0;
-            return root.vertical ? 0 : root.effectiveEdgeInset;
-        }
+        anchors.topMargin: root.bridgeMode ? 0
+            : (root.cornerIsFloat ? root.effectiveEdgeInset
+                : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
 
-        anchors.bottomMargin: {
-            if (forcePillStyle) return root.effectiveEdgeInset;
-            if (root.bridgeMode) return 0;
-            if (root.cornerIsFloat) return root.effectiveEdgeInset;
-            if (isActuallyHybrid && !vertical && isBottom) return 0;
-            return root.vertical ? 0 : root.effectiveEdgeInset;
-        }
+        anchors.bottomMargin: root.bridgeMode ? 0
+            : (root.cornerIsFloat ? root.effectiveEdgeInset
+                : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
 
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
@@ -230,6 +221,7 @@ Item {
 
     Component {
         id: notchBackgroundComponent
+
         Item {
             anchors.fill: parent
 
@@ -535,7 +527,6 @@ Item {
                                   ? Qt.rgba(0, 0, 0, 0.25)
                                   : Qt.rgba(0, 0, 0, 0.12)
                 }
-
             }
 
             Rectangle {
@@ -558,6 +549,7 @@ Item {
                 topRightRadius: parent.topRightRadius
                 bottomLeftRadius: parent.bottomLeftRadius
                 bottomRightRadius: parent.bottomRightRadius
+
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? root.highlightOpacity : root.highlightOpacity * 0.6) }
                     GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.0) }
