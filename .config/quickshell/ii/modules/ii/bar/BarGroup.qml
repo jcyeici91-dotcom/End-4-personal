@@ -11,13 +11,17 @@ Item {
     property int padding: unifyInside ? 0 : 6
     property int edgeInset: 2
 
-readonly property bool useUnifiedLayout:
-    root.bgIsCrystal && (root.useHybridBg || root.useLineBg)
+   property bool forcePillStyle: false
 
-property int spacing: useUnifiedLayout ? 0 : 4
+    readonly property bool isActuallyHybrid: useHybridBg && !forcePillStyle
 
-property bool unifyInside: useUnifiedLayout
-property bool unifyChildChips: useUnifiedLayout
+    readonly property bool useUnifiedLayout:
+        root.bgIsCrystal && (isActuallyHybrid || root.useLineBg)
+
+    property int spacing: useUnifiedLayout ? 0 : 4
+
+    property bool unifyInside: useUnifiedLayout
+    property bool unifyChildChips: useUnifiedLayout
 
     property real startRadius: Appearance.rounding.normal
     property real endRadius: Appearance.rounding.normal
@@ -33,7 +37,7 @@ property bool unifyChildChips: useUnifiedLayout
     property bool clipContent: true
 
     property bool isContainer: true
-property bool forceNoContainer: unifyChildChips
+    property bool forceNoContainer: unifyChildChips
 
     property bool attachScreenLeft: false
     property bool attachScreenRight: false
@@ -51,9 +55,9 @@ property bool forceNoContainer: unifyChildChips
     readonly property int styleIntFromConfig: Config.options?.bar?.barBackgroundStyle ?? 1
     readonly property bool bgIsCrystal: styleIntFromConfig === 3
 
-    readonly property string cornerStyle: (Config.options?.bar?.cornerStyle ?? "hug")
-    readonly property bool cornerIsFloat: cornerStyle === "float"
-    readonly property bool cornerIsRect: cornerStyle === "rect"
+    readonly property var rawCornerStyle: Config.options?.bar?.cornerStyle
+    readonly property bool cornerIsFloat: rawCornerStyle === "float" || rawCornerStyle === 1
+    readonly property bool cornerIsRect: rawCornerStyle === "rect" || rawCornerStyle === 2
 
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
@@ -79,7 +83,6 @@ property bool forceNoContainer: unifyChildChips
 
     readonly property int effectiveEdgeInset: bridgeMode ? 0 : (cornerIsFloat ? Math.max(2, edgeInset) : edgeInset)
 
-    //prueba
     readonly property real pillMeasure: {
         const m = vertical ? backgroundLoader.width : backgroundLoader.height
         return Math.max(1, m)
@@ -96,55 +99,59 @@ property bool forceNoContainer: unifyChildChips
         return pillRadius
     }
 
-    readonly property bool allowFlatten: useHybridBg && !cornerIsFloat
+    readonly property bool allowFlatten: isActuallyHybrid && !cornerIsFloat
     readonly property bool flattenTop: allowFlatten && !vertical && !isBottom
     readonly property bool flattenBottom: allowFlatten && !vertical && isBottom
     readonly property bool allowAttach: allowFlatten && !cornerIsFloat
 
     readonly property real finalRTL: {
+        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!useHybridBg) return baseRadius
+        if (!isActuallyHybrid) return baseRadius
         if (flattenTop || (allowAttach && attachScreenLeft)) return 0
         return baseRadius
     }
     readonly property real finalRTR: {
+        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!useHybridBg) return baseRadius
+        if (!isActuallyHybrid) return baseRadius
         if (flattenTop || (allowAttach && attachScreenRight)) return 0
         return baseRadius
     }
     readonly property real finalRBL: {
+        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!useHybridBg) return baseRadius
+        if (!isActuallyHybrid) return baseRadius
         if (flattenBottom || (allowAttach && attachScreenLeft)) return 0
         return baseRadius
     }
     readonly property real finalRBR: {
+        if (forcePillStyle) return baseRadius; 
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return baseRadius
-        if (!useHybridBg) return baseRadius
+        if (!isActuallyHybrid) return baseRadius
         if (flattenBottom || (allowAttach && attachScreenRight)) return 0
         return baseRadius
     }
 
-readonly property color effectiveFill: {
-    if (!root.isContainer || root.isBorderless)
-        return "transparent"
+    readonly property color effectiveFill: {
+        if (!root.isContainer || root.isBorderless)
+            return "transparent"
 
-    if (root.bgIsCrystal) {
-        return Qt.rgba(
-            root.colBackground.r,
-            root.colBackground.g,
-            root.colBackground.b,
-            root.themeIsDark ? 0.035 : 0.065   //  mucho más limpio
-        )
+        if (root.bgIsCrystal) {
+            return Qt.rgba(
+                root.colBackground.r,
+                root.colBackground.g,
+                root.colBackground.b,
+                root.themeIsDark ? 0.035 : 0.065
+            )
+        }
+
+        return root.colBackground
     }
-
-    return root.colBackground
-}
     readonly property color effectiveBorderColor: {
         if (Appearance.colors.isDark) return Qt.rgba(1, 1, 1, root.borderOpacity)
         return Qt.rgba(0, 0, 0, 0.14)
@@ -195,13 +202,21 @@ readonly property color effectiveFill: {
 
         anchors.margins: root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0)
 
-        anchors.topMargin: root.bridgeMode ? 0
-            : (root.cornerIsFloat ? root.effectiveEdgeInset
-                : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
+        anchors.topMargin: {
+            if (forcePillStyle) return root.effectiveEdgeInset;
+            if (root.bridgeMode) return 0;
+            if (root.cornerIsFloat) return root.effectiveEdgeInset;
+            if (isActuallyHybrid && !vertical && !isBottom) return 0;
+            return root.vertical ? 0 : root.effectiveEdgeInset;
+        }
 
-        anchors.bottomMargin: root.bridgeMode ? 0
-            : (root.cornerIsFloat ? root.effectiveEdgeInset
-                : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
+        anchors.bottomMargin: {
+            if (forcePillStyle) return root.effectiveEdgeInset;
+            if (root.bridgeMode) return 0;
+            if (root.cornerIsFloat) return root.effectiveEdgeInset;
+            if (isActuallyHybrid && !vertical && isBottom) return 0;
+            return root.vertical ? 0 : root.effectiveEdgeInset;
+        }
 
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
@@ -215,7 +230,6 @@ readonly property color effectiveFill: {
 
     Component {
         id: notchBackgroundComponent
-
         Item {
             anchors.fill: parent
 
@@ -402,9 +416,8 @@ readonly property color effectiveFill: {
                                   ? Qt.rgba(0, 0, 0, 0.20)
                                   : Qt.rgba(0, 0, 0, 0.10)
                 }
-    }
+            }
 
-           
             Rectangle {
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -456,18 +469,18 @@ readonly property color effectiveFill: {
             readonly property bool showCrystal: root.bgIsCrystal
             readonly property bool showSolid: !root.bgIsCrystal
 
-           gradient: Gradient {
-    GradientStop {
-        position: 0
-        color: root.bgIsCrystal
-               ? Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.18)
-               : root.effectiveFill
-    }
-    GradientStop {
-        position: 1
-        color: root.effectiveFill
-    }
-}
+            gradient: Gradient {
+                GradientStop {
+                    position: 0
+                    color: root.bgIsCrystal
+                           ? Qt.rgba(1, 1, 1, root.themeIsDark ? 0.06 : 0.18)
+                           : root.effectiveFill
+                }
+                GradientStop {
+                    position: 1
+                    color: root.effectiveFill
+                }
+            }
 
             color: root.bgIsCrystal ? "transparent" : root.effectiveFill
 
@@ -523,7 +536,7 @@ readonly property color effectiveFill: {
                                   : Qt.rgba(0, 0, 0, 0.12)
                 }
 
-               }
+            }
 
             Rectangle {
                 anchors.top: parent.top
@@ -591,25 +604,22 @@ readonly property color effectiveFill: {
             columnSpacing: root.unifyInside ? 0 : root.spacing
             rowSpacing: root.unifyInside ? 0 : root.spacing
 
-            // Ajuste hijos NO dibujen cápsulas cuando es cristal unificado
-          Component.onCompleted: updateChildContainers()
-onVisibleChildrenChanged: updateChildContainers()
+            Component.onCompleted: updateChildContainers()
+            onVisibleChildrenChanged: updateChildContainers()
 
-function updateChildContainers() {
-    for (let i = 0; i < gridLayout.data.length; i++) {
-        let c = gridLayout.data[i]
-        if (!c)
-            continue
+            function updateChildContainers() {
+                for (let i = 0; i < gridLayout.data.length; i++) {
+                    let c = gridLayout.data[i]
+                    if (!c)
+                        continue
 
-        if (c.hasOwnProperty("isContainer"))
-            c.isContainer = !root.unifyChildChips
+                    if (c.hasOwnProperty("isContainer"))
+                        c.isContainer = !root.unifyChildChips
 
-        if (c.hasOwnProperty("forceNoContainer"))
-            c.forceNoContainer = root.unifyChildChips
+                    if (c.hasOwnProperty("forceNoContainer"))
+                        c.forceNoContainer = root.unifyChildChips
+                }
+            }
+        }
     }
 }
-         }
-    }
-}
-    
-

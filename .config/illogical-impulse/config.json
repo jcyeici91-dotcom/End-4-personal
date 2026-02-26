@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/Luffy_from_One_Piece_5160x2160.jpeg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/1348174.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2772.3906250000005,
-                "y": 1362.1875
+                "x": 2819.9296875,
+                "y": 1630.984375
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2636.4062500000005,
-                "y": 203.12890625
+                "x": 2769.39453125,
+                "y": 240.0703125
             }
         }
     },
