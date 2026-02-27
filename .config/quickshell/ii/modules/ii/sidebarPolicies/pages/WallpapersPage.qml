@@ -248,6 +248,12 @@ Item {
             }
         }
 
+        ThemePaletteStrip {
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            Layout.bottomMargin: 4
+        }
+
         GridView {
             id: wallGrid
             Layout.fillWidth: true
@@ -474,8 +480,7 @@ Item {
                 }
 
                 Text {
-                    text: Translation.tr("Wallpapers.FolderLabel")
-                        .arg(wallpaperModel.folder.toString().replace("file://", ""))
+                    text: Translation.tr("Wallpapers.FolderLabel").arg(wallpaperModel.folder.toString().replace("file://", ""))
                     color: page.onSurfaceMuted
                     font.pixelSize: 11
                     font.family: page.fontMain
@@ -486,4 +491,3 @@ Item {
         }
     }
 }
-

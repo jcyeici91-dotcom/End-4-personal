@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "samurai"
+            "type": "honey_cream"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/39.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/unknown_1Resized.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 98.80468750000045,
-                "y": 284.3515625
+                "x": 700.0546875000005,
+                "y": 565.95703125
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2723.8359375,
-                "y": 1625.91015625
+                "x": 2742.00390625,
+                "y": 1718.984375
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2722.17578125,
-                "y": 368.03125
+                "x": 1655.4453125,
+                "y": 245.515625
             }
         }
     },
@@ -213,7 +213,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rect",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
