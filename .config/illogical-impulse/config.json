@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "smoke_blue"
+            "type": "samurai"
         },
         "transparency": {
             "automatic": true,
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 269.34765625000045,
-                "y": 458.32421875
+                "x": 98.80468750000045,
+                "y": 284.3515625
             },
             "media": {
                 "enable": true,
@@ -213,7 +213,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
