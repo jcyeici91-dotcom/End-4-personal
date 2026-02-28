@@ -331,42 +331,27 @@ Singleton {
     property var modelsOfProviders: baseModels
 
     function mergeModelsFromList(base, extraList) {
-    var result = {}
 
-    // Copia base de forma segura
-    if (base && typeof base === "object") {
+        var result = {}
         for (var provider in base) {
-            var baseVal = base[provider]
-            if (Array.isArray(baseVal)) result[provider] = baseVal.slice()
-            else if (baseVal === null || baseVal === undefined) result[provider] = []
-            else result[provider] = [baseVal]
+            result[provider] = base[provider].slice()
         }
-    }
-
-    // Mezcla extras SOLO si es lista
-    if (Array.isArray(extraList)) {
-        for (var i = 0; i < extraList.length; i++) {
-            var item = extraList[i]
-            if (!item || typeof item !== "object") continue
-
-            for (var provider2 in item) {
-                var v = item[provider2]
-
-                // Convierte cualquier cosa rara a array
-                var addArr = Array.isArray(v) ? v : (v === null || v === undefined ? [] : [v])
-
-                if (Array.isArray(result[provider2])) {
-                    result[provider2] = result[provider2].concat(addArr)
-                } else {
-                    result[provider2] = addArr.slice()
+        
+        if (extraList) {
+            for (var i = 0; i < extraList.length; i++) {
+                var item = extraList[i]
+                for (var provider in item) {
+                    if (result[provider]) {
+                        result[provider] = result[provider].concat(item[provider])
+                    } else {
+                        result[provider] = item[provider].slice()
+                    }
                 }
             }
         }
+        
+        return result
     }
-
-    return result
-}
-
 
     function getModelProvider(providerKey, modelValue) {
         if (!modelsOfProviders[providerKey]) {
@@ -395,13 +380,11 @@ Singleton {
     property string pendingFilePath: ""
 
     Component.onCompleted: {
-    setModel(currentModelId, false, false) // Do necessary setup for model
-    const extra = Config?.options?.ai?.extraModels
-    if (Array.isArray(extra) && extra.length > 0) {
-        modelsOfProviders = mergeModelsFromList(baseModels, extra)
+        setModel(currentModelId, false, false); // Do necessary setup for model
+        if (Config.options.ai.extraModels.length > 0) {
+            modelsOfProviders = mergeModelsFromList(baseModels, Config.options.ai.extraModels)
+        }
     }
-}
-
 
     function guessModelLogo(model) {
         if (model.includes("llama")) return "ollama-symbolic";

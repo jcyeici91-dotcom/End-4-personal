@@ -8,30 +8,12 @@ import Quickshell.Io
 
 ContentPage {
     id: page
+    readonly property int index: 4
+    property bool register: parent.register ?? false
     forceWidth: true
 
-    property bool hyprscrollingPluginEnabled: false
-    property bool pluginStateFetched: false
-
-    Process {
-        running: page.contentY > 500 && !pluginStateFetched // fetching the content when scrolled a little to prevent lags
-        command: [ "hyprpm", "list"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let rawOutput = this.text;
-        
-                let cleanOutput = rawOutput.replace(/\x1B\[[0-9;]*[JKmsu]/g, '');
-                let flatText = cleanOutput.replace(/[│└─→]/g, ' ').replace(/\s+/g, ' ');
-
-                let pluginEnabled = flatText.includes("Plugin hyprscrolling enabled: true")
-                page.hyprscrollingPluginEnabled = pluginEnabled
-                page.pluginStateFetched = true
-            }
-        } 
-    }
-
     ContentSection {
-        icon: "keyboard"
+        icon: "model_training"
         title: Translation.tr("AI")
 
         ConfigSwitch {
@@ -582,9 +564,10 @@ ContentPage {
 
         ConfigRow {
             ContentSubsection {
-                title: Translation.tr("Sidebars position")
+                title: Translation.tr("Sidebar position")
 
                 ConfigSelectionArray {
+                    register: true
                     currentValue: Config.options.sidebar.position
                     onSelected: newValue => {
                         Config.options.sidebar.position = newValue;
@@ -619,6 +602,7 @@ ContentPage {
             title: Translation.tr("Quick toggles")
             
             ConfigSelectionArray {
+                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.sidebar.quickToggles.style
                 onSelected: newValue => {
@@ -904,6 +888,7 @@ ContentPage {
             title: Translation.tr("Overview style")
 
             ConfigSelectionArray {
+                register: true
                 currentValue: Config.options.overview.style
                 onSelected: newValue => {
                     Config.options.overview.style = newValue
@@ -990,7 +975,6 @@ ContentPage {
             }
 
             ConfigSpinBox {
-                enabled: Config.options.overview.hyprscrollingImplementation.enable
                 icon: "width"
                 text: Translation.tr("Max workspace width")
                 value: Config.options.overview.hyprscrollingImplementation.maxWorkspaceWidth
@@ -1005,6 +989,7 @@ ContentPage {
             ConfigRow {
                 uniform: true
                 ConfigSelectionArray {
+                    register: true
                     currentValue: Config.options.overview.orderRightLeft
                     onSelected: newValue => {
                         Config.options.overview.orderRightLeft = newValue
@@ -1023,6 +1008,7 @@ ContentPage {
                     ]
                 }
                 ConfigSelectionArray {
+                    register: true
                     Layout.leftMargin: 50
                     currentValue: Config.options.overview.orderBottomUp
                     onSelected: newValue => {
@@ -1062,6 +1048,7 @@ ContentPage {
             title: Translation.tr("Background style")
             visible: Config.options.overview.style === "scrolling"
             ConfigSelectionArray {
+                register: true
                 currentValue: Config.options.overview.scrollingStyle.backgroundStyle
                 onSelected: newValue => {
                     Config.options.overview.scrollingStyle.backgroundStyle = newValue
@@ -1083,51 +1070,6 @@ ContentPage {
                         value: "transparent"
                     }
                 ]
-            }
-        }
-
-
-
-        ContentSubsection {
-            title: Translation.tr("Hyprscrolling plugin implementation")
-
-            ConfigSwitch {
-                buttonIcon: "view_carousel"
-                text: Translation.tr("Use hyprscrolling implementation")
-                checked: Config.options.overview.hyprscrollingImplementation.enable
-                onCheckedChanged: {
-                    Config.options.overview.hyprscrollingImplementation.enable = checked;
-                }
-            }
-        }
-
-        RowLayout {
-            Layout.topMargin: 10
-            StyledText {
-                property bool firstError: page.hyprscrollingPluginEnabled && !configEnabled
-                property bool secondError: !page.hyprscrollingPluginEnabled & configEnabled
-                property bool configEnabled: Config.options.overview.hyprscrollingImplementation.enable
-                Layout.leftMargin: 10
-                color: firstError || secondError ? Appearance.colors.colError : Appearance.colors.colSubtext
-                font.pixelSize: Appearance.font.pixelSize.smallie
-                text: firstError ? Translation.tr("Hyprscrolling plugin is installed. To ensure a better experience\nplease enable the ‘implementation’ option.") :
-                    secondError ? Translation.tr("Hyprscrolling plugin is not installed. To ensure a better experience\nplease disable the ‘implementation’ option.") :
-                    Translation.tr("Plese refer to documentation for more information about how to\nimplement hyprscrolling plugin to properly work with this shell")
-                    
-            }
-            Item {
-                Layout.fillWidth: true
-            }
-            RippleButtonWithIcon {
-                buttonRadius: Appearance.rounding.full
-                materialIcon: "open_in_new"
-                mainText: Translation.tr("Open docs")
-                onClicked: {
-                    Qt.openUrlExternally(`https://github.com/vaguesyntax/ii-vynx?tab=readme-ov-file#-hyprscrolling-implementation-`);
-                }
-                StyledToolTip {
-                    text: "github.com/vaguesyntax/ii-vynx"
-                }
             }
         }
     }

@@ -50,7 +50,7 @@ Item { // Window
 
     property bool indicateXWayland: windowData?.xwayland ?? false
 
-    property bool hyprscrollingEnabled: Config.options.overview.hyprscrollingImplementation.enable
+    property bool hyprscrollingEnabled: false
     property int scrollWidth
     property int scrollHeight
     property int scrollX
@@ -101,11 +101,24 @@ Item { // Window
         animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
     }
 
+    // Windows are not always rendered in scrolling mode, so background stays transparent. This fallback is needed to make sure the window is visible
+    Loader {
+        z: 0
+        active: root.hyprscrollingEnabled
+        anchors.fill: parent
+        sourceComponent: Rectangle { 
+            anchors.fill: parent
+            color: Qt.rgba(0.1,0.1,0.1,1.0)
+        }
+    }
+    
+
     ScreencopyView {
         id: windowPreview
         anchors.fill: parent
         captureSource: root.toplevel
         live: true
+        z: 1
 
         // Color overlay for interactions
         Rectangle {

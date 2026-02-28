@@ -64,11 +64,20 @@ Singleton {
                 property real temperature: 0.5
             }
 
+            property JsonObject background: JsonObject {
+                property JsonObject mediaMode: JsonObject {
+                    property real userScrollOffset: 0
+                }
+            }
+
             property JsonObject cheatsheet: JsonObject {
                 property int tabIndex: 0
             }
 
             property JsonObject sidebar: JsonObject {
+                property JsonObject policies: JsonObject {
+                    property int tab: 0
+                }
                 property JsonObject bottomGroup: JsonObject {
                     property bool collapsed: false
                     property int tab: 0
@@ -82,6 +91,7 @@ Singleton {
 
             property JsonObject idle: JsonObject {
                 property bool inhibit: false
+                property string sessionId: ""
             }
 
             property JsonObject overlay: JsonObject {
@@ -175,6 +185,10 @@ Singleton {
             }
             property JsonObject media: JsonObject {
                 property rect popupRect: Qt.rect(0, 0, 0, 0)
+            }
+
+            property JsonObject wallpaper: JsonObject {
+                property list<string> favourites: []
             }
         }
     }

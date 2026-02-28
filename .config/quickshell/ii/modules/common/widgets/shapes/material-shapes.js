@@ -700,7 +700,7 @@ function doRepeat(points, reps, center, mirroring) {
     }
 }
 
-function customPolygon(pnr, reps, center = new Offset.Offset(0.5, 0.5), mirroring = false) {
+function customPolygon(pnr, reps = 1, center = new Offset.Offset(0.5, 0.5), mirroring = false) {
     const actualPoints = doRepeat(pnr, reps, center, mirroring);
     const vertices = [];
     for (const p of actualPoints) {

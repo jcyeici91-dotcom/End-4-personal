@@ -19,20 +19,34 @@ RowLayout {
     property real to: slider.to
     property real textWidth: 120
 
+    readonly property string currentSearch: SearchRegistry.currentSearch
+    onCurrentSearchChanged: {
+        if (SearchRegistry.currentSearch.toLowerCase() === root.text.toLowerCase()) {
+            highlightOverlay.startAnimation()
+        }
+    }
+
+    
     RowLayout {
         id: row
         spacing: 10
 
         OptionalMaterialSymbol {
+            opacity: 1 - highlightOverlay.opacity
             id: iconWidget
             icon: root.buttonIcon
             iconSize: Appearance.font.pixelSize.larger
         }
         StyledText {
+            opacity: 1 - highlightOverlay.opacity
             id: labelWidget
             Layout.preferredWidth: root.textWidth
             text: root.text
             color: Appearance.colors.colOnSecondaryContainer
+        }
+        HighlightOverlay {
+            id: highlightOverlay
+            visible: false
         }
     }
     

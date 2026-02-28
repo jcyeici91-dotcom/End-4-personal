@@ -9,19 +9,6 @@ ContentPage {
     id: page
     forceWidth: true
 
-    /*
-      Reorganización (más “natural” para configurar una barra):
-      1) Layout (qué va a la izquierda/centro/derecha)
-      2) Posición + Auto-hide (dónde está y cómo se comporta)
-      3) Apariencia (esquinas, grupos, fondo)
-      4) Tamaños (ajuste fino al final)
-      5) Componentes (Workspaces, Active window, Media, Tray, Utility, Timer, Notifications, Tooltips)
-
-      Además:
-      - En opciones: textos cortos seguidos y el más largo al final.
-      - ConfigRow con uniform:true donde conviene para alineación visual.
-    */
-
     property var componentMap: ({
         "workspaces": workspaces,
         "active_window": activeWindow,

@@ -6,6 +6,8 @@ import qs.modules.common.widgets
 
 ContentPage {
     id: page
+    readonly property int index: 3
+    property bool register: parent.register ?? false
     forceWidth: true
     
     property bool allowHeavyLoads: false
@@ -57,6 +59,143 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "music_note"
+        title: Translation.tr("Media mode")
+        tooltip: Translation.tr("Toggle the mode with a keybind that executes 'quickshell:mediaModeToggle'\nExample: bindd = Super, Z, Toggle media mode, global, quickshell:mediaModeToggle")
+
+        ConfigRow {
+
+            ConfigSwitch {
+                Layout.fillWidth: true
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.background.mediaMode.enable
+                onCheckedChanged: {
+                    Config.options.background.mediaMode.enable = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr("Using a keybind instead of this toggle is recommended")
+                }
+            }
+
+            RippleButtonWithShape {
+                Layout.fillWidth: false
+
+                shapeString: Config.options.background.mediaMode.backgroundShape
+                implicitWidth: 60
+                extraIcon: "edit"
+
+                onClicked: {
+                    mediaModeBackgroundShapeLoader.active = !mediaModeBackgroundShapeLoader.active;
+                }
+                StyledToolTip {
+                    text: Translation.tr("Edit the material shape")
+                }
+            }
+        }
+        
+
+        Loader { 
+            id: mediaModeBackgroundShapeLoader
+            active: false
+            visible: active
+            Layout.fillWidth: true
+            sourceComponent: ContentSubsection {
+                title: Translation.tr("Background shape")
+                
+                ConfigSelectionArray {
+                    currentValue: Config.options.background.mediaMode.backgroundShape
+                    onSelected: newValue => {
+                        Config.options.background.mediaMode.backgroundShape = newValue;
+                    }
+                    options: ([ 
+                        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill", "Triangle",
+                        "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny", "Cookie4Sided", "Cookie6Sided", 
+                        "Cookie7Sided", "Cookie9Sided", "Cookie12Sided", "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", 
+                        "SoftBurst", "Flower", "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart" 
+                    ]).map(icon => { 
+                        return { 
+                            displayName: "", 
+                            shape: icon, 
+                            value: icon 
+                        } 
+                    })
+                }
+            }
+        }
+
+        ConfigRow {
+            ConfigSwitch {
+                Layout.fillWidth: false
+                buttonIcon: "animation"
+                text: Translation.tr("Enable background animation")
+                checked: Config.options.background.mediaMode.backgroundAnimation.enable
+                onCheckedChanged: {
+                    Config.options.background.mediaMode.backgroundAnimation.enable = checked;
+                }
+            }
+
+            ConfigSpinBox {
+                enabled: Config.options.background.mediaMode.backgroundAnimation.enable
+                Layout.fillWidth: true
+                icon: "speed"
+                text: Translation.tr("Speed scale")
+                value: Config.options.background.mediaMode.backgroundAnimation.speedScale
+                from: 0
+                to: 100
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.background.mediaMode.backgroundAnimation.speedScale = value;
+                }
+
+                MouseArea {
+                    z: -1
+                    id: spinBoxMouseArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
+
+                StyledToolTip {
+                    extraVisibleCondition: spinBoxMouseArea.containsMouse
+                    text: Translation.tr("1: very slow | 10: default | 20: 2x speed...")
+                }
+            }
+        }
+        
+        ConfigSwitch {
+            buttonIcon: "format_color_fill"
+            text: Translation.tr("Change shell color to match album art")
+            checked: Config.options.background.mediaMode.changeShellColor
+            onCheckedChanged: {
+                Config.options.background.mediaMode.changeShellColor = checked;
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Text highlight style")
+            ConfigSelectionArray {
+                currentValue: Config.options.background.mediaMode.syllable.textHighlightStyle
+                onSelected: newValue => {
+                    Config.options.background.mediaMode.syllable.textHighlightStyle = newValue;
+                }
+                options: [
+                    {   
+                        displayName: Translation.tr("Vertical"),
+                        icon: "vertical_distribute",
+                        value: 0
+                    },
+                    {
+                        displayName: Translation.tr("Horizontal"),
+                        icon: "horizontal_distribute",
+                        value: 1
+                    }
+                ]
+            }
+        }
+        
+    }
+
+    ContentSection {
         id: settingsClock
         icon: "clock_loader_40"
         title: Translation.tr("Widget: Clock")
@@ -90,6 +229,7 @@ ContentPage {
                 Layout.fillWidth: true
             }
             ConfigSelectionArray {
+                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.clock.placementStrategy
                 onSelected: newValue => {
@@ -130,6 +270,7 @@ ContentPage {
                 title: Translation.tr("Clock style")
                 Layout.fillWidth: true
                 ConfigSelectionArray {
+                    register: true
                     currentValue: Config.options.background.widgets.clock.style
                     onSelected: newValue => {
                         Config.options.background.widgets.clock.style = newValue;
@@ -153,6 +294,7 @@ ContentPage {
                 title: Translation.tr("Clock style (locked)")
                 Layout.fillWidth: false
                 ConfigSelectionArray {
+                    register: true
                     currentValue: Config.options.background.widgets.clock.styleLocked
                     onSelected: newValue => {
                         Config.options.background.widgets.clock.styleLocked = newValue;
@@ -250,8 +392,8 @@ ContentPage {
                 value: Config.options.background.widgets.clock.digital.font.size
                 usePercentTooltip: false
                 buttonIcon: "format_size"
-                from: 70
-                to: 150
+                from: 50
+                to: 700
                 stopIndicatorValues: [90]
                 onValueChanged: {
                     Config.options.background.widgets.clock.digital.font.size = value;
@@ -286,9 +428,6 @@ ContentPage {
         ContentSubsection {
             visible: settingsClock.cookiePresent
             title: Translation.tr("Cookie clock settings")
-
-            
-            
 
             ConfigSpinBox {
                 enabled: Config.options.background.widgets.clock.cookie.backgroundStyle !== "shape"
@@ -574,44 +713,68 @@ ContentPage {
             }
         }
 
+
         ContentSubsection {
             visible: settingsClock.cookiePresent
             title: Translation.tr("Background style")
 
-            ConfigSelectionArray {
-                currentValue: Config.options.background.widgets.clock.cookie.backgroundStyle
-                onSelected: newValue => {
-                    Config.options.background.widgets.clock.cookie.backgroundStyle = newValue;
+            ConfigRow {
+                spacing: 10
+                ConfigSelectionArray {
+                    Layout.fillWidth: false
+                    currentValue: Config.options.background.widgets.clock.cookie.backgroundStyle
+                    onSelected: newValue => {
+                        Config.options.background.widgets.clock.cookie.backgroundStyle = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: "",
+                            icon: "block",
+                            value: "hide"
+                        },
+                        {
+                            displayName: Translation.tr("Sine"),
+                            icon: "waves",
+                            value: "sine"
+                        },
+                        {
+                            displayName: Translation.tr("Cookie"),
+                            icon: "cookie",
+                            value: "cookie"
+                        },
+                        {
+                            displayName: Translation.tr("Shape"),
+                            icon: "shape_line",
+                            value: "shape"
+                        },
+                    ]
                 }
-                options: [
-                    {
-                        displayName: "",
-                        icon: "block",
-                        value: "hide"
-                    },
-                    {
-                        displayName: Translation.tr("Sine"),
-                        icon: "waves",
-                        value: "sine"
-                    },
-                    {
-                        displayName: Translation.tr("Cookie"),
-                        icon: "cookie",
-                        value: "cookie"
-                    },
-                    {
-                        displayName: Translation.tr("Shape"),
-                        icon: "shape_line",
-                        value: "shape"
-                    },
-                ]
-            }
+
+                RippleButtonWithShape {
+                    visible: Config.options.background.widgets.clock.cookie.backgroundStyle == "shape"
+                    Layout.fillWidth: false
+
+                    shapeString: Config.options.background.widgets.clock.cookie.backgroundShape
+                    implicitWidth: 60
+                    extraIcon: "edit"
+
+                    onClicked: {
+                        backgroundShapeLoader.active = !backgroundShapeLoader.active;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr("Edit the material shape")
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }   
         }
 
-        
         Loader { 
             id: backgroundShapeLoader
-            active: page.allowHeavyLoads && settingsClock.cookiePresent && Config.options.background.widgets.clock.cookie.backgroundStyle === "shape"
+            active: false
             visible: active
             Layout.fillWidth: true
             sourceComponent: ContentSubsection {
@@ -682,6 +845,7 @@ ContentPage {
                 Layout.fillWidth: true
             }
             ConfigSelectionArray {
+                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.weather.placementStrategy
                 onSelected: newValue => {
@@ -725,10 +889,26 @@ ContentPage {
                     Config.options.background.widgets.media.enable = checked;
                 }
             }
+            
+            RippleButtonWithShape {
+                shapeString: Config.options.background.widgets.media.backgroundShape
+                implicitWidth: 60
+                extraIcon: "edit"
+
+                onClicked: {
+                    mediaBackgroundShapeLoader.active = !mediaBackgroundShapeLoader.active;
+                }
+                StyledToolTip {
+                    text: Translation.tr("Edit the material shape")
+                }
+            }
+
             Item {
                 Layout.fillWidth: true
             }
+
             ConfigSelectionArray {
+                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.media.placementStrategy
                 onSelected: newValue => {
@@ -749,17 +929,38 @@ ContentPage {
                         displayName: Translation.tr("Most busy"),
                         icon: "shapes",
                         value: "mostBusy"
-                    },
+                    }
                 ]
             }
         }
 
-        ConfigSwitch {
-            buttonIcon: "colors"
-            text: Translation.tr("Tint art cover")
-            checked: Config.options.background.widgets.media.tintArtCover
-            onCheckedChanged: {
-                Config.options.background.widgets.media.tintArtCover = checked;
+
+        Loader { 
+            id: mediaBackgroundShapeLoader
+            active: false
+            visible: active
+            Layout.fillWidth: true
+            sourceComponent: ContentSubsection {
+                title: Translation.tr("Background shape")
+                
+                ConfigSelectionArray {
+                    currentValue: Config.options.background.widgets.media.backgroundShape
+                    onSelected: newValue => {
+                        Config.options.background.widgets.media.backgroundShape = newValue;
+                    }
+                    options: ([ 
+                        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill", "Triangle",
+                        "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny", "Cookie4Sided", "Cookie6Sided", 
+                        "Cookie7Sided", "Cookie9Sided", "Cookie12Sided", "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", 
+                        "SoftBurst", "Flower", "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart" 
+                    ]).map(icon => { 
+                        return { 
+                            displayName: "", 
+                            shape: icon, 
+                            value: icon 
+                        } 
+                    })
+                }
             }
         }
 
@@ -771,6 +972,29 @@ ContentPage {
                 checked: Config.options.background.widgets.media.useAlbumColors
                 onCheckedChanged: {
                     Config.options.background.widgets.media.useAlbumColors = checked;
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "colors"
+                text: Translation.tr("Tint art cover")
+                checked: Config.options.background.widgets.media.tintArtCover
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.tintArtCover = checked;
+                }
+            }
+        }
+
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "block"
+                text: Translation.tr("Hide all controls")
+                checked: Config.options.background.widgets.media.hideAllButtons
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.hideAllButtons = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr("Buttons will only be visible on hover")
                 }
             }
             ConfigSwitch {

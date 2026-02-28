@@ -13,7 +13,7 @@ import Quickshell.Hyprland
 
 Item {
     id: root
-    property bool hyprscrollingEnabled: Config.options.overview.hyprscrollingImplementation.enable
+    property bool hyprscrollingEnabled: false //FIXME
     property int maxWorkspaceWidth: Config.options.overview.hyprscrollingImplementation.maxWorkspaceWidth
     property int minWorkspaceWidth: (monitorData?.transform % 2 === 1) ? 
         ((monitor.height - monitorData?.reserved[0] - monitorData?.reserved[2]) * root.scale / monitor.scale) :
@@ -255,6 +255,7 @@ Item {
                     scale: root.scale
                     widgetMonitor: HyprlandData.monitors.find(m => m.id == root.monitor.id)
                     windowData: windowByAddress[address]
+                    hyprscrollingEnabled: root.hyprscrollingEnabled
 
                     property int wsId: windowData?.workspace?.id
 

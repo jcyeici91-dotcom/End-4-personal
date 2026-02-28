@@ -10,7 +10,7 @@ You can run the example with Quickshell's runner:
 qs -p example.qml
 ```
 
-https://github.com/user-attachments/assets/142cdd86-2a30-4c77-a9ce-e234b6d0d77e
+https://github.com/user-attachments/assets/8e4e3120-3edb-4acd-8fcf-83aa1b5bb0e0
 
 ### Usage
 

@@ -116,24 +116,34 @@ TabButton {
 
         StyledText {
             id: itemText
-            anchors {
-                top: itemIconBackground.bottom
-                topMargin: 2
-                horizontalCenter: itemIconBackground.horizontalCenter
-            }
-            states: State {
-                name: "expanded"
-                when: root.expanded
-                AnchorChanges {
-                    target: itemText
-                    anchors {
-                        top: undefined
-                        horizontalCenter: undefined
-                        left: itemIconBackground.right
-                        verticalCenter: itemIconBackground.verticalCenter
+            states: [
+                State {
+                    name: "expanded"
+                    when: root.expanded
+                    AnchorChanges {
+                        target: itemText
+                        anchors {
+                            top: undefined
+                            horizontalCenter: undefined
+                            left: itemIconBackground.right
+                            verticalCenter: itemIconBackground.verticalCenter
+                        }
+                    }
+                },
+                State {
+                    name: "minimized"
+                    when: !root.expanded
+                    AnchorChanges {
+                        target: itemText
+                        anchors {
+                            left: undefined
+                            verticalCenter: undefined
+                            top: itemIconBackground.bottom
+                            horizontalCenter: itemIconBackground.horizontalCenter
+                        }
                     }
                 }
-            }
+            ]
             transitions: Transition {
                 AnchorAnimation {
                     duration: Appearance.animation.elementMoveFast.duration

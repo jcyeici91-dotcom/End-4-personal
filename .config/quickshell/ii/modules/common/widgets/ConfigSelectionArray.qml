@@ -31,6 +31,8 @@ Flow {
         },
     ]
     property var currentValue: null
+    property var register: false // not registering every selection array
+
 
     signal selected(var newValue)
 

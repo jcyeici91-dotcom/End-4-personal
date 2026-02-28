@@ -16,7 +16,6 @@ Scope {
 
     Variants {
         id: barVariant
-
         // For each monitor
         property var variantModel: {
             const screens = Quickshell.screens;
@@ -25,30 +24,20 @@ Scope {
                 return screens;
             return screens.filter(screen => list.includes(screen.name));
         }
-
         model: variantModel
-
         LazyLoader {
             id: barLoader
             active: GlobalStates.barOpen && !GlobalStates.screenLocked
-
             required property ShellScreen modelData
             property var monitorIndex: barVariant.variantModel.indexOf(barLoader.modelData)
-
             component: PanelWindow { // Bar window
                 id: barRoot
                 screen: barLoader.modelData
-
-                property int monitorIndex: barLoader.monitorIndex
-
-                // En tu config actual "bottom" significa "lado derecho" para verticalBar
-                property bool rightSide: Config.options.bar.bottom
-
                 property var brightnessMonitor: Brightness.getMonitorForScreen(barLoader.modelData)
 
+                property int monitorIndex: barLoader.monitorIndex
                 property bool hasActiveWindows: false
-                property bool showBarBackground: (barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2)
-                                               || (Config.options.bar.barBackgroundStyle === 1)
+                property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
@@ -57,21 +46,20 @@ Scope {
                         const monitor = HyprlandData.monitors.find(m => m.id === monitorIndex);
                         const wsId = monitor?.activeWorkspace?.id;
 
-                        const hasWindow = wsId
-                            ? HyprlandData.windowList.some(w => w.workspace.id === wsId && !w.floating)
-                            : false;
+                        const hasWindow = wsId ? HyprlandData.windowList.some(w => w.workspace.id === wsId && !w.floating) : false;
 
                         barRoot.hasActiveWindows = hasWindow
                     }
                 }
-
+                
                 Timer {
                     id: showBarTimer
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
                     repeat: false
-                    onTriggered: barRoot.superShow = true
+                    onTriggered: {
+                        barRoot.superShow = true
+                    }
                 }
-
                 Connections {
                     target: GlobalStates
                     function onSuperDownChanged() {
@@ -83,31 +71,34 @@ Scope {
                         }
                     }
                 }
-
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
-
                 exclusionMode: ExclusionMode.Ignore
-                exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
-                    ? 0
-                    : (Appearance.sizes.baseVerticalBarWidth
-                       + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0))
-
+                exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 :
+                    Appearance.sizes.baseVerticalBarWidth + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
                 WlrLayershell.namespace: "quickshell:verticalBar"
+                // WlrLayershell.layer: WlrLayer.Overlay // TODO enable this when bar can hide when fullscreen
                 implicitWidth: Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding
-
-                mask: Region { item: hoverMaskRegion }
+                mask: Region {
+                    item: hoverMaskRegion
+                }
                 color: "transparent"
 
+                // Positioning
                 anchors {
-                    left: !barRoot.rightSide
-                    right: barRoot.rightSide
+                    left: !Config.options.bar.bottom
+                    right: Config.options.bar.bottom
                     top: true
                     bottom: true
                 }
 
-                Component.onCompleted: GlobalFocusGrab.addPersistent(barRoot)
-                Component.onDestruction: GlobalFocusGrab.removePersistent(barRoot)
+                // Include in focus grab
+                Component.onCompleted: {
+                    GlobalFocusGrab.addPersistent(barRoot);
+                }
+                Component.onDestruction: {
+                    GlobalFocusGrab.removePersistent(barRoot);
+                }
 
                 MouseArea  {
                     id: hoverRegion
@@ -126,27 +117,14 @@ Scope {
                     VerticalBarContent {
                         id: barContent
                         implicitWidth: Appearance.sizes.verticalBarWidth
-
-                        // FIX: monitorIndex ahora se pasa al content (y content lo requiere)
-                        monitorIndex: barRoot.monitorIndex
-
-                        // Lado (por si lo usas dentro del content/widgets)
-                        rightSide: barRoot.rightSide
-
                         anchors {
                             top: parent.top
                             bottom: parent.bottom
-
-                            // Default: izquierda
                             left: parent.left
                             right: undefined
-
-                            leftMargin: (Config?.options.bar.autoHide.enable && !barRoot.mustShow)
-                                ? -barContent.implicitWidth
-                                : 0
+                            leftMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.verticalBarWidth : 0
                             rightMargin: 0
                         }
-
                         Behavior on anchors.leftMargin {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
@@ -156,8 +134,7 @@ Scope {
 
                         states: State {
                             name: "right"
-                            when: barRoot.rightSide
-
+                            when: Config.options.bar.bottom
                             AnchorChanges {
                                 target: barContent
                                 anchors {
@@ -167,19 +144,15 @@ Scope {
                                     right: parent.right
                                 }
                             }
-
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-
-                                // FIX CRÍTICO: ocultar por ancho verticalBar, NO por barHeight
-                                anchors.rightMargin: (Config?.options.bar.autoHide.enable && !barRoot.mustShow)
-                                    ? -barContent.implicitWidth
-                                    : 0
+                                anchors.rightMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : 0
                             }
                         }
                     }
 
+                    // Round decorators
                     Loader {
                         id: roundDecorators
                         anchors {
@@ -189,11 +162,11 @@ Scope {
                             right: undefined
                         }
                         width: Appearance.rounding.screenRounding
-                        active: barRoot.showBarBackground && Config.options.bar.cornerStyle === 0 // Hug
+                        active: showBarBackground && Config.options.bar.cornerStyle === 0 // Hug
 
                         states: State {
                             name: "right"
-                            when: barRoot.rightSide
+                            when: Config.options.bar.bottom
                             AnchorChanges {
                                 target: roundDecorators
                                 anchors {
@@ -207,7 +180,6 @@ Scope {
 
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
-
                             RoundCorner {
                                 id: topCorner
                                 anchors {
@@ -217,32 +189,34 @@ Scope {
                                 }
 
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: barRoot.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
-                                corner: RoundCorner.CornerEnum.TopLeft
+                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
 
+                                corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
-                                    name: "right"
-                                    when: barRoot.rightSide
-                                    PropertyChanges { topCorner.corner: RoundCorner.CornerEnum.TopRight }
+                                    name: "bottom"
+                                    when: Config.options.bar.bottom
+                                    PropertyChanges {
+                                        topCorner.corner: RoundCorner.CornerEnum.TopRight
+                                    }
                                 }
                             }
-
                             RoundCorner {
                                 id: bottomCorner
                                 anchors {
                                     bottom: parent.bottom
-                                    left: !barRoot.rightSide ? parent.left : undefined
-                                    right: barRoot.rightSide ? parent.right : undefined
+                                    left: !Config.options.bar.bottom ? parent.left : undefined
+                                    right: Config.options.bar.bottom ? parent.right : undefined
                                 }
-
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: barRoot.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
-                                corner: RoundCorner.CornerEnum.BottomLeft
+                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
 
+                                corner: RoundCorner.CornerEnum.BottomLeft
                                 states: State {
-                                    name: "right"
-                                    when: barRoot.rightSide
-                                    PropertyChanges { bottomCorner.corner: RoundCorner.CornerEnum.BottomRight }
+                                    name: "bottom"
+                                    when: Config.options.bar.bottom
+                                    PropertyChanges {
+                                        bottomCorner.corner: RoundCorner.CornerEnum.BottomRight
+                                    }
                                 }
                             }
                         }
@@ -254,27 +228,44 @@ Scope {
 
     IpcHandler {
         target: "bar"
-        function toggle(): void { GlobalStates.barOpen = !GlobalStates.barOpen }
-        function close(): void { GlobalStates.barOpen = false }
-        function open(): void { GlobalStates.barOpen = true }
+
+        function toggle(): void {
+            GlobalStates.barOpen = !GlobalStates.barOpen
+        }
+
+        function close(): void {
+            GlobalStates.barOpen = false
+        }
+
+        function open(): void {
+            GlobalStates.barOpen = true
+        }
     }
 
     GlobalShortcut {
         name: "barToggle"
         description: "Toggles bar on press"
-        onPressed: GlobalStates.barOpen = !GlobalStates.barOpen
+
+        onPressed: {
+            GlobalStates.barOpen = !GlobalStates.barOpen;
+        }
     }
 
     GlobalShortcut {
         name: "barOpen"
         description: "Opens bar on press"
-        onPressed: GlobalStates.barOpen = true
+
+        onPressed: {
+            GlobalStates.barOpen = true;
+        }
     }
 
     GlobalShortcut {
         name: "barClose"
         description: "Closes bar on press"
-        onPressed: GlobalStates.barOpen = false
+
+        onPressed: {
+            GlobalStates.barOpen = false;
+        }
     }
 }
-

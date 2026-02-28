@@ -80,7 +80,7 @@ ContentPage {
     }
     ContentSection {
         icon: "folder_managed"
-        title: Translation.tr("Dotfiles")
+        title: Translation.tr("Parent-Dots")
 
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
@@ -143,6 +143,71 @@ ContentPage {
                     Qt.openUrlExternally("https://github.com/sponsors/end-4")
                 }
             }
+
+            
+        }
+    }
+
+    ContentSection {
+        icon: "folder_data"
+        title: Translation.tr("Dotfiles")
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 20
+            Layout.topMargin: 10
+            Layout.bottomMargin: 10
+            CustomIcon {
+                width: 80
+                height: 80
+                source: "ii-vynx"
+            }
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                // spacing: 10
+                StyledText {
+                    text: Translation.tr("ii-vynx")
+                    font.pixelSize: Appearance.font.pixelSize.title
+                }
+                StyledText {
+                    text: "https://github.com/vaguesyntax/ii-vynx"
+                    font.pixelSize: Appearance.font.pixelSize.normal
+                    textFormat: Text.MarkdownText
+                    onLinkActivated: (link) => {
+                        Qt.openUrlExternally(link)
+                    }
+                    PointingHandLinkHover {}
+                }
+            }
+        }
+
+        Flow {
+            Layout.fillWidth: true
+            spacing: 5
+
+            RippleButtonWithIcon {
+                materialIcon: "adjust"
+                materialIconFill: false
+                mainText: Translation.tr("Issues")
+                onClicked: {
+                    Qt.openUrlExternally("https://github.com/vaguesyntax/ii-vynx/issues")
+                }
+            }
+            RippleButtonWithIcon {
+                materialIcon: "auto_stories"
+                mainText: Translation.tr("Documentation")
+                onClicked: {
+                    Qt.openUrlExternally("https://github.com/vaguesyntax/ii-vynx/wiki")
+                }
+            }
+            RippleButtonWithIcon {
+                materialIcon: "bug_report"
+                mainText: Translation.tr("Known Issues")
+                onClicked: {
+                    Qt.openUrlExternally("https://github.com/vaguesyntax/ii-vynx/wiki/Known-Issues-and-Limitations")
+                }
+            }
+            
 
             
         }

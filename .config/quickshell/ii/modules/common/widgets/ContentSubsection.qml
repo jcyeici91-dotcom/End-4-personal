@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
@@ -13,12 +14,18 @@ ColumnLayout {
     Layout.topMargin: 4
     spacing: 2
 
+    SearchHandler {
+        searchString: root.title
+    }
+
     RowLayout {
         ContentSubsectionLabel {
+            opacity: 1 - highlightOverlay.opacity
             visible: root.title && root.title.length > 0
             text: root.title
         }
         MaterialSymbol {
+            opacity: 1 - highlightOverlay.opacity
             visible: root.tooltip && root.tooltip.length > 0
             text: "info"
             iconSize: Appearance.font.pixelSize.large
@@ -35,6 +42,10 @@ ColumnLayout {
                     text: root.tooltip
                 }
             }
+        }
+        HighlightOverlay {
+            id: highlightOverlay
+            visible: false
         }
         Item { Layout.fillWidth: true }
     }

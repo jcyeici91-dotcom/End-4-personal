@@ -36,7 +36,6 @@ Window {
         implicitHeight: root.radius * 2
         color: "#685496"
         roundedPolygon: root.shapeGetters[root.shapeIndex]()
-        onProgressChanged: requestPaint()
     }
     //////////////////////////////// End juicy part ////////////////////////////////
 

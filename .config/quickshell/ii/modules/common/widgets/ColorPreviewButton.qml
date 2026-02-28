@@ -8,6 +8,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
+
 RippleButton {
     id: root
     readonly property string builtInThemeDirectory: Directories.defaultThemes
@@ -29,7 +30,7 @@ RippleButton {
 
     readonly property string wallpaperPath: Config.options.background.wallpaperPath
     readonly property string scriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/colors/generate_colors_material.py`)
-    readonly property string grepCommand: "grep -E '^[[:space:]]*(primary|primaryContainer|secondary)[[:space:]]*:' | grep -oE '#[0-9A-Fa-f]{6}'"
+    readonly property string grepCommand: "grep -E '^[[:space:]]*(primary|primaryContainer|secondary)[[:space:]]*:' | grep -oE '#[0-9A-Fa-f]{6}'" // some magic to extract hex colors from the script output
     property string scriptArguments: ` --scheme ${root.colorScheme} --debug | ${root.grepCommand}`
 
     property string fullCommand: `python3 ${root.scriptPath} --color "$(${root.accentColorCommand})" ${root.scriptArguments}`
@@ -111,7 +112,7 @@ RippleButton {
             anchors {
                 centerIn: parent
                 margins: 8
-            }   
+            }    
             implicitWidth: root.implicitHeight - 16
             implicitHeight: root.implicitHeight - 16
             
@@ -147,5 +148,7 @@ RippleButton {
                 ctx.fill();
             }
         }
+
     }
+
 }

@@ -1,3 +1,4 @@
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -34,6 +35,14 @@ MouseArea {
     hoverEnabled: true
     onClicked: root.activated()
 
+    function getWallhavenId(url) {
+        const urlStr = url.toString()
+        const fileName = urlStr.split('/').pop() 
+        const fileNameWithoutExt = fileName.split('.')[0] 
+        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i)
+        return match ? match[1] : null
+    }
+    
     Rectangle {
         id: background
         anchors.fill: parent
@@ -120,6 +129,74 @@ MouseArea {
                 }
 
                 Loader {
+                    id: similarImageButtonLoader
+                    active: root.getWallhavenId(fileModelData.fileName) && root.useThumbnail
+                    
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: 8
+
+                    asynchronous: true
+                    sourceComponent: WallpaperActionButton {
+                        id: button
+                        buttonIcon: "image_search"
+                        buttonFill: 1
+                        tooltipText: Translation.tr("Search for similar images")
+
+                        colBackground: root.containsMouse ? Appearance.colors.colSecondaryContainerHover : "transparent"
+
+                        property int wallpaperTabIndex: {
+                            let index = 0;
+                            if (Config.options.policies.ai !== 0) index++;
+                            if (Config.options.policies.translator !== 0) index++;
+                            return Config.options.policies.wallpapers !== 0 ? index : -1;
+                        }
+
+                        onClicked: {
+                            if (button.wallpaperTabIndex === -1) {
+                                console.log("Wallpaper policies tab is disabled, cannot search for similar images. TODO: add an indicator to user");
+                                return;
+                            }
+                            WallpaperBrowser.addSimilarImageMessage(Translation.tr("Searching for a similar image:"), fileModelData.filePath)
+                            WallpaperBrowser.moreLikeThisPicture(root.getWallhavenId(fileModelData.fileName), 1);
+                            Persistent.states.sidebar.policies.tab = button.wallpaperTabIndex;
+                            
+                            GlobalStates.policiesPanelOpen = true;
+                            GlobalStates.wallpaperSelectorOpen = false;
+                        }
+                    }
+                }
+
+                FadeLoader {
+                    id: favouriteButtonLoader
+                    shown: !root.isDirectory && (root.containsMouse || isFavourite)
+
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 8
+
+                    property bool isFavourite: Persistent.states.wallpaper.favourites.includes(fileModelData.filePath)
+
+                    sourceComponent: WallpaperActionButton {
+                        buttonIcon: favouriteButtonLoader.isFavourite ? "favorite" : "favorite_border"
+                        buttonFill: favouriteButtonLoader.isFavourite ? 1 : 0
+                        tooltipText: Translation.tr("Toggle favourite")
+
+                        onClicked: {
+                            const favs = Array.from(Persistent.states.wallpaper.favourites);
+                            const path = fileModelData.filePath;
+                            const index = favs.indexOf(path);
+                            if (index === -1) {
+                                favs.push(path);
+                            } else {
+                                favs.splice(index, 1);
+                            }
+                            Persistent.states.wallpaper.favourites = favs;
+                        }
+                    }
+                }
+
+                Loader {
                     id: iconLoader
                     active: !root.useThumbnail
                     anchors.fill: parent
@@ -145,6 +222,38 @@ MouseArea {
                 }
                 text: fileModelData.fileName
             }
+        }
+    }
+
+
+    component WallpaperActionButton: RippleButton {
+        id: button
+
+        property alias buttonIcon: materialSymbol.text
+        property alias buttonFill: materialSymbol.fill
+        property alias tooltipText: tooltip.text
+
+        implicitWidth: 30
+        implicitHeight: 30
+
+        colBackground: Appearance.colors.colSecondaryContainer
+        colBackgroundHover: Appearance.colors.colSecondaryContainerHover
+        colRipple: Appearance.colors.colSecondaryContainerActive
+
+        MaterialSymbol {
+            id: materialSymbol
+
+            text: button.buttonIcon
+            fill: button.buttonFill
+
+            anchors.centerIn: parent
+            color: Appearance.colors.colPrimary
+            font.pixelSize: Appearance.font.pixelSize.large
+        }
+
+        StyledToolTip {
+            id: tooltip
+            text: button.tooltipText
         }
     }
 }
