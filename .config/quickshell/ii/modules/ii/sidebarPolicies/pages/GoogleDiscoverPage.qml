@@ -1394,46 +1394,7 @@ Item {
         }
     }
 
-    Process {
-        id: procTransfers
-        property var seenTransfers: ({})
-        
-        property string rssUrl: "https://news.google.com/rss/search?q=fichaje+OR+traspaso+OR+oficial+(f%C3%BAtbol+OR+premier+OR+liga+OR+serie+a)&hl=es-419&gl=ES&ceid=ES:es-419"
-
-        function checkTransfers() {
-            command = ["curl", "-s", "-L", rssUrl]
-            running = true
-        }
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (text && text.length > 80) {
-                    var items = parseXMLToItems(text, false)
-                    for (var i = 0; i < items.length; i++) {
-                        var it = items[i]
-                        var titleLower = it.title.toLowerCase()
-                        
-                        //  notificar
-                        var isTransfer = titleLower.includes("oficial") || 
-                                         titleLower.includes("fichaje") || 
-                                         titleLower.includes("acuerdo") ||
-                                         titleLower.includes("traspaso");
-                                         
-                        if (isTransfer) {
-                               if (procTransfers.seenTransfers[it.link] !== true) {
-                                procTransfers.seenTransfers[it.link] = true
-                                
-                                procNotify.send("Mercado de Fichajes", it.title + "\n\nFuente: " + it.source, "normal")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    Process {
+     Process {
         id: procNews
 
         property var queue: []
@@ -1578,19 +1539,9 @@ Item {
         onTriggered: procNews.loadNews()
     }
     
-    // Timer para revisar los fichajes
-    Timer {
-        interval: 600000 // Cada 10 minutos 
-        running: true
-        repeat: true
-        onTriggered: procTransfers.checkTransfers()
-    }
-
     Component.onCompleted: {
         procNews.loadNews()
         procScores.startLoadScores()
         
-        // Ejecutamos la búsqueda de traspasos al iniciar
-        procTransfers.checkTransfers()
-    }
+           }
 }

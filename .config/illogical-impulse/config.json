@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "mellow_mustard"
+            "type": "honey_cream"
         },
         "transparency": {
             "automatic": true,
@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/08.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/39.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 128.92968750000045,
-                "y": 363.09375
+                "x": 247.97265625000045,
+                "y": 328.984375
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 1436.08203125,
-                "y": 1645.125
+                "x": 2660.06640625,
+                "y": 1533.67578125
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 1785.0937499999998,
-                "y": 1288.34375
+                "x": 2541.82421875,
+                "y": 393.89453125
             }
         }
     },
@@ -211,7 +211,7 @@
         "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 1,
+        "cornerStyle": 0,
         "floatStyleShadow": true,
         "groupBackgroundStyle": "rect",
         "indicators": {
