@@ -124,7 +124,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/unknown_1Resized.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/08.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 283.85937500000045,
-                "y": 150.66796875000003
+                "x": 128.92968750000045,
+                "y": 363.09375
             },
             "media": {
                 "enable": true,
@@ -208,12 +208,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
