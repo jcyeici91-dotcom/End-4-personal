@@ -58,11 +58,10 @@ Item {
 
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
     readonly property bool useGlassMode: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
-
     readonly property bool useOverlayBg: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
 
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
-    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0) // 0 Hug | 1 Float | 2 Rect
+    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
     readonly property bool isBottom: (Config?.options?.bar?.bottom ?? false)
 
     readonly property bool allowFullBarBackgroundInHybrid: (useHybridGroups && showSolidBackground)
@@ -257,6 +256,7 @@ Item {
                     : ColorUtils.transparentize(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.90 : 0.84)
                 Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
                 Behavior on border.color { ColorAnimation { duration: 220; easing.type: Easing.InOutQuad } }
+
                 Item {
                     anchors.fill: parent
                     visible: root.useGlassMode
@@ -425,7 +425,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-       anchors.leftMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
+        anchors.leftMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
         width: 1
     }
 
@@ -452,14 +452,14 @@ Item {
     Component {
         id: leftHybridComponent
         Bar.BarGroup {
-        forcePillStyle: true
+            forcePillStyle: true
             vertical: false
             spacing: 4
             isContainer: true
             autoHide: false
             padding: 6
             edgeInset: 2
-            attachScreenLeft: false // Esto evita el efecto notch en el lado izquierdo
+            attachScreenLeft: false
             width: implicitWidth
             Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
             Repeater {
@@ -531,8 +531,7 @@ Item {
             id: middleHybridComponent
             Item {
                 anchors.fill: parent
-
-                   Rectangle {
+                Rectangle {
                     id: middleTopBridge
                     z: -9
                     visible: (!root.isBottom) && root.bridgeEnabled
@@ -543,7 +542,6 @@ Item {
                     anchors.right: centerRightLoader.active ? centerRightLoader.right : centerCenterGroup.right
                     height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
                 }
-
                 Rectangle {
                     id: middleBottomBridge
                     z: -9
@@ -555,7 +553,6 @@ Item {
                     anchors.right: centerRightLoader.active ? centerRightLoader.right : centerCenterGroup.right
                     height: Math.round(root.bridgeBandPx + root.seamOverlapPx)
                 }
-
                 Loader {
                     id: centerLeftLoader
                     anchors.top: parent.top
@@ -649,7 +646,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.right: rightStopper.left
-      anchors.rightMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
+        anchors.rightMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
         active: true
         sourceComponent: root.useHybridGroups ? rightHybridComponent : rightClassicComponent
     }
@@ -668,7 +665,7 @@ Item {
     Component {
         id: rightHybridComponent
         Bar.BarGroup {
-        forcePillStyle: true
+            forcePillStyle: true
             vertical: false
             spacing: 4
             isContainer: true

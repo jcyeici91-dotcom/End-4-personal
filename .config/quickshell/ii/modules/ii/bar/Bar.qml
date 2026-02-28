@@ -45,8 +45,15 @@ Scope {
                 readonly property bool pushWindows: !!Config?.options?.bar?.autoHide?.pushWindows
                 readonly property bool deadPixelFix: !!Config?.options?.interactions?.deadPixelWorkaround?.enable
 
-                // 0 = glass(transparent), 1 = always visible, 2 = adaptive
-                readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+                // Pseudo-Enum para mayor legibilidad
+                QtObject {
+                    id: styleEnum
+                    readonly property int glass: 0
+                    readonly property int alwaysVisible: 1
+                    readonly property int adaptive: 2
+                }
+
+                readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? styleEnum.alwaysVisible)
 
                 // Hybrid groups
                 readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
@@ -55,38 +62,38 @@ Scope {
                 property bool hasActiveWindows: false
 
                 readonly property bool showBarBackground: (
-                    (barBackgroundStyle === 1) ||
-                    (barBackgroundStyle === 0) ||
-                    (barBackgroundStyle === 2 && barRoot.hasActiveWindows)
+                    (barBackgroundStyle === styleEnum.alwaysVisible) ||
+                    (barBackgroundStyle === styleEnum.glass) ||
+                    (barBackgroundStyle === styleEnum.adaptive && barRoot.hasActiveWindows)
                 )
 
                 readonly property color _solidBase: Appearance.colors.colLayer0
+                readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
 
-               readonly property color _glassTint: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
-
-              readonly property color barBackgroundColorForCorners: !barRoot.showBarBackground
+                readonly property color barBackgroundColorForCorners: !barRoot.showBarBackground
                     ? "transparent"
-                    : ((barBackgroundStyle === 0) ? _glassTint : _solidBase)
+                    : ((barBackgroundStyle === styleEnum.glass) ? _glassTint : _solidBase)
+
+                // Optimización de monitores y ventanas
+                property var currentMonitor: {
+                    const screenName = barRoot.screen?.name
+                    return HyprlandData.monitors.find(m => m && m.name === screenName) 
+                        ?? HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) 
+                        ?? null
+                }
+
+                property var activeWsId: currentMonitor?.activeWorkspace?.id
 
                 function recomputeHasActiveWindows() {
-                    const screenName = barRoot.screen?.name
-
-                    let monitor = null
-                    if (screenName) {
-                        monitor = HyprlandData.monitors.find(m => m && m.name === screenName) ?? null
+                    if (!activeWsId) {
+                        barRoot.hasActiveWindows = false
+                        return
                     }
-                    if (!monitor) {
-                        monitor = HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) ?? null
-                    }
-
-                    const wsId = monitor?.activeWorkspace?.id
-                    barRoot.hasActiveWindows = wsId
-                        ? HyprlandData.windowList.some(w => w.workspace?.id === wsId && !w.floating)
-                        : false
+                    barRoot.hasActiveWindows = HyprlandData.windowList.some(w => w.workspace?.id === activeWsId && !w.floating)
                 }
 
                 Connections {
-                    enabled: barRoot.barBackgroundStyle === 2
+                    enabled: barRoot.barBackgroundStyle === styleEnum.adaptive
                     target: HyprlandData
                     function onWindowListChanged() { barRoot.recomputeHasActiveWindows() }
                     function onMonitorsChanged() { barRoot.recomputeHasActiveWindows() }
@@ -131,25 +138,20 @@ Scope {
 
                 mask: Region { item: hoverMaskRegion }
 
-                // Positioning (TOP/BOTTOM)
-                function applyWindowAnchors() {
-                    barRoot.anchors.top = !barRoot.isBottom
-                    barRoot.anchors.bottom = barRoot.isBottom
-                    barRoot.anchors.left = true
-                    barRoot.anchors.right = true
+                // Positioning (TOP/BOTTOM) - Declarativo
+                anchors { 
+                    top: !barRoot.isBottom
+                    bottom: barRoot.isBottom
+                    left: true
+                    right: true 
                 }
 
-                anchors { top: true; bottom: false; left: true; right: true }
-
-                onIsBottomChanged: applyWindowAnchors()
-
                 margins {
-                    right: (barRoot.deadPixelFix && barRoot.anchors.right) * -1
-                    bottom: (barRoot.deadPixelFix && barRoot.anchors.bottom) * -1
+                    right: (barRoot.deadPixelFix && barRoot.anchors.right) ? -1 : 0
+                    bottom: (barRoot.deadPixelFix && barRoot.anchors.bottom) ? -1 : 0
                 }
 
                 Component.onCompleted: {
-                    applyWindowAnchors()
                     barRoot.recomputeHasActiveWindows()
                     GlobalFocusGrab.addPersistent(barRoot)
                 }
@@ -162,8 +164,8 @@ Scope {
 
                     anchors {
                         fill: parent
-                        rightMargin: (barRoot.deadPixelFix && barRoot.anchors.right) * 1
-                        bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) * 1
+                        rightMargin: (barRoot.deadPixelFix && barRoot.anchors.right) ? 1 : 0
+                        bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) ? 1 : 0
                     }
 
                     Item {
@@ -195,8 +197,8 @@ Scope {
                                 ? -Appearance.sizes.barHeight
                                 : 0
 
-                            bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) * -1
-                            rightMargin: (barRoot.deadPixelFix && barRoot.anchors.right) * -1
+                            bottomMargin: (barRoot.deadPixelFix && barRoot.anchors.bottom) ? -1 : 0
+                            rightMargin: (barRoot.deadPixelFix && barRoot.anchors.right) ? -1 : 0
                         }
 
                         Behavior on anchors.topMargin {
@@ -219,26 +221,21 @@ Scope {
                                 anchors.topMargin: 0
                                 anchors.bottomMargin: (barRoot.autoHideEnabled && !barRoot.mustShow)
                                     ? -Appearance.sizes.barHeight
-                                    : ((barRoot.deadPixelFix && barRoot.anchors.bottom) * -1)
+                                    : ((barRoot.deadPixelFix && barRoot.anchors.bottom) ? -1 : 0)
                             }
                         }
                     }
 
                     readonly property bool isHugStyleHere: (Config?.options?.bar?.cornerStyle === 0)
-
                     readonly property bool allowFlatHugPaintingHere: (!barRoot.useHybridGroups)
-
                     readonly property int seamOverlapPx: 2
 
                     // Solo válido en no-hybrid:
                     readonly property color effectiveCornerColor: barRoot.barBackgroundColorForCorners
 
-                      Item {
-                        id: edgeFillers
-                        visible: false // intencional: implementar “bien” en BarContent para Hybrid+Hug
-                    }
+                    // TODO: Implementar edgeFillers adecuadamente en BarContent para Hybrid+Hug
 
-                      Loader {
+                    Loader {
                         id: roundDecorators
 
                         // Si corner color es transparente (adaptive sin ventanas), no cargues nada.
@@ -320,4 +317,3 @@ Scope {
         onPressed: GlobalStates.barOpen = false
     }
 }
-

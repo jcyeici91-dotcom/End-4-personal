@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "mellow_mustard"
         },
         "transparency": {
             "automatic": true,
@@ -165,8 +165,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 700.0546875000005,
-                "y": 565.95703125
+                "x": 283.85937500000045,
+                "y": 150.66796875000003
             },
             "media": {
                 "enable": true,
@@ -184,14 +184,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2742.00390625,
-                "y": 1718.984375
+                "x": 1436.08203125,
+                "y": 1645.125
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 1655.4453125,
-                "y": 245.515625
+                "x": 1785.0937499999998,
+                "y": 1288.34375
             }
         }
     },
@@ -376,7 +376,7 @@
             ],
             "showAppIcons": true,
             "showNumberDelay": 300,
-            "shown": 5,
+            "shown": 3,
             "useNerdFont": false,
             "useWorkspaceMap": true,
             "workspaceMap": [
