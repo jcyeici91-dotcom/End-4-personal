@@ -291,26 +291,28 @@ Item { // Player instance
                             }
                         }
 
-                        TrackChangeButton {
-                            iconName: "skip_next"
-                            downAction: () => root.player?.next()
-                        }
+                    // prueba 
+          TrackChangeButton {
+    iconName: "skip_next"
+    downAction: () => root.player?.next()
+}
 
-                           TrackChangeButton {
-                            iconName: "star"
-                            buttonSize: 18
-                            fill: MprisController.activePlayer == root.player
-                            downAction: () => MprisController.activePlayer = root.player
-                        }
+StyledSwitch {
+    id: mediaModeSwitch
+    Layout.alignment: Qt.AlignVCenter
+    checked: Config.options.background.mediaMode.enable
+    onClicked: {
+        Config.options.background.mediaMode.enable = checked
+    }
+}
 
-                          TrackChangeButton {
-                            iconName: "push_pin"
-                            buttonSize: 18
-                            fill: root.pinned
-                            downAction: () => root.togglePinned()
-                        }
-                    }
-
+TrackChangeButton {
+    iconName: "push_pin"
+    buttonSize: 18
+    fill: root.pinned
+    downAction: () => root.togglePinned()
+}
+                }    
                     RippleButton {
                         id: playPauseButton
                         anchors.right: parent.right
