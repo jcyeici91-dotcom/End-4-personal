@@ -3,12 +3,12 @@ import qs.services
 import QtQuick
 import QtQuick.Controls
 import Qt5Compat.GraphicalEffects 
+import Quickshell.Services.Mpris
 
 // An animated version on LyricsSyllable (i have no idea why it is named as syllable dont judge me)
 
 Item {
     id: root
-    visible: LyricsService.syncedLines.length > 0
     clip: true
 
     readonly property int highlightStyle: Config.options.background.mediaMode.syllable.textHighlightStyle
@@ -16,6 +16,10 @@ Item {
     readonly property bool isPlaying: LyricsService.activePlayer.isPlaying 
     
     property real largeFontSize: Appearance.font.pixelSize.hugeass * 2.0
+
+    Component.onCompleted: {
+        LyricsService.initiliazeLyrics()
+    }
 
     Item {
         id: listMaskSource
@@ -61,7 +65,7 @@ Item {
             highlightMoveDuration: 600
 
             function scrollToCurrentItem() {
-                if (!lyricsList.currentItem) return
+                if (!lyricsList.currentItem || lyricsList.moving) return
                 let item = lyricsList.currentItem
                 let targetY = item.y - (lyricsList.height / 2 - item.height / 2)
                 
@@ -107,20 +111,22 @@ Item {
                     }
 
                     // Maske için kullanılan görünmez metin
-                    Text {
+                    StyledText {
                         id: lyricText
                         text: modelData.text
                         anchors.centerIn: parent
                         width: parent.width - 40 
                         font.pixelSize: root.largeFontSize
-                        font.weight: isCurrent ? Font.Bold : Font.Normal
+                        font.family: Appearance.font.family.title
+                        font.weight: isCurrent ? Font.Bold : Font.DemiBold
+                        font.styleName: "" // Set empty to prevent conflicts, not meaningless
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap
                         visible: false 
                     }
 
                     // Pasif Arka Plan Metni
-                    Text {
+                    StyledText {
                         id: backgroundText
                         text: lyricText.text
                         anchors.fill: lyricText
@@ -163,10 +169,6 @@ Item {
                 }
             }
         }
-    }
-
-    Component.onCompleted: {
-        LyricsService.initiliazeLyrics()
     }
 
     component HorizontalHighlight: LinearGradient {

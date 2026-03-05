@@ -290,19 +290,27 @@ Item { // Player instance
                                 }
                             }
                         }
-
-                    // prueba 
-          TrackChangeButton {
+                   // prueba    
+         TrackChangeButton {
     iconName: "skip_next"
     downAction: () => root.player?.next()
 }
 
-StyledSwitch {
-    id: mediaModeSwitch
-    Layout.alignment: Qt.AlignVCenter
-    checked: Config.options.background.mediaMode.enable
-    onClicked: {
-        Config.options.background.mediaMode.enable = checked
+//StyledSwitch {               // INTERRUPTOR
+ //   id: mediaModeSwitch
+  //  Layout.alignment: Qt.AlignVCenter
+  //  checked: Persistent.states.background.mediaMode.enabled
+  //  onToggled: {
+   //     Persistent.states.background.mediaMode.enabled = checked
+  //  }
+// }
+
+TrackChangeButton {             // ICONO
+    iconName: Persistent.states.background.mediaMode.enabled ? "music_note" : "music_off"
+    fill: Persistent.states.background.mediaMode.enabled
+    downAction: () => {
+        Persistent.states.background.mediaMode.enabled =
+            !Persistent.states.background.mediaMode.enabled
     }
 }
 
@@ -312,7 +320,10 @@ TrackChangeButton {
     fill: root.pinned
     downAction: () => root.togglePinned()
 }
-                }    
+                    }
+
+              // fin prueba 
+              
                     RippleButton {
                         id: playPauseButton
                         anchors.right: parent.right

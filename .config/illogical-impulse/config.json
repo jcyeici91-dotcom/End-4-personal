@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "smoke_blue"
         },
         "transparency": {
             "automatic": true,
@@ -117,16 +117,16 @@
         "hideWhenFullscreen": true,
         "mediaMode": {
             "backgroundAnimation": {
-                "enable": true,
+                "enable": false,
                 "speedScale": 10
             },
-            "backgroundShape": "Pentagon",
+            "backgroundShape": "Square",
             "changeShellColor": false,
-            "enable": true,
             "enableBackgroundAnimation": true,
             "syllable": {
                 "textHighlightStyle": 0
-            }
+            },
+            "togglePerMonitor": false
         },
         "parallax": {
             "autoVertical": false,
@@ -137,7 +137,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/2560x1440.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -148,12 +148,12 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "none",
-                    "hourHandStyle": "fill",
+                    "dialNumberStyle": "full",
+                    "hourHandStyle": "hollow",
                     "hourMarks": true,
-                    "minuteHandStyle": "medium",
-                    "secondHandStyle": "dot",
-                    "sides": 9,
+                    "minuteHandStyle": "thin",
+                    "secondHandStyle": "classic",
+                    "sides": 23,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -178,8 +178,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 283.01171875000045,
-                "y": 141.578125
+                "x": 377.5898437499999,
+                "y": 405.8828125
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -199,14 +199,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2871.5429687499995,
-                "y": 1514.1171875
+                "x": 2767.2265625,
+                "y": 1125
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2708.3007812499995,
-                "y": 364
+                "x": 2724.26953125,
+                "y": 765.1132812499998
             }
         }
     },
@@ -223,12 +223,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 2,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -454,7 +454,7 @@
         "translator": {
             "engine": "auto",
             "sourceLanguage": "auto",
-            "targetLanguage": "auto"
+            "targetLanguage": "Español"
         },
         "ui": "en_US"
     },
@@ -471,7 +471,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 5111,
+            "colorTemperature": 4223,
             "from": "19:00",
             "to": "06:30"
         }
@@ -697,6 +697,10 @@
                     {
                         "size": 1,
                         "type": "powerProfile"
+                    },
+                    {
+                        "size": 1,
+                        "type": "screenSnip"
                     },
                     {
                         "size": 1,

@@ -14,10 +14,8 @@ import Quickshell.Hyprland
 
 Scope {
     id: root
-
-    property bool pinned: false
-
     property bool visible: false
+    property bool pinned: false
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property var realPlayers: MprisController.players
     readonly property var meaningfulPlayers: filterDuplicatePlayers(realPlayers)
@@ -26,54 +24,51 @@ Scope {
     readonly property real widgetHeight: Appearance.sizes.mediaControlsHeight
     property real popupRounding: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
     property list<real> visualizerPoints: []
+    
 
     function filterDuplicatePlayers(players) {
-        let filtered = []
-        let used = new Set()
+        let filtered = [];
+        let used = new Set();
 
         for (let i = 0; i < players.length; ++i) {
             if (used.has(i))
-                continue
-
-            let p1 = players[i]
-            let group = [i]
+                continue;
+            let p1 = players[i];
+            let group = [i];
 
             // Find duplicates by trackTitle prefix
             for (let j = i + 1; j < players.length; ++j) {
-                let p2 = players[j]
-                if (
-                    (p1.trackTitle && p2.trackTitle
-                     && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle)))
-                    || ((p1.position - p2.position <= 2) && (p1.length - p2.length <= 2))
-                ) {
-                    group.push(j)
+                let p2 = players[j];
+                if (p1.trackTitle && p2.trackTitle && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle)) || (p1.position - p2.position <= 2 && p1.length - p2.length <= 2)) {
+                    group.push(j);
                 }
             }
 
             // Pick the one with non-empty trackArtUrl, or fallback to the first
-            let chosenIdx = group.find(idx => players[idx].trackArtUrl && players[idx].trackArtUrl.length > 0)
+            let chosenIdx = group.find(idx => players[idx].trackArtUrl && players[idx].trackArtUrl.length > 0);
             if (chosenIdx === undefined)
-                chosenIdx = group[0]
+                chosenIdx = group[0];
 
-            filtered.push(players[chosenIdx])
-            group.forEach(idx => used.add(idx))
+            filtered.push(players[chosenIdx]);
+            group.forEach(idx => used.add(idx));
         }
-        return filtered
+        return filtered;
     }
 
     Process {
         id: cavaProc
         running: mediaControlsLoader.active
         onRunningChanged: {
-            if (!cavaProc.running)
-                root.visualizerPoints = []
+            if (!cavaProc.running) {
+                root.visualizerPoints = [];
+            }
         }
         command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
         stdout: SplitParser {
             onRead: data => {
                 // Parse `;`-separated values into the visualizerPoints array
-                let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p))
-                root.visualizerPoints = points
+                let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
+                root.visualizerPoints = points;
             }
         }
     }
@@ -81,77 +76,103 @@ Scope {
     Loader {
         id: mediaControlsLoader
         active: GlobalStates.mediaControlsOpen
-
         onActiveChanged: {
-            if (!mediaControlsLoader.active && root.realPlayers.length === 0)
-                GlobalStates.mediaControlsOpen = false
+            if (!mediaControlsLoader.active && root.realPlayers.length === 0) {
+                GlobalStates.mediaControlsOpen = false;
+            }
         }
 
         sourceComponent: PanelWindow {
             id: panelWindow
             visible: true
-
             exclusionMode: ExclusionMode.Ignore
             exclusiveZone: 0
             implicitWidth: root.widgetWidth
             implicitHeight: playerColumnLayout.implicitHeight
             color: "transparent"
             WlrLayershell.namespace: "quickshell:mediaControls"
-
+            
+            readonly property var rect: Persistent.states.media.popupRect
+            readonly property real barThickness: {
+                if (Config.options.bar.vertical) {
+                    return Config.options.bar.sizes.width || 40;
+                } else {
+                    return Config.options.bar.sizes.height || 40;
+                }
+            }
             anchors {
-                top: !Config.options.bar.bottom || Config.options.bar.vertical
-                bottom: Config.options.bar.bottom && !Config.options.bar.vertical
-                left: !(Config.options.bar.vertical && Config.options.bar.bottom)
+                top: true
+                left: !Config.options.bar.vertical || !Config.options.bar.bottom
                 right: Config.options.bar.vertical && Config.options.bar.bottom
             }
-
             margins {
-                top: Config.options.bar.vertical
-                    ? ((panelWindow.screen.height / 2) - root.widgetHeight * 1.5)
-                    : Appearance.sizes.barHeight
-                bottom: Appearance.sizes.barHeight
-                left: Config.options.bar.vertical
-                    ? Appearance.sizes.barHeight
-                    : ((panelWindow.screen.width / 2) - (root.osdWidth / 2) - root.widgetWidth)
-                right: Appearance.sizes.barHeight
+                top: {
+                    if (rect.width === 0) return 0;
+                    if (Config.options.bar.vertical) {
+                        let targetY = rect.y + (rect.height / 2) - (panelWindow.implicitHeight / 2);
+                        return Math.max(0, Math.min(targetY, screen.height - panelWindow.implicitHeight));
+                    } else {
+                        if (!Config.options.bar.bottom) {
+                            return barThickness;
+                        } else {
+                            return screen.height - barThickness - panelWindow.implicitHeight;
+                        }
+                    }
+                }
+                left: {
+                    if (rect.width === 0) return 0;
+                    if (Config.options.bar.vertical) {
+                        if (!Config.options.bar.bottom) {
+                            return barThickness;
+                        }
+                        return 0;
+                    } else {
+                        let targetX = rect.x + (rect.width / 2) - (panelWindow.implicitWidth / 2);
+                        return Math.max(0, Math.min(targetX, screen.width - panelWindow.implicitWidth));
+                    }
+                }
+                right: {
+                    if (rect.width === 0) return 0;
+                    if (Config.options.bar.vertical && Config.options.bar.bottom) {
+                        return barThickness;
+                    }
+                    return 0;
+                }
             }
 
             mask: Region {
                 item: playerColumnLayout
             }
 
-          
-            function updateDismissable() {
-                // Si está pinned, NO se debe cerrar por click afuera
-                if (root.pinned) {
-                    GlobalFocusGrab.removeDismissable(panelWindow)
-                } else {
-                    GlobalFocusGrab.addDismissable(panelWindow)
-                }
-            }
+ function updateDismissable() {
+    if (root.pinned)
+        GlobalFocusGrab.removeDismissable(panelWindow);
+    else
+        GlobalFocusGrab.addDismissable(panelWindow);
+}
 
-            Component.onCompleted: updateDismissable()
+Component.onCompleted: {
+    updateDismissable();
+}
 
-            Component.onDestruction: {
-                // Siempre limpia al destruir
-                GlobalFocusGrab.removeDismissable(panelWindow)
-            }
+Component.onDestruction: {
+    GlobalFocusGrab.removeDismissable(panelWindow);
+}
 
-                Connections {
-                target: root
-                function onPinnedChanged() {
-                    panelWindow.updateDismissable()
-                }
-            }
+Connections {
+    target: root
+    function onPinnedChanged() {
+        panelWindow.updateDismissable();
+    }
+}
 
-                  Connections {
-                target: GlobalFocusGrab
-                function onDismissed() {
-                    if (root.pinned)
-                        return
-                    GlobalStates.mediaControlsOpen = false
-                }
-            }
+Connections {
+    target: GlobalFocusGrab
+    function onDismissed() {
+        if (!root.pinned)
+            GlobalStates.mediaControlsOpen = false;
+    }
+}
 
             ColumnLayout {
                 id: playerColumnLayout
@@ -159,36 +180,39 @@ Scope {
                 spacing: -Appearance.sizes.elevationMargin // Shadow overlap okay
 
                 Repeater {
-                    model: ScriptModel { values: root.meaningfulPlayers }
-
-                    delegate: PlayerControl {
-                        required property MprisPlayer modelData
-                        player: modelData
-                        visualizerPoints: root.visualizerPoints
-                        implicitWidth: root.widgetWidth
-                        implicitHeight: root.widgetHeight
-                        radius: root.popupRounding
-
-                        pinned: root.pinned
-                        onTogglePinned: root.pinned = !root.pinned
+                    model: ScriptModel {
+                        values: root.meaningfulPlayers
                     }
+               delegate: PlayerControl {
+    required property MprisPlayer modelData
+    player: modelData
+    visualizerPoints: root.visualizerPoints
+    implicitWidth: root.widgetWidth
+    implicitHeight: root.widgetHeight
+    radius: root.popupRounding
+    pinned: root.pinned
+    onTogglePinned: root.pinned = !root.pinned
+}
                 }
 
                 Item {
                     // No player placeholder
                     Layout.alignment: {
-                        if (panelWindow.anchors.left)  return Qt.AlignLeft
-                        if (panelWindow.anchors.right) return Qt.AlignRight
-                        return Qt.AlignHCenter
+                        if (panelWindow.anchors.left)
+                            return Qt.AlignLeft;
+                        if (panelWindow.anchors.right)
+                            return Qt.AlignRight;
+                        return Qt.AlignHCenter;
                     }
                     Layout.leftMargin: Appearance.sizes.hyprlandGapsOut
                     Layout.rightMargin: Appearance.sizes.hyprlandGapsOut
-
                     visible: root.meaningfulPlayers.length === 0
                     implicitWidth: placeholderBackground.implicitWidth + Appearance.sizes.elevationMargin
                     implicitHeight: placeholderBackground.implicitHeight + Appearance.sizes.elevationMargin
 
-                    StyledRectangularShadow { target: placeholderBackground }
+                    StyledRectangularShadow {
+                        target: placeholderBackground
+                    }
 
                     Rectangle {
                         id: placeholderBackground
@@ -223,43 +247,43 @@ Scope {
         target: "mediaControls"
 
         function toggle(): void {
-            mediaControlsLoader.active = !mediaControlsLoader.active
+            mediaControlsLoader.active = !mediaControlsLoader.active;
             if (mediaControlsLoader.active)
-                Notifications.timeoutAll()
+                Notifications.timeoutAll();
         }
 
         function close(): void {
-            mediaControlsLoader.active = false
+            mediaControlsLoader.active = false;
         }
 
         function open(): void {
-            mediaControlsLoader.active = true
-            Notifications.timeoutAll()
+            mediaControlsLoader.active = true;
+            Notifications.timeoutAll();
         }
     }
 
     GlobalShortcut {
         name: "mediaControlsToggle"
         description: "Toggles media controls on press"
+
         onPressed: {
-            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
         }
     }
-
     GlobalShortcut {
         name: "mediaControlsOpen"
         description: "Opens media controls on press"
+
         onPressed: {
-            GlobalStates.mediaControlsOpen = true
+            GlobalStates.mediaControlsOpen = true;
         }
     }
-
     GlobalShortcut {
         name: "mediaControlsClose"
         description: "Closes media controls on press"
+
         onPressed: {
-            GlobalStates.mediaControlsOpen = false
+            GlobalStates.mediaControlsOpen = false;
         }
     }
 }
-

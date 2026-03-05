@@ -6,11 +6,10 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Notifications
 
-/**
- * A group of notifications from the same app.
- * Similar to Android's notifications
- */
-MouseArea { // Notification group area
+import qs.modules.ii.ui 1.0
+import "../../ii/bar" as Bar
+
+MouseArea {
     id: root
     property var notificationGroup
     property var notifications: notificationGroup?.notifications ?? []
@@ -21,20 +20,67 @@ MouseArea { // Notification group area
     property real padding: 10
     implicitHeight: background.implicitHeight
 
-    property real dragConfirmThreshold: 70 // Drag further to discard notification
-    property real dismissOvershoot: 20 // Account for gaps and bouncy animations
-    property var qmlParent: root?.parent?.parent // There's something between this and the parent ListView
+    property real dragConfirmThreshold: 70
+    property real dismissOvershoot: 20
+    property var qmlParent: root?.parent?.parent
     property var parentDragIndex: qmlParent?.dragIndex
     property var parentDragDistance: qmlParent?.dragDistance
     property var dragIndexDiff: Math.abs(parentDragIndex - index)
-    property real xOffset: dragIndexDiff == 0 ? parentDragDistance : 
+    property real xOffset: dragIndexDiff == 0 ? parentDragDistance :
         Math.abs(parentDragDistance) > dragConfirmThreshold ? 0 :
         dragIndexDiff == 1 ? (parentDragDistance * 0.3) :
         dragIndexDiff == 2 ? (parentDragDistance * 0.1) : 0
 
+    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
+    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+
+    function _styleFromConfig(v) {
+        switch (v) {
+        case 0: return "glass"
+        case 1: return "solid"
+        case 2: return "adaptive"
+        case 3: return "crystal"
+        default: return "solid"
+        }
+    }
+
+    function _styleFromUIState() {
+        const s = UIState.surfaceStyle
+        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
+    }
+
+    function _normalizeRequestedStyle(s) {
+        if (typeof s !== "string") return "solid"
+        const v = s.toLowerCase().trim()
+        if (v === "visible") return "solid"
+        if (v === "transparent") return "solid"
+        if (v === "glass") return "solid"
+        if (v === "solid" || v === "crystal" || v === "adaptive") return v
+        return "solid"
+    }
+
+    readonly property string resolvedStyle: {
+        if (followGlobalBarStyle) {
+            const s = _styleFromUIState()
+            if (s !== "") return _normalizeRequestedStyle(s)
+        }
+        return _normalizeRequestedStyle(_styleFromConfig(barBackgroundStyleFromConfig))
+    }
+
+    readonly property bool bgIsSolid: resolvedStyle === "solid"
+    readonly property bool bgIsAdaptive: resolvedStyle === "adaptive"
+    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
+
+    readonly property bool hasWindows: (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined)
+        ? UIState.hasWindows
+        : false
+
+    readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasWindows)
+    readonly property bool useCrystalEffects: bgIsCrystal || (bgIsAdaptive && !hasWindows)
+
     function destroyWithAnimation(left = false) {
         root.qmlParent.resetDrag()
-        background.anchors.leftMargin = background.anchors.leftMargin; // Break binding
+        background.anchors.leftMargin = background.anchors.leftMargin;
         destroyAnimation.left = left;
         destroyAnimation.running = true;
     }
@@ -50,7 +96,7 @@ MouseArea { // Notification group area
         });
     }
 
-    SequentialAnimation { // Drag finish animation
+    SequentialAnimation {
         id: destroyAnimation
         property bool left: true
         running: false
@@ -78,7 +124,7 @@ MouseArea { // Notification group area
         root.expanded = !root.expanded;
     }
 
-    DragManager { // Drag manager
+    DragManager {
         id: dragManager
         anchors.fill: parent
         interactive: !expanded
@@ -86,12 +132,12 @@ MouseArea { // Notification group area
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
         onPressed: {
-            if (mouse.button === Qt.RightButton) 
+            if (mouse.button === Qt.RightButton)
                 root.toggleExpanded();
         }
 
         onClicked: (mouse) => {
-            if (mouse.button === Qt.MiddleButton) 
+            if (mouse.button === Qt.MiddleButton)
                 root.destroyWithAnimation();
         }
 
@@ -108,7 +154,7 @@ MouseArea { // Notification group area
         onDragReleased: (diffX, diffY) => {
             if (Math.abs(diffX) > root.dragConfirmThreshold)
                 root.destroyWithAnimation(diffX < 0);
-            else 
+            else
                 dragManager.resetDrag();
         }
     }
@@ -117,13 +163,41 @@ MouseArea { // Notification group area
         target: background
         visible: popup
     }
-    Rectangle { // Background of the notification
+
+    Rectangle {
         id: background
         anchors.left: parent.left
         width: parent.width
-        color: popup ? Appearance.colors.colBackgroundSurfaceContainer : Appearance.colors.colLayer2
+
+        color: showSolidBackground
+            ? (popup ? Appearance.colors.colBackgroundSurfaceContainer : Appearance.colors.colLayer2)
+            : "transparent"
+
+        border.width: showSolidBackground ? 1 : 0
+        border.color: Appearance.colors.colLayer0Border
+
         radius: Appearance.rounding.normal
         anchors.leftMargin: root.xOffset
+
+        Bar.BarBgOverlayGlassBlur {
+            anchors.fill: parent
+            z: 0
+            useGlassMode: useCrystalEffects
+            showSolidBackground: showSolidBackground
+            backgroundColor: popup ? Appearance.colors.colBackgroundSurfaceContainer : Appearance.colors.colLayer2
+            cornerStyle: 0
+            basePadding: 0
+            content: [ Item {} ]
+        }
+
+        Bar.BarBgCrystalOverlay {
+            anchors.fill: parent
+            z: 1
+            useGlassMode: useCrystalEffects
+            showSolidBackground: showSolidBackground
+            backgroundColor: popup ? Appearance.colors.colBackgroundSurfaceContainer : Appearance.colors.colLayer2
+            cornerStyle: 0
+        }
 
         Behavior on anchors.leftMargin {
             enabled: !dragManager.dragging
@@ -133,9 +207,9 @@ MouseArea { // Notification group area
                 easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
             }
         }
-        
+
         clip: true
-        implicitHeight: root.expanded ? 
+        implicitHeight: root.expanded ?
             row.implicitHeight + padding * 2 :
             Math.min(80, row.implicitHeight + padding * 2)
 
@@ -144,37 +218,37 @@ MouseArea { // Notification group area
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
 
-        RowLayout { // Left column for icon, right column for content
+        RowLayout {
             id: row
+            z: 2
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: root.padding
             spacing: 10
 
-            NotificationAppIcon { // Icons
+            NotificationAppIcon {
                 Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: false
                 image: root?.multipleNotifications ? "" : notificationGroup?.notifications[0]?.image ?? ""
                 appIcon: root.notificationGroup?.appIcon
                 summary: root.notificationGroup?.notifications[root.notificationCount - 1]?.summary
-                urgency: root.notifications.some(n => n.urgency === NotificationUrgency.Critical.toString()) ? 
+                urgency: root.notifications.some(n => n.urgency === NotificationUrgency.Critical.toString()) ?
                     NotificationUrgency.Critical : NotificationUrgency.Normal
             }
 
-            ColumnLayout { // Content
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: expanded ? (root.multipleNotifications ? 
-                    (notificationGroup?.notifications[root.notificationCount - 1].image != "") ? 35 : 
+                spacing: expanded ? (root.multipleNotifications ?
+                    (notificationGroup?.notifications[root.notificationCount - 1].image != "") ? 35 :
                     5 : 0) : 0
-                // spacing: 00
+
                 Behavior on spacing {
                     animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
 
-                Item { // App name (or summary when there's only 1 notif) and time
+                Item {
                     id: topRow
-                    // spacing: 0
                     Layout.fillWidth: true
                     property real fontSize: Appearance.font.pixelSize.smaller
                     property bool showAppName: root.multipleNotifications
@@ -186,6 +260,7 @@ MouseArea { // Notification group area
                         anchors.right: expandButton.left
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 5
+
                         StyledText {
                             id: appName
                             elide: Text.ElideRight
@@ -200,9 +275,9 @@ MouseArea { // Notification group area
                                 Appearance.colors.colSubtext :
                                 Appearance.colors.colOnLayer2
                         }
+
                         StyledText {
                             id: timeText
-                            // Layout.fillWidth: true
                             Layout.rightMargin: 10
                             horizontalAlignment: Text.AlignLeft
                             text: NotificationUtils.getFriendlyNotifTimeString(notificationGroup?.time)
@@ -210,6 +285,7 @@ MouseArea { // Notification group area
                             color: Appearance.colors.colSubtext
                         }
                     }
+
                     NotificationGroupExpandButton {
                         id: expandButton
                         anchors.right: parent.right
@@ -226,20 +302,22 @@ MouseArea { // Notification group area
                     }
                 }
 
-                StyledListView { // Notification body (expanded)
+                StyledListView {
                     id: notificationsColumn
                     implicitHeight: contentHeight
                     Layout.fillWidth: true
                     spacing: expanded ? 5 : 3
-                    // clip: true
                     interactive: false
+
                     Behavior on spacing {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
+
                     model: ScriptModel {
-                        values: root.expanded ? root.notifications.slice().reverse() : 
+                        values: root.expanded ? root.notifications.slice().reverse() :
                             root.notifications.slice().reverse().slice(0, 2)
                     }
+
                     delegate: NotificationItem {
                         required property int index
                         required property var modelData
@@ -250,10 +328,12 @@ MouseArea { // Notification group area
                         visible: root.expanded || (index < 2)
                         anchors.left: parent?.left
                         anchors.right: parent?.right
+                        crystalMode: root.useCrystalEffects && !root.showSolidBackground
+                        crystalTextBoost: root.popup ? 0.06 : 0.0
                     }
                 }
-
             }
         }
     }
 }
+

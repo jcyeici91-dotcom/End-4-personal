@@ -92,6 +92,7 @@ Item {
         if (useLineBg) return 0
         if (useRectBg || cornerIsRect) return rectRadius
         if (isBorderless) return startRadius
+        if (root.forcePillStyle) return pillRadius
         return pillRadius
     }
 
@@ -352,9 +353,6 @@ Item {
             anchors.fill: parent
 
             antialiasing: true
-            layer.enabled: root.bgIsCrystal && !root.bridgeMode && root.opacity > 0
-            layer.smooth: true
-            layer.samples: 4
 
             radius: root.rectRadius
 
@@ -454,9 +452,6 @@ Item {
             anchors.fill: parent
 
             antialiasing: true
-            layer.enabled: root.bgIsCrystal && !root.bridgeMode && root.opacity > 0
-            layer.smooth: true
-            layer.samples: 4
 
             readonly property bool showCrystal: root.bgIsCrystal
             readonly property bool showSolid: !root.bgIsCrystal

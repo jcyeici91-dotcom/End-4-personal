@@ -21,32 +21,18 @@ AbstractQuickPanel {
     property real spacing: 6
     property real padding: 6
     readonly property real baseCellWidth: {
+        // This is the wrong calculation, but it looks correct in reality???
+        // (theoretically spacing should be multiplied by 1 column less)
         const availableWidth = root.width - (root.padding * 2) - (root.spacing * (root.columns))
         return availableWidth / root.columns
     }
     readonly property real baseCellHeight: 56
 
     // Toggles
-    // (1) Quitado "nightLight" para que no exista en el panel Android
-    readonly property list<string> availableToggleTypes: [
-        "network", "bluetooth", "idleInhibitor", "easyEffects",
-        /* "nightLight", */  // <-- quitado
-        "darkMode", "cloudflareWarp", "gameMode", "screenSnip", "colorPicker",
-        "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile",
-        "musicRecognition", "antiFlashbang"
-    ]
-
+    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
     readonly property int columns: Config.options.sidebar.quickToggles.android.columns
-
-    // (2) Filtrado: aunque esté en Config, no se dibuja
-    readonly property list<var> toggles: {
-        if (!Config.ready) return []
-        const list = Config.options.sidebar.quickToggles.android.toggles ?? []
-        return list.filter(t => t && t.type !== "nightLight")
-    }
-
+    readonly property list<var> toggles: Config.ready ? Config.options.sidebar.quickToggles.android.toggles : []
     readonly property list<var> toggleRows: toggleRowsForList(toggles)
-
     readonly property list<var> unusedToggles: {
         const types = availableToggleTypes.filter(type => !toggles.some(toggle => (toggle && toggle.type === type)))
         return types.map(type => { return { type: type, size: 1 } })
@@ -56,7 +42,7 @@ AbstractQuickPanel {
     function toggleRowsForList(togglesList) {
         var rows = [];
         var row = [];
-        var totalSize = 0;
+        var totalSize = 0; // Total cols taken in current row
         for (var i = 0; i < togglesList.length; i++) {
             if (!togglesList[i]) continue;
             if (totalSize + togglesList[i].size > columns) {
@@ -67,7 +53,9 @@ AbstractQuickPanel {
             row.push(togglesList[i]);
             totalSize += togglesList[i].size;
         }
-        if (row.length > 0) rows.push(row);
+        if (row.length > 0) {
+            rows.push(row);
+        }
         return rows;
     }
 
@@ -78,14 +66,16 @@ AbstractQuickPanel {
             margins: root.padding
         }
         spacing: 12
-
+        
         Column {
             id: usedRows
             spacing: root.spacing
 
             Repeater {
                 id: usedRowsRepeater
-                model: ScriptModel { values: Array(root.toggleRows.length) }
+                model: ScriptModel {
+                    values: Array(root.toggleRows.length)
+                }
                 delegate: ButtonGroup {
                     id: toggleRow
                     required property int index
@@ -93,7 +83,9 @@ AbstractQuickPanel {
                     property int startingIndex: {
                         const rows = root.toggleRows;
                         let sum = 0;
-                        for (let i = 0; i < index; i++) sum += rows[i].length;
+                        for (let i = 0; i < index; i++) {
+                            sum += rows[i].length;
+                        }
                         return sum;
                     }
                     spacing: root.spacing
@@ -112,7 +104,6 @@ AbstractQuickPanel {
                             onOpenAudioOutputDialog: root.openAudioOutputDialog()
                             onOpenAudioInputDialog: root.openAudioInputDialog()
                             onOpenBluetoothDialog: root.openBluetoothDialog()
-                            // nightLight ya no existe aquí, pero dejo el handler por compatibilidad
                             onOpenNightLightDialog: root.openNightLightDialog()
                             onOpenWifiDialog: root.openWifiDialog()
                         }
@@ -142,7 +133,9 @@ AbstractQuickPanel {
                 spacing: root.spacing
 
                 Repeater {
-                    model: ScriptModel { values: Array(root.unusedToggleRows.length) }
+                    model: ScriptModel {
+                        values: Array(root.unusedToggleRows.length)
+                    }
                     delegate: ButtonGroup {
                         id: unusedToggleRow
                         required property int index
@@ -168,4 +161,3 @@ AbstractQuickPanel {
         }
     }
 }
-

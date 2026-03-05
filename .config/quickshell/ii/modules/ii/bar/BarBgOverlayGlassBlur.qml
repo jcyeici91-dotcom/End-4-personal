@@ -1,6 +1,6 @@
 // BarBgOverlayGlassBlur.qml
 import QtQuick
-import QtQuick.Effects
+import QtQuick.Effects     
 import qs
 import qs.modules.common
 
@@ -12,28 +12,19 @@ Item {
     required property bool showSolidBackground
     required property color backgroundColor
     required property int cornerStyle
-    property int basePadding: 4
 
-    property real chromaticAberration: 0.015 // Intensidad del desfase de color
-    property real iridescenceStrength: 0.30 // Intensidad del gradiente iridiscente (como image_0.png)
-    property real shadowOpacity: 0.18 // Opacidad de la sombra
-    property int shadowBlur: 20 // Desenfoque de la sombra
-
-    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
-    function _isDark(c) { return _lin(c) < 0.6 }
-    readonly property bool themeIsDark: _isDark(Appearance.colors.colLayer0)
-
-    readonly property int outerMargin: (cornerStyle === 1)
-        ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0))
-        : 0
-
-    readonly property int radiusPx: (cornerStyle === 1)
-        ? (Appearance.rounding.windowRounding ?? 18)
-        : 0
+    property int basePadding: 8          
+    property real blurAmount: 0.85       //  nuevo control más intuitivo
+    property real tintIntensity: 0.22    //  brightness/saturation muy alto
+    property real noiseOpacity: 0.07     //  ruido muy sutil
+    property real chromaticAberration: 0.008  // bajado (era muy visible)
+    property real iridescenceStrength: 0.08   // casi no tiene rainbow fuerte
+    property real shadowOpacity: 0.12    // más suave
+    property int shadowBlur: 16          // más pequeño y suave
 
     default property alias content: contentContainer.data
 
-    // 1. Sólido
+    // Fondo sólido 
     Rectangle {
         id: solidBg
         anchors.fill: parent
@@ -44,18 +35,19 @@ Item {
         antialiasing: true
     }
 
-    // 2. Fuente de Desenfoque
+    // Fuente para el desenfoque 
     ShaderEffectSource {
         id: blurSource
         anchors.fill: parent
         anchors.margins: root.outerMargin
-      live: true
+        live: true
         visible: false
-        recursive: true
+        recursive: true       
         smooth: true
+        // textureSize: Qt.size(width * 0.5, height * 0.5)   opcional: bajar resolución para rendimiento
     }
 
-    // 3. Efecto de Cristal Envolvente 
+    //   SOLO MultiEffect 
     MultiEffect {
         id: glassEffect
         anchors.fill: parent
@@ -63,106 +55,77 @@ Item {
         source: blurSource
         visible: root.useGlassMode && !root.showSolidBackground
 
-        // Desenfoque base suave
+        // Controles para look iOS
         blurEnabled: true
-        blurMax: 80
-        blur: 1.0
+        blur: root.blurAmount           // 0.7–0.9 suele verse muy parecido a iOS
+        blurMax: 64                     // 48–96 según densidad de pantalla
+        blurMultiplier: 1.0
 
-        // Sombra paralela suave 
+        // Tinte suave 
+        colorization: root.themeIsDark ? 0.0 : 0.0
+        colorizationColor: root.themeIsDark
+            ? Qt.rgba(0.18, 0.22, 0.30, root.tintIntensity)
+            : Qt.rgba(0.92, 0.94, 0.96, root.tintIntensity)
+
+        brightness: root.themeIsDark ? -0.02 : 0.04     // muy sutil
+        saturation: root.themeIsDark ? 1.05 : 1.10      // leve boost
+
+        // Borde muy fino 
+        maskEnabled: true
+        maskSource: ShaderEffectSource {
+            sourceItem: Rectangle {
+                width: glassEffect.width
+                height: glassEffect.height
+                radius: root.radiusPx
+                color: "white"          // máscara = borde redondeado
+                border.width: 1
+                border.color: "black"   // borde sutil
+            }
+        }
+
+        // Sombra muy suave 
         shadowEnabled: true
         shadowBlur: root.shadowBlur
-        shadowColor: Qt.rgba(0, 0, 0, root.shadowOpacity)
+        shadowOpacity: root.shadowOpacity
+        shadowColor: Qt.rgba(0,0,0,1)
         shadowHorizontalOffset: 0
-        shadowVerticalOffset: 2
-
-        brightness: themeIsDark ? 0.08 : 0.12
-        saturation: 1.15 // Un aumento modesto para los colores de fondo
-
-        opacity: 0.95
-
-            Rectangle {
-            anchors.fill: parent
-            radius: root.radiusPx
-            border.width: 1
-            border.color: themeIsDark
-                ? Qt.rgba(1, 1, 1, 0.12)
-                : Qt.rgba(0, 0, 0, 0.08)
-            color: "transparent"
-        }
+        shadowVerticalOffset: root.themeIsDark ? 1 : 2
     }
 
-   ShaderEffect {
+    
+    //    Ruido muy sutil (vidrio )
+    ShaderEffect {
+        anchors.fill: glassEffect
+        visible: glassEffect.visible && root.noiseOpacity > 0.001
+
+        property real noiseOpacity: root.noiseOpacity
+
+        fragmentShader: "
+            #version 440
+            in vec2 qt_TexCoord0;
+            out vec4 fragColor;
+
+            float random(vec2 st) {
+                return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+            }
+
+            void main() {
+                vec2 uv = qt_TexCoord0 * vec2(1280.0, 720.0); // escala del ruido
+                float n = random(uv + mod(qt_TexCoord0 * 0.0001, 1.0)); // animación muy lenta opcional
+                vec4 color = vec4(vec3(n), 1.0);
+                fragColor = mix(vec4(0.0), color, noiseOpacity * 0.6);
+            }"
+    }
+
+        ShaderEffect {
         id: iridescenceShader
         anchors.fill: parent
         anchors.margins: root.outerMargin
-        
-      property var source: blurSource 
-        
-        visible: root.useGlassMode && !root.showSolidBackground
 
-        // Propiedades uniformes para el shader
+        visible: root.useGlassMode && !root.showSolidBackground && root.iridescenceStrength > 0.01
+        property var source: blurSource
         property real aberration: root.chromaticAberration
         property real iridescence: root.iridescenceStrength
-        property real radius: root.radiusPx
-        property real itemWidth: width
-        property real itemHeight: height
-
-        // Vertex Shader Passthrough
-        vertexShader: "
-            #version 150
-            in vec4 qt_Vertex;
-            in vec2 qt_MultiTexCoord0;
-            out vec2 qt_TexCoord0;
-            uniform mat4 qt_Matrix;
-            void main() {
-                qt_TexCoord0 = qt_MultiTexCoord0;
-                gl_Position = qt_Matrix * qt_Vertex;
-            }
-        "
-
-        // Fragment Shader: Dispersión Cromática e Iridiscencia (Efecto Prismático)
-        fragmentShader: "
-            #version 150
-            in vec2 qt_TexCoord0;
-            out vec4 finalColor;
-            uniform sampler2D source;
-            uniform float aberration;
-            uniform float iridescence;
-            uniform float itemWidth;
-            uniform float itemHeight;
-
-            void main() {
-                vec2 uv = qt_TexCoord0;
-
-                // --- 1. Dispersión Cromática ---
-                vec2 center = vec2(0.5, 0.5);
-                vec2 fromCenter = uv - center;
-                float dist = length(fromCenter);
-                vec2 offset_R = fromCenter * aberration * (1.0 + 2.0 * dist * dist);
-                vec2 offset_B = -offset_R * 0.8;
-
-                vec3 sample_R = texture(source, uv + offset_R).rgb;
-                vec3 sample_G = texture(source, uv).rgb;
-                vec3 sample_B = texture(source, uv + offset_B).rgb;
-
-                vec3 blurredBg = vec3(sample_R.r, sample_G.g, sample_B.b);
-
-                // --- 2. Iridiscencia de Fina Capa ---
-                float irid_dist = length((uv * 2.0 - 1.0) * vec2(1.0, itemWidth/itemHeight));
-                float normalizedDist = smoothstep(0.0, 1.0, irid_dist);
-
-                vec3 irid_color = vec3(0.0);
-                float hueOffset = 0.45 + normalizedDist * 0.65;
-                
-                irid_color.r = 0.5 * (1.0 + cos(6.28318 * (hueOffset + 0.0)));
-                irid_color.g = 0.5 * (1.0 + cos(6.28318 * (hueOffset + 0.33)));
-                irid_color.b = 0.5 * (1.0 + cos(6.28318 * (hueOffset + 0.67)));
-
-                vec3 finalRGB = mix(blurredBg, irid_color, iridescence * smoothstep(0.3, 0.9, normalizedDist));
-
-                finalColor = vec4(finalRGB, 1.0);
-            }
-        "
     }
 
     Item {

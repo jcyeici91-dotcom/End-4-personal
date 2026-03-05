@@ -260,7 +260,7 @@ Item {
                             }
 
                             console.log("[Wallpaper Browser] Dropped image:", fileUrl)
-                            WallpaperBrowser.addSimilarImageMessage("Searching for a similar image:", fileUrl)
+                            WallpaperBrowser.addSimilarImageMessage(Translation.tr("Searching for a similar image:"), fileUrl)
                             root.handleInput(root.commandPrefix + "similar " + wallhavenId);
                         }
                         drop.accept(Qt.CopyAction)

@@ -27,34 +27,33 @@ Singleton {
     property bool screenLockContainsCharacters: false
     property bool screenUnlockFailed: false
     property bool sessionOpen: false
-    
-    // VARIABLE PARA EL MENÚ DESLIZABLE
-    property bool sessionVisible: false 
-
     property bool superDown: false
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
 
+    // VARIABLE PARA EL MENÚ DESLIZABLE
+    property bool sessionVisible: false 
+    
     property bool dashboardPanelOpen: false // formerly sidebarRightOpen
     property bool policiesPanelOpen: false  // formerly sidebarLeftOpen
 
     readonly property bool effectiveLeftOpen: {
         switch (Config.options.sidebar.position) {
-            case "default": return dashboardPanelOpen;
-            case "inverted": return policiesPanelOpen;
-            case "left": return dashboardPanelOpen || policiesPanelOpen;
-            case "right": return false;
-            default: return dashboardPanelOpen;
+            case "default":  return policiesPanelOpen;  
+            case "inverted": return dashboardPanelOpen;  
+            case "left":     return dashboardPanelOpen || policiesPanelOpen;
+            case "right":    return false;
+            default:         return policiesPanelOpen;
         }
     }
     readonly property bool effectiveRightOpen: {
         switch (Config.options.sidebar.position) {
-            case "default": return policiesPanelOpen;
-            case "inverted": return dashboardPanelOpen;
-            case "left": return false;
-            case "right": return dashboardPanelOpen || policiesPanelOpen;
-            default: return policiesPanelOpen;
+            case "default":  return dashboardPanelOpen; 
+            case "inverted": return policiesPanelOpen; 
+            case "left":     return false;
+            case "right":    return dashboardPanelOpen || policiesPanelOpen;
+            default:         return dashboardPanelOpen;
         }
     }
 

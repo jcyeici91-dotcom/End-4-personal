@@ -744,35 +744,45 @@ Item {
             }
         }
 
-        MouseArea {
-            id: mouseControl
-            anchors.fill: parent
-            hoverEnabled: true
-            z: 50
-            preventStealing: true
-            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton | Qt.BackButton | Qt.ForwardButton
+       MouseArea {
+    id: mouseControl
+    anchors.fill: parent
+    hoverEnabled: true
+    z: 50
+    preventStealing: true
+    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton | Qt.BackButton | Qt.ForwardButton
 
-            onPressed: function (event) {
-                event.accepted = true
-                if (!root.activePlayer) return
+    onPressed: function (event) {
+        event.accepted = true
+        if (!root.activePlayer) return
 
-                if (event.button === Qt.MiddleButton) {
-                    root.activePlayer.togglePlaying()
-                } else if (event.button === Qt.BackButton) {
-                    root.activePlayer.previous()
-                } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
-                    root.activePlayer.next()
-                } else if (event.button === Qt.LeftButton) {
-                    GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
-                }
-            }
+        if (event.button === Qt.MiddleButton) {
+            root.activePlayer.togglePlaying()
+        } else if (event.button === Qt.BackButton) {
+            root.activePlayer.previous()
+        } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
+            root.activePlayer.next()
+        } else if (event.button === Qt.LeftButton) {
 
-            onWheel: function (wheel) {
-                wheel.accepted = true
-                if (wheel.angleDelta.y > 0) Audio.incrementVolume()
-                else Audio.decrementVolume()
-            }
+            var globalPos = root.mapToItem(null, 0, 0)
+
+            Persistent.states.media.popupRect = Qt.rect(
+                globalPos.x,
+                globalPos.y,
+                root.width,
+                root.height
+            )
+
+            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
         }
+    }
+
+    onWheel: function (wheel) {
+        wheel.accepted = true
+        if (wheel.angleDelta.y > 0) Audio.incrementVolume()
+        else Audio.decrementVolume()
+    }
+}
 
         Item {
             id: contentRoot
