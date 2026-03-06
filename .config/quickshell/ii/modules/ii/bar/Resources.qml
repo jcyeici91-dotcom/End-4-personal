@@ -324,6 +324,8 @@ MouseArea {
                     active: root.showCatEffective && root.cpuShown && root.enableCatGif
                     visible: active
                     anchors.fill: parent
+                    // mover gif horizontal
+    anchors.topMargin: -8
                     source: "ResourceCat.qml"
                     onLoaded: {
                         if (!item) return

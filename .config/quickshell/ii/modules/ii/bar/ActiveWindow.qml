@@ -1,3 +1,4 @@
+// ActiveWindow.qml
 import qs
 import qs.services
 import qs.modules.common
@@ -19,16 +20,20 @@ Item {
     id: root
 
     property bool vertical: false
-    // Detectamos si la barra está a la derecha o a la izquierda
+    
     readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
 
     property int maxSize: 165
     property bool isFixedSize: Config.options.bar.activeWindow.fixedSize
-    // Le damos un tamaño un poco más largo en vertical para que el texto fluya bien
+    
     property int fixedSize: vertical ? 180 : 250
     readonly property int capsuleSize: isFixedSize ? fixedSize : maxSize
 
-    // --- LÓGICA DE ESTILOS BASADA EN BARCONTENT ---
+    readonly property int dynamicMargin: root.vertical ? 6 : Math.max(2, Math.round(root.height * 0.05))
+    readonly property int dynamicIconSize: Math.max(16, Math.min(22, Math.round(root.height * 0.50)))
+    readonly property int dynamicTitleSize: Math.max(10, Math.min(13, Math.round(root.height * 0.30)))
+    readonly property int dynamicLabelSize: Math.max(7, Math.min(9, Math.round(root.height * 0.18)))
+
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
@@ -64,7 +69,6 @@ Item {
 
     readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode) ? Appearance.m3colors.darkmode : false
 
-    // Texto
     readonly property color titleColor: Appearance.colors.colOnLayer1
     readonly property color labelColor: Appearance.colors.colOnLayer2
     readonly property real labelOpacity: 1.0
@@ -78,7 +82,6 @@ Item {
         ? Qt.rgba(0, 0, 0, 0.45)
         : Qt.rgba(0, 0, 0, 0.12)
 
-    // Fondo “capsule”
     readonly property color capsuleFill: Appearance.colors.colLayer1
     readonly property color capsuleBorder: Appearance.colors.colLayer3
     readonly property color capsuleInner: Appearance.colors.colLayer2
@@ -171,55 +174,38 @@ Item {
 
     Item {
         anchors.fill: parent
+        anchors.margins: root.dynamicMargin
         x: root.parallaxOffset.x
         y: root.parallaxOffset.y
 
         Behavior on x { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
         Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
-        GridLayout {
-            id: contentGrid
+        RowLayout {
             anchors.fill: parent
-            anchors.margins: root.vertical ? 6 : 10
-
-            // Layout adaptativo: Columna en vertical, Fila en horizontal
-            columns: root.vertical ? 1 : 2
-            rows: root.vertical ? 2 : 1
-            rowSpacing: 10
-            columnSpacing: 12
+            spacing: 6
+            visible: !root.vertical
 
             Item {
-                id: iconContainer
-                Layout.alignment: root.vertical ? Qt.AlignTop | Qt.AlignHCenter : Qt.AlignVCenter
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
-                Layout.topMargin: root.vertical ? 4 : 0
+                Layout.preferredWidth: root.dynamicIconSize
+                Layout.preferredHeight: root.dynamicIconSize
+                Layout.alignment: Qt.AlignVCenter
 
                 Image {
                     id: appIcon
                     anchors.centerIn: parent
-                    width: 26
-                    height: 26
+                    width: parent.width
+                    height: parent.height
                     source: internal.iconSource
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
-
-                    scale: 1.0
                     onSourceChanged: popAnim.restart()
 
                     SequentialAnimation {
                         id: popAnim
-                        NumberAnimation {
-                            target: appIcon; property: "scale"
-                            from: 0.5; to: 1.25
-                            duration: 200; easing.type: Easing.OutBack
-                        }
-                        NumberAnimation {
-                            target: appIcon; property: "scale"
-                            to: 1.0
-                            duration: 150; easing.type: Easing.OutQuad
-                        }
+                        NumberAnimation { target: appIcon; property: "scale"; from: 0.5; to: 1.2; duration: 200; easing.type: Easing.OutBack }
+                        NumberAnimation { target: appIcon; property: "scale"; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
                     }
                 }
 
@@ -232,126 +218,112 @@ Item {
                 }
             }
 
-            // CONTENEDOR MÁGICO DEL TEXTO ROTADO
+            Column {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: -1
+
+                StyledText {
+                    width: parent.width
+                    visible: root.height >= 33
+                    text: internal.classText.toUpperCase()
+                    font.pixelSize: root.dynamicLabelSize
+                    font.bold: true
+                    color: root.labelColor
+                    opacity: root.labelOpacity
+                    elide: Text.ElideRight
+
+                    layer.enabled: root.titleShadowEnabled
+                    layer.effect: DropShadow {
+                        verticalOffset: root.themeIsDark ? 1 : 0
+                        radius: root.themeIsDark ? 6 : 3
+                        samples: root.themeIsDark ? 14 : 8
+                        color: root.labelShadowColor
+                    }
+                }
+
+                Item {
+                    width: parent.width
+                    height: titleTextMetrics.height
+                    clip: true
+
+                    TextMetrics {
+                        id: titleTextMetrics
+                        text: internal.titleText
+                        font.pixelSize: root.dynamicTitleSize
+                        font.bold: true
+                    }
+
+                    StyledText {
+                        id: mainTitle
+                        text: internal.titleText
+                        font.pixelSize: root.dynamicTitleSize
+                        font.bold: true
+                        color: root.titleColor
+                        width: parent.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        
+                        property bool shouldScroll: titleTextMetrics.width > parent.width
+
+                        layer.enabled: root.titleShadowEnabled
+                        layer.effect: DropShadow {
+                            verticalOffset: root.themeIsDark ? 1 : 0
+                            radius: root.themeIsDark ? 8 : 4
+                            samples: root.themeIsDark ? 16 : 10
+                            color: root.titleShadowColor
+                        }
+
+                        SequentialAnimation on x {
+                            running: mainTitle.shouldScroll && root.visible && mouseArea.containsMouse
+                            loops: Animation.Infinite
+                            PauseAnimation { duration: root.titleScrollPauseStartMs }
+                            NumberAnimation {
+                                to: -(titleTextMetrics.width - mainTitle.parent.width)
+                                duration: Math.max(250, Math.round(1000 * ((titleTextMetrics.width - mainTitle.parent.width) / root.titleScrollPxPerSecond)))
+                                easing.type: Easing.InOutSine
+                            }
+                            PauseAnimation { duration: root.titleScrollPauseEndMs }
+                            NumberAnimation { to: 0; duration: 500; easing.type: Easing.InOutSine }
+                        }
+                    }
+                }
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            visible: root.vertical
+            spacing: 8
+
             Item {
-                id: textWrapper
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: root.dynamicIconSize
+                Layout.preferredHeight: root.dynamicIconSize
+                Image {
+                    anchors.fill: parent
+                    source: internal.iconSource
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-
                 Item {
-                    id: rotatedTextContainer
-                    // Invertimos las dimensiones internamente para rotarlo sin que se corte
-                    width: root.vertical ? textWrapper.height : textWrapper.width
-                    height: root.vertical ? textWrapper.width : textWrapper.height
+                    width: parent.height
+                    height: parent.width
                     anchors.centerIn: parent
-
-                    // AQUÍ ESTÁ EL SECRETO:
-                    // Si la barra está a la derecha, gira 90°. Si está a la izquierda, gira -90° para que sea legible.
-                    rotation: root.vertical ? (root.isRightSide ? 90 : -90) : 0
-
-                    ColumnLayout {
-                        id: textCol
-                        anchors.fill: parent
-                        spacing: 0
-
-                        StyledText {
-                            id: appClassText
-                            // CAMBIO ÚNICO: ocultar “nombre de la app” en vertical, mantenerlo en horizontal
-                            visible: !root.vertical
-
-                            Layout.fillWidth: true
-                            text: internal.classText.toUpperCase()
-                            font.pixelSize: 9
-                            font.bold: true
-                            font.capitalization: Font.AllUppercase
-                            color: root.labelColor
-                            opacity: root.labelOpacity
-                            elide: Text.ElideRight
-
-                            layer.enabled: root.titleShadowEnabled
-                            layer.effect: DropShadow {
-                                // Mantenemos la sombra yendo visualmente hacia abajo ajustando la matemática
-                                horizontalOffset: root.vertical ? (root.isRightSide ? (root.themeIsDark ? 1 : 0) : (root.themeIsDark ? -1 : 0)) : 0
-                                verticalOffset: root.vertical ? 0 : (root.themeIsDark ? 1 : 0)
-                                radius: root.themeIsDark ? 6 : 3
-                                samples: root.themeIsDark ? 14 : 8
-                                color: root.labelShadowColor
-                            }
-                        }
-
-                        Item {
-                            id: titleViewport
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: titleTextMetrics.height
-                            clip: true
-
-                            readonly property int baseWidth: width
-                            readonly property int delta: Math.max(0, titleTextMetrics.width - baseWidth)
-                            readonly property bool hoverScrollEnabled: mouseArea.containsMouse
-
-                            TextMetrics {
-                                id: titleTextMetrics
-                                text: internal.titleText
-                                font.pixelSize: Appearance.font.pixelSize.medium
-                                font.bold: true
-                            }
-
-                            StyledText {
-                                id: mainTitle
-                                text: internal.titleText
-                                font.pixelSize: Appearance.font.pixelSize.medium
-                                font.bold: true
-                                color: root.titleColor
-
-                                anchors.verticalCenter: parent.verticalCenter
-                                x: 0
-
-                                property bool shouldScroll: titleTextMetrics.width > titleViewport.baseWidth
-
-                                layer.enabled: root.titleShadowEnabled
-                                layer.effect: DropShadow {
-                                    horizontalOffset: root.vertical ? (root.isRightSide ? (root.themeIsDark ? 1 : 0) : (root.themeIsDark ? -1 : 0)) : 0
-                                    verticalOffset: root.vertical ? 0 : (root.themeIsDark ? 1 : 0)
-                                    radius: root.themeIsDark ? 8 : 4
-                                    samples: root.themeIsDark ? 16 : 10
-                                    color: root.titleShadowColor
-                                }
-
-                                SequentialAnimation on x {
-                                    id: hoverScrollAnim
-                                    running: mainTitle.shouldScroll && root.visible && titleViewport.hoverScrollEnabled
-                                    loops: Animation.Infinite
-
-                                    PauseAnimation { duration: root.titleScrollPauseStartMs }
-
-                                    NumberAnimation {
-                                        to: -titleViewport.delta
-                                        duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
-                                        easing.type: Easing.InOutSine
-                                    }
-
-                                    PauseAnimation { duration: root.titleScrollPauseEndMs }
-
-                                    NumberAnimation {
-                                        to: 0
-                                        duration: Math.max(250, Math.round(1000 * (titleViewport.delta / root.titleScrollPxPerSecond)))
-                                        easing.type: Easing.InOutSine
-                                    }
-                                }
-
-                                onShouldScrollChanged: {
-                                    if (!shouldScroll) x = 0
-                                }
-                            }
-
-                            Connections {
-                                target: mouseArea
-                                function onContainsMouseChanged() {
-                                    if (!mouseArea.containsMouse) mainTitle.x = 0
-                                }
-                            }
-                        }
+                    rotation: root.isRightSide ? 90 : -90
+                    StyledText {
+                        anchors.centerIn: parent
+                        text: internal.titleText
+                        font.pixelSize: root.dynamicTitleSize
+                        font.bold: true
+                        color: root.titleColor
+                        width: parent.width
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
                     }
                 }
             }
@@ -377,23 +349,14 @@ Item {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-
         onExited: {
             root.parallaxOffset = Qt.point(0, 0)
             mainTitle.x = 0
         }
-
         onPositionChanged: {
             if (!root.parallaxEnabled) return
-            var centerX = width / 2
-            var centerY = height / 2
-            root.parallaxOffset = Qt.point(
-                (centerX - mouseX) * 0.05,
-                (centerY - mouseY) * 0.05
-            )
+            root.parallaxOffset = Qt.point((width/2 - mouseX) * 0.05, (height/2 - mouseY) * 0.05)
         }
-
         onClicked: clickSquish.restart()
     }
 }
-

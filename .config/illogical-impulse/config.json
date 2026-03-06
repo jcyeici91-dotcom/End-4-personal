@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "smoke_blue"
+            "type": "saffron_latte"
         },
         "transparency": {
             "automatic": true,
@@ -137,7 +137,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/1348174.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/aesthetic_deer.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -147,13 +147,13 @@
                     "backgroundStyle": "cookie",
                     "constantlyRotate": true,
                     "dateInClock": true,
-                    "dateStyle": "rect",
-                    "dialNumberStyle": "full",
-                    "hourHandStyle": "classic",
+                    "dateStyle": "bubble",
+                    "dialNumberStyle": "none",
+                    "hourHandStyle": "fill",
                     "hourMarks": true,
-                    "minuteHandStyle": "classic",
-                    "secondHandStyle": "classic",
-                    "sides": 14,
+                    "minuteHandStyle": "medium",
+                    "secondHandStyle": "dot",
+                    "sides": 9,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -178,8 +178,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 239.4374999999999,
-                "y": 310.71875
+                "x": 190.8281249999999,
+                "y": 182.9375
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -199,14 +199,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2263.6132812500005,
-                "y": 1318.54296875
+                "x": 2186.476562500001,
+                "y": 1323.26171875
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2283.4257812500005,
-                "y": 174.88281249999977
+                "x": 2128.83203125,
+                "y": 204.30468749999977
             }
         }
     },
@@ -223,12 +223,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 3,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -350,7 +350,7 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 45,
+            "height": 35,
             "width": 45
         },
         "timers": {
@@ -472,7 +472,7 @@
         },
         "night": {
             "automatic": false,
-            "colorTemperature": 4223,
+            "colorTemperature": 4778,
             "from": "19:00",
             "to": "06:30"
         }
