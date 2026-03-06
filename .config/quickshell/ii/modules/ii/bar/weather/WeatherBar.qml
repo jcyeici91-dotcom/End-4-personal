@@ -197,47 +197,12 @@ MouseArea {
             visible: plate.borderAmt > 0.01
         }
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: Math.max(0, parent.radius - 1)
-            color: "transparent"
-            border.width: 1
-            border.color: Qt.rgba(Appearance.colors.colOnLayer1.r, Appearance.colors.colOnLayer1.g, Appearance.colors.colOnLayer1.b, (root.themeIsDark ? 0.12 : 0.18) * plate.borderAmt)
-            antialiasing: true
-            visible: plate.borderAmt > 0.01
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.width: 1
-            border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, (root.themeIsDark ? 0.16 : 0.12) + 0.16 * root.hoverAmount * plate.borderAmt)
-            antialiasing: true
-            visible: plate.borderAmt > 0.01
-        }
-
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: root.vertical ? (root.isRightSide ? undefined : parent.left) : parent.left
-            anchors.right: root.vertical ? (root.isRightSide ? parent.right : undefined) : parent.right
-            anchors.topMargin: root.vertical ? parent.radius / 1.6 : 1
-            anchors.leftMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
-            anchors.rightMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
-            height: root.vertical ? Math.max(2, Math.round(parent.height * 0.26)) : 1
-            width: root.vertical ? 1 : undefined
-            color: Qt.rgba(Appearance.colors.colOnLayer1.r, Appearance.colors.colOnLayer1.g, Appearance.colors.colOnLayer1.b, (root.themeIsDark ? 0.18 : 0.22) * plate.borderAmt)
-            antialiasing: true
-            visible: plate.borderAmt > 0.01
-        }
-
+        // Efecto Aura
         Item {
             anchors.fill: parent
             visible: root.enableWeatherAura
             opacity: 0.20 + 0.20 * root.hoverAmount
             clip: true
-
             Rectangle {
                 width: parent.width * 0.60
                 height: parent.height * 1.3
@@ -250,57 +215,6 @@ MouseArea {
                     GradientStop { position: 0.5; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.themeIsDark ? 0.14 : 0.10) }
                     GradientStop { position: 1.0; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.00) }
                 }
-                opacity: 0.92
-            }
-
-            Rectangle {
-                visible: root.weatherKind() === "sun"
-                width: parent.height * 1.1
-                height: width
-                radius: 10
-                x: parent.width * 0.06
-                y: -parent.height * 0.45
-                color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10 + 0.10 * (0.5 + 0.5 * Math.sin(6.28318 * root.auraPhase)))
-            }
-
-            Repeater {
-                model: (root.weatherKind() === "rain" || root.weatherKind() === "storm") ? 6 : 0
-                delegate: Rectangle {
-                    width: 2.5
-                    height: parent.height * 0.65
-                    radius: 1.5
-                    rotation: -18
-                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "storm" ? 0.20 : 0.16)
-                    x: (index * parent.width * 0.17) + (parent.width * 0.32 * root.auraPhase)
-                    y: parent.height * 0.08 + (index % 2) * 3
-                    opacity: 0.60
-                }
-            }
-
-            Repeater {
-                model: (root.weatherKind() === "snow" || root.weatherKind() === "fog") ? 8 : 0
-                delegate: Rectangle {
-                    width: 3 + (index % 2)
-                    height: width
-                    radius: 2
-                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.weatherKind() === "fog" ? 0.12 : 0.18)
-                    x: (index * parent.width * 0.13 + parent.width * 0.24 * root.auraPhase) % parent.width
-                    y: parent.height * (0.15 + 0.10 * (index % 4)) + (parent.height * 0.10 * Math.sin(6.28318 * (root.auraPhase + index * 0.16)))
-                    opacity: 0.65
-                }
-            }
-
-            Repeater {
-                model: (root.weatherKind() === "cloud") ? 4 : 0
-                delegate: Rectangle {
-                    width: parent.width * (0.26 + 0.12 * (index % 2))
-                    height: 2.5
-                    radius: 1.5
-                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.14)
-                    x: (-parent.width * 0.28) + (parent.width * 1.25 * root.auraPhase) - (index * 16)
-                    y: parent.height * (0.24 + 0.24 * index)
-                    opacity: 0.75
-                }
             }
         }
     }
@@ -308,18 +222,12 @@ MouseArea {
     Item {
         id: contentBox
         anchors.fill: parent
-        anchors.margins: 0
 
         GridLayout {
             id: contentGrid
-            width: implicitWidth
-            height: implicitHeight
             anchors.centerIn: parent
-            x: (contentBox.width - width) / 2
-            y: (contentBox.height - height) / 2
             columns: root.vertical ? 1 : 2
             rows: root.vertical ? 2 : 1
-            rowSpacing: 8
             columnSpacing: root.gap
 
             Item {
@@ -332,16 +240,13 @@ MouseArea {
                     fill: 1
                     iconSize: Math.max(26, Appearance.font.pixelSize.small + 8)
                     color: root.accent
-                    opacity: 0.94 + 0.06 * root.hoverAmount
                     scale: 1.0 + 0.08 * root.beatAmt
-                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                 }
             }
 
             Item {
                 id: textWrapper
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-                clip: true
                 Layout.preferredWidth: root.vertical ? innerRow.implicitHeight : innerRow.implicitWidth
                 Layout.preferredHeight: root.vertical ? innerRow.implicitWidth : innerRow.implicitHeight
 
@@ -357,28 +262,23 @@ MouseArea {
                         spacing: 10
 
                         StyledText {
-                            Layout.alignment: Qt.AlignVCenter
                             text: root.tempText
-                            font.pixelSize: Appearance.font.pixelSize.small + 4
-                            font.bold: true
-                            font.weight: Font.Bold
-                            font.features: ({ "tnum": 1 })
-                            color: root.fg
+                            font.family: "Montserrat, Arial Black, Lexend, sans-serif"
+                            font.pixelSize: Appearance.font.pixelSize.small + 6
+                            font.weight: Font.Black
+                            color: Appearance.m3colors.m3tertiary
                             renderType: Text.NativeRendering
                         }
 
                         StyledText {
-                            Layout.alignment: Qt.AlignVCenter
                             visible: root.cityText !== ""
                             text: root.cityText
+                            font.family: "Montserrat, Arial Black, Lexend, sans-serif"
                             font.pixelSize: Appearance.font.pixelSize.tiny + 4
-                            font.bold: true
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 0.45
-                            color: root.cityColor
-                            opacity: 0.95 + 0.05 * root.hoverAmount
+                            font.weight: Font.Black
+                            color: Appearance.m3colors.m3primary
                             elide: Text.ElideRight
-                            Layout.maximumWidth: 190
+                            Layout.maximumWidth: 170
                             renderType: Text.NativeRendering
                         }
                     }
@@ -389,6 +289,6 @@ MouseArea {
 
     WeatherPopup {
         id: weatherPopup
-        hoverTarget: root  // ← Esto restaura el comportamiento original: popup abre al hover
+        hoverTarget: root
     }
 }

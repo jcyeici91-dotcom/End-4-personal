@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "saffron_latte"
+            "type": "honey_cream"
         },
         "transparency": {
             "automatic": true,
@@ -137,7 +137,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/aesthetic_deer.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/07.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -178,8 +178,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 190.8281249999999,
-                "y": 182.9375
+                "x": 142.2382812499999,
+                "y": 420.95703125
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -223,12 +223,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 3,
+        "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 1,
+        "cornerStyle": 2,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rect",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -350,7 +350,7 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 35,
+            "height": 45,
             "width": 45
         },
         "timers": {
@@ -746,7 +746,7 @@
         "theme": "freedesktop"
     },
     "time": {
-        "dateFormat": "ddd MM/dd",
+        "dateFormat": "ddd dd/MM",
         "dateWithYearFormat": "dd/MM/yyyy",
         "firstDayOfWeek": 0,
         "format": "hh:mm",
