@@ -16,11 +16,11 @@ Scope {
     property bool dontAutoCancelSearch: false
     PanelWindow {
         id: root
+        readonly property bool isScrollingLayout: GlobalStates.isScrollingLayout
         property string searchingText: ""
         readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.screen)
         property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)
         property int monitorIndex: monitor.id
-        property string overviewStyle: Config.options.overview.style
 
         WlrLayershell.namespace: "quickshell:overview"
         WlrLayershell.layer: WlrLayer.Top
@@ -168,7 +168,7 @@ Scope {
                 scale: root.effectiveScale
                 anchors.top: searchWidgetWrapper.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
-                active: root.visible && (Config?.options.overview.enable ?? true) && root.overviewStyle == "classic"
+                active: root.visible && (Config?.options.overview.enable ?? true) && !root.isScrollingLayout
                 sourceComponent: OverviewWidget {
                     panelWindow: root
                     visible: (root.searchingText == "")
@@ -180,7 +180,7 @@ Scope {
                 id: scrollingOverviewLoader
                 scale: root.effectiveScale
                 anchors.fill: parent
-                active: root.visible && (Config?.options.overview.enable ?? true) && root.overviewStyle == "scrolling"
+                active: root.visible && (Config?.options.overview.enable ?? true) && root.isScrollingLayout
                 sourceComponent: ScrollingOverviewWidget {
                     anchors.fill: parent
                     panelWindow: root

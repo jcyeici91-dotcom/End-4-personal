@@ -31,6 +31,7 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+ property bool isScrollingLayout: false
 
     // VARIABLE PARA EL MENÚ DESLIZABLE
     property bool sessionVisible: false 
@@ -85,6 +86,19 @@ Singleton {
         }
         onReleased: {
             root.superDown = false
+        }
+    }
+
+
+  // NOTE: FileView may be a better approach but it has it's own disadvantages
+    Process {
+        running: true
+        command: [ "bash", "-c", `hyprctl getoption general:layout | grep "str:" | awk '{print $2}'`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                // console.log("Got layout:", this.text, "layout is scrolling : ", this.text.trim() == "scrolling")
+                GlobalStates.isScrollingLayout = this.text.trim() == "scrolling"
+            }
         }
     }
 }

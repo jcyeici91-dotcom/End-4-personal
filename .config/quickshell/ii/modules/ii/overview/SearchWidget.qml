@@ -21,7 +21,7 @@ Item { // Wrapper
 
     property string searchingText: LauncherSearch.query
     property bool showResults: searchingText != ""
-    property string overviewPosition: Config.options.overview.position
+    property string overviewPosition: "top" // REALLYFIXME: a fallback value for now, its not used anymore 
     implicitWidth: searchWidgetContent.implicitWidth + Appearance.sizes.elevationMargin * 2
     implicitHeight: searchWidgetContent.implicitHeight + searchBar.verticalPadding * 2 + Appearance.sizes.elevationMargin * 2
 

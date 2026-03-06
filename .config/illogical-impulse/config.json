@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "smoke_blue"
         },
         "transparency": {
             "automatic": true,
@@ -117,16 +117,16 @@
         "hideWhenFullscreen": true,
         "mediaMode": {
             "backgroundAnimation": {
-                "enable": false,
+                "enable": true,
                 "speedScale": 10
             },
             "backgroundShape": "Square",
-            "changeShellColor": false,
+            "changeShellColor": true,
             "enableBackgroundAnimation": true,
             "syllable": {
                 "textHighlightStyle": 0
             },
-            "togglePerMonitor": false
+            "togglePerMonitor": true
         },
         "parallax": {
             "autoVertical": false,
@@ -199,14 +199,14 @@
                     "opacity": 0.3,
                     "smoothing": 2
                 },
-                "x": 2767.2265625,
-                "y": 1125
+                "x": 2263.6132812500005,
+                "y": 1318.54296875
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2136.9570312500005,
-                "y": 177.39453124999977
+                "x": 2283.4257812500005,
+                "y": 174.88281249999977
             }
         }
     },
@@ -223,12 +223,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 1,
-        "borderless": true,
+        "barBackgroundStyle": 0,
+        "borderless": false,
         "bottom": false,
-        "cornerStyle": 0,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -542,7 +542,7 @@
         "centerIcons": true,
         "centerTopPaddingRatio": 3,
         "columns": 1,
-        "enable": false,
+        "enable": true,
         "hyprscrollingImplementation": {
             "maxWorkspaceWidth": 1200
         },

@@ -1,5 +1,6 @@
-import QtQuick
+// BarFullBackground.qml
 
+import QtQuick
 import qs
 import qs.modules.common
 import qs.modules.common.widgets
