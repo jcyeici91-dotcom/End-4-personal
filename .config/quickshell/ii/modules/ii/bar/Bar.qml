@@ -12,6 +12,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions as CF
 
+import "." as Bar
+
 Scope {
     id: bar
 
@@ -45,26 +47,59 @@ Scope {
                 readonly property bool pushWindows: !!Config?.options?.bar?.autoHide?.pushWindows
                 readonly property bool deadPixelFix: !!Config?.options?.interactions?.deadPixelWorkaround?.enable
 
-                // Pseudo-Enum para mayor legibilidad
                 QtObject {
                     id: styleEnum
                     readonly property int glass: 0
-                    readonly property int alwaysVisible: 1
+                    readonly property int visible: 1
                     readonly property int adaptive: 2
+                    readonly property int crystal: 3
                 }
 
-                readonly property int barBackgroundStyle: (Config?.options?.bar?.barBackgroundStyle ?? styleEnum.alwaysVisible)
+                readonly property var _barBackgroundStyleRaw: (Config?.options?.bar?.barBackgroundStyle ?? styleEnum.visible)
 
-                // Hybrid groups
+                function _normalizeBarStyle(v) {
+                    if (typeof v === "number") {
+                        switch (v) {
+                            case styleEnum.glass: return "glass"
+                            case styleEnum.visible: return "visible"
+                            case styleEnum.adaptive: return "adaptive"
+                            case styleEnum.crystal: return "crystal"
+                            default: return "visible"
+                        }
+                    }
+
+                    if (typeof v !== "string") return "visible"
+                    const s = v.toLowerCase().trim()
+
+                    if (s === "solid") return "visible"
+                    if (s === "alwaysvisible" || s === "always_visible") return "visible"
+
+                    if (s === "visible" || s === "glass" || s === "adaptive" || s === "crystal")
+                        return s
+
+                    return "visible"
+                }
+
+                readonly property string barStyleName: _normalizeBarStyle(_barBackgroundStyleRaw)
+
+                readonly property int barBackgroundStyle: (typeof _barBackgroundStyleRaw === "number")
+                    ? _barBackgroundStyleRaw
+                    : ((barStyleName === "glass") ? styleEnum.glass
+                       : (barStyleName === "adaptive") ? styleEnum.adaptive
+                       : (barStyleName === "crystal") ? styleEnum.crystal
+                       : styleEnum.visible)
+
                 readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
 
-                // Background style / adaptive
                 property bool hasActiveWindows: false
 
+                readonly property bool isAdaptiveStyle: (barRoot.barStyleName === "adaptive")
+
                 readonly property bool showBarBackground: (
-                    (barBackgroundStyle === styleEnum.alwaysVisible) ||
-                    (barBackgroundStyle === styleEnum.glass) ||
-                    (barBackgroundStyle === styleEnum.adaptive && barRoot.hasActiveWindows)
+                    (barRoot.barStyleName === "visible") ||
+                    (barRoot.barStyleName === "glass") ||
+                    (barRoot.barStyleName === "crystal") ||
+                    (barRoot.barStyleName === "adaptive" && barRoot.hasActiveWindows)
                 )
 
                 readonly property color _solidBase: Appearance.colors.colLayer0
@@ -72,13 +107,12 @@ Scope {
 
                 readonly property color barBackgroundColorForCorners: !barRoot.showBarBackground
                     ? "transparent"
-                    : ((barBackgroundStyle === styleEnum.glass) ? _glassTint : _solidBase)
+                    : ((barRoot.barStyleName === "glass" || barRoot.barStyleName === "crystal") ? _glassTint : _solidBase)
 
-                // Optimización de monitores y ventanas
                 property var currentMonitor: {
                     const screenName = barRoot.screen?.name
-                    return HyprlandData.monitors.find(m => m && m.name === screenName) 
-                        ?? HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex) 
+                    return HyprlandData.monitors.find(m => m && m.name === screenName)
+                        ?? HyprlandData.monitors.find(m => m && m.id === barRoot.monitorIndex)
                         ?? null
                 }
 
@@ -89,17 +123,20 @@ Scope {
                         barRoot.hasActiveWindows = false
                         return
                     }
-                    barRoot.hasActiveWindows = HyprlandData.windowList.some(w => w.workspace?.id === activeWsId && !w.floating)
+                    barRoot.hasActiveWindows = HyprlandData.windowList.some(w =>
+                        (w.workspace?.id === activeWsId) && !w.floating
+                    )
                 }
 
+                onActiveWsIdChanged: barRoot.recomputeHasActiveWindows()
+
                 Connections {
-                    enabled: barRoot.barBackgroundStyle === styleEnum.adaptive
+                    enabled: barRoot.isAdaptiveStyle
                     target: HyprlandData
                     function onWindowListChanged() { barRoot.recomputeHasActiveWindows() }
                     function onMonitorsChanged() { barRoot.recomputeHasActiveWindows() }
                 }
 
-                // Super show / hover show
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
 
@@ -124,7 +161,6 @@ Scope {
                     }
                 }
 
-                // Layershell / size / mask
                 exclusionMode: ExclusionMode.Ignore
 
                 exclusiveZone: (barRoot.autoHideEnabled && (!barRoot.mustShow || !barRoot.pushWindows))
@@ -138,12 +174,11 @@ Scope {
 
                 mask: Region { item: hoverMaskRegion }
 
-                // Positioning (TOP/BOTTOM) - Declarativo
-                anchors { 
+                anchors {
                     top: !barRoot.isBottom
                     bottom: barRoot.isBottom
                     left: true
-                    right: true 
+                    right: true
                 }
 
                 margins {
@@ -169,23 +204,8 @@ Scope {
                     }
 
                     Item {
-                        id: hoverMaskRegion
-                        anchors {
-                            fill: barContent
-                            topMargin: -(Config?.options?.bar?.autoHide?.hoverRegionWidth ?? 0)
-                            bottomMargin: -(Config?.options?.bar?.autoHide?.hoverRegionWidth ?? 0)
-                        }
-                    }
-
-                    BarContent {
-                        id: barContent
+                        id: barSlot
                         implicitHeight: Appearance.sizes.barHeight
-
-                        monitorIndex: barRoot.monitorIndex
-                        screen: barRoot.screen
-
-                        property bool showBackground: barRoot.showBarBackground
-                        property int backgroundStyle: barRoot.barBackgroundStyle
 
                         anchors {
                             left: parent.left
@@ -213,16 +233,44 @@ Scope {
                             when: barRoot.isBottom
 
                             AnchorChanges {
-                                target: barContent
+                                target: barSlot
                                 anchors { top: undefined; bottom: parent.bottom }
                             }
                             PropertyChanges {
-                                target: barContent
+                                target: barSlot
                                 anchors.topMargin: 0
                                 anchors.bottomMargin: (barRoot.autoHideEnabled && !barRoot.mustShow)
                                     ? -Appearance.sizes.barHeight
                                     : ((barRoot.deadPixelFix && barRoot.anchors.bottom) ? -1 : 0)
                             }
+                        }
+
+                        Bar.BarFullBackground {
+                            anchors.fill: parent
+                            enabled: barRoot.showBarBackground
+
+                            followGlobalStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
+                            styleFromConfig: barRoot.barBackgroundStyle
+
+                            hasActiveWindows: barRoot.hasActiveWindows
+                            cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+                            isBottom: barRoot.isBottom
+                        }
+
+                        BarContent {
+                            id: barContent
+                            anchors.fill: parent
+                            monitorIndex: barRoot.monitorIndex
+                            screen: barRoot.screen
+                        }
+                    }
+
+                    Item {
+                        id: hoverMaskRegion
+                        anchors {
+                            fill: barSlot
+                            topMargin: -(Config?.options?.bar?.autoHide?.hoverRegionWidth ?? 0)
+                            bottomMargin: -(Config?.options?.bar?.autoHide?.hoverRegionWidth ?? 0)
                         }
                     }
 
@@ -230,26 +278,22 @@ Scope {
                     readonly property bool allowFlatHugPaintingHere: (!barRoot.useHybridGroups)
                     readonly property int seamOverlapPx: 2
 
-                    // Solo válido en no-hybrid:
                     readonly property color effectiveCornerColor: barRoot.barBackgroundColorForCorners
-
-                    // TODO: Implementar edgeFillers adecuadamente en BarContent para Hybrid+Hug
 
                     Loader {
                         id: roundDecorators
 
-                        // Si corner color es transparente (adaptive sin ventanas), no cargues nada.
                         active: hoverRegion.isHugStyleHere
-                                && hoverRegion.allowFlatHugPaintingHere
-                                && barRoot.showBarBackground
-                                && (hoverRegion.effectiveCornerColor !== "transparent")
+                            && hoverRegion.allowFlatHugPaintingHere
+                            && barRoot.showBarBackground
+                            && (hoverRegion.effectiveCornerColor !== "transparent")
 
                         height: Appearance.rounding.screenRounding + hoverRegion.seamOverlapPx
 
                         anchors {
                             left: parent.left
                             right: parent.right
-                            top: barContent.bottom
+                            top: barSlot.bottom
                             bottom: undefined
                             topMargin: -hoverRegion.seamOverlapPx
                         }
@@ -257,7 +301,7 @@ Scope {
                         states: State {
                             name: "bottom"
                             when: barRoot.isBottom
-                            AnchorChanges { target: roundDecorators; anchors { top: undefined; bottom: barContent.top } }
+                            AnchorChanges { target: roundDecorators; anchors { top: undefined; bottom: barSlot.top } }
                             PropertyChanges {
                                 target: roundDecorators
                                 anchors.topMargin: 0
@@ -292,7 +336,6 @@ Scope {
         }
     }
 
-    // IPC
     IpcHandler {
         target: "bar"
         function toggle(): void { GlobalStates.barOpen = !GlobalStates.barOpen }
@@ -300,7 +343,6 @@ Scope {
         function open(): void { GlobalStates.barOpen = true }
     }
 
-    // Shortcuts
     GlobalShortcut {
         name: "barToggle"
         description: "Toggles bar on press"
@@ -317,3 +359,4 @@ Scope {
         onPressed: GlobalStates.barOpen = false
     }
 }
+

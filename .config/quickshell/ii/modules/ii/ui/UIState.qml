@@ -1,3 +1,4 @@
+// UIState.qml
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -8,10 +9,11 @@ QtObject {
 
     property string surfaceStyle: "crystal"
 
-    readonly property bool isCrystal: surfaceStyle === "crystal"
-    readonly property bool isGlass: surfaceStyle === "glass" || surfaceStyle === "crystal"
-    readonly property bool isSolid: surfaceStyle === "solid"
-    readonly property bool isAdaptive: surfaceStyle === "adaptive"
+    function _normStyle(s) {
+        s = (s ?? "").toString().trim().toLowerCase()
+        if (s === "glass" || s === "crystal" || s === "solid" || s === "adaptive") return s
+        return "crystal"
+    }
 
     function _safeLen(x) {
         return x ? (typeof x === "number" ? x : (x.length ?? x.count ?? 0)) : 0
@@ -31,4 +33,21 @@ QtObject {
 
         return false
     }
+
+    readonly property string resolvedSurfaceStyle: {
+        const s = _normStyle(surfaceStyle)
+        if (s !== "adaptive") return s
+        return hasWindows ? "crystal" : "solid"
+    }
+
+    readonly property bool isCrystal: resolvedSurfaceStyle === "crystal"
+    readonly property bool isGlass: resolvedSurfaceStyle === "glass" || resolvedSurfaceStyle === "crystal"
+    readonly property bool isSolid: resolvedSurfaceStyle === "solid"
+    readonly property bool isAdaptive: _normStyle(surfaceStyle) === "adaptive"
+
+    readonly property bool useGlassMode: isGlass
+    readonly property bool showSolidBackground: isSolid
+    readonly property bool useCrystalOverlay: isCrystal
+    readonly property bool useGlassBlur: isGlass
 }
+

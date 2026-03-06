@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "orng"
+            "type": "honey_cream"
         },
         "transparency": {
             "automatic": true,
@@ -147,11 +147,11 @@
                     "backgroundStyle": "cookie",
                     "constantlyRotate": true,
                     "dateInClock": true,
-                    "dateStyle": "bubble",
+                    "dateStyle": "rect",
                     "dialNumberStyle": "full",
-                    "hourHandStyle": "hollow",
+                    "hourHandStyle": "classic",
                     "hourMarks": true,
-                    "minuteHandStyle": "medium",
+                    "minuteHandStyle": "classic",
                     "secondHandStyle": "classic",
                     "sides": 14,
                     "timeIndicators": true
@@ -178,8 +178,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 220.8749999999999,
-                "y": 587.05078125
+                "x": 239.4374999999999,
+                "y": 310.71875
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -223,12 +223,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 3,
-        "borderless": false,
+        "barBackgroundStyle": 1,
+        "borderless": true,
         "bottom": false,
-        "cornerStyle": 1,
+        "cornerStyle": 0,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rect",
+        "groupBackgroundStyle": "rounded",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -236,12 +236,6 @@
         },
         "layouts": {
             "availableComps": [
-                {
-                    "icon": "screen_record",
-                    "id": "record_indicator",
-                    "title": "Record indicator",
-                    "visible": false
-                },
                 {
                     "icon": "battery_android_6",
                     "id": "battery",
@@ -273,6 +267,13 @@
                     "icon": "screen_share",
                     "id": "screen_share_indicator",
                     "title": "Screen share indicator",
+                    "visible": false
+                },
+                {
+                    "centered": false,
+                    "icon": "screen_record",
+                    "id": "record_indicator",
+                    "title": "Record indicator",
                     "visible": false
                 }
             ],
