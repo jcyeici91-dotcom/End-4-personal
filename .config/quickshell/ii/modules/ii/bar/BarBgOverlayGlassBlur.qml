@@ -1,6 +1,5 @@
-// BarBgOverlayGlassBlur.qml
 import QtQuick
-import QtQuick.Effects     
+import QtQuick.Effects
 import qs
 import qs.modules.common
 
@@ -13,18 +12,31 @@ Item {
     required property color backgroundColor
     required property int cornerStyle
 
-    property int basePadding: 8          
-    property real blurAmount: 0.85       //  nuevo control más intuitivo
-    property real tintIntensity: 0.22    //  brightness/saturation muy alto
-    property real noiseOpacity: 0.07     //  ruido muy sutil
-    property real chromaticAberration: 0.008  // bajado (era muy visible)
-    property real iridescenceStrength: 0.08   // casi no tiene rainbow fuerte
-    property real shadowOpacity: 0.12    // más suave
-    property int shadowBlur: 16          // más pequeño y suave
+    property int basePadding: 8
+    property real blurAmount: 0.82
+    property real tintIntensity: 0.18
+    property real noiseOpacity: 0.055
+    property real iridescenceStrength: 0.07
+    property real shadowOpacity: 0.10
+    property int shadowBlur: 20
+
+    readonly property bool themeIsDark: {
+        var c = Appearance.colors.colLayer0
+        return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) < 0.65
+    }
+
+    readonly property int outerMargin:
+        cornerStyle === 1
+        ? Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0))
+        : 0
+
+    readonly property int radiusPx:
+        cornerStyle === 1
+        ? (Appearance.rounding.windowRounding ?? 18)
+        : 0
 
     default property alias content: contentContainer.data
 
-    // Fondo sólido 
     Rectangle {
         id: solidBg
         anchors.fill: parent
@@ -35,19 +47,15 @@ Item {
         antialiasing: true
     }
 
-    // Fuente para el desenfoque 
     ShaderEffectSource {
         id: blurSource
         anchors.fill: parent
         anchors.margins: root.outerMargin
         live: true
         visible: false
-        recursive: true       
         smooth: true
-        // textureSize: Qt.size(width * 0.5, height * 0.5)   opcional: bajar resolución para rendimiento
     }
 
-    //   SOLO MultiEffect 
     MultiEffect {
         id: glassEffect
         anchors.fill: parent
@@ -55,77 +63,139 @@ Item {
         source: blurSource
         visible: root.useGlassMode && !root.showSolidBackground
 
-        // Controles para look iOS
         blurEnabled: true
-        blur: root.blurAmount           // 0.7–0.9 suele verse muy parecido a iOS
-        blurMax: 64                     // 48–96 según densidad de pantalla
-        blurMultiplier: 1.0
+        blur: root.blurAmount
+        blurMax: 72
+        blurMultiplier: 1.2
 
-        // Tinte suave 
-        colorization: root.themeIsDark ? 0.0 : 0.0
+        colorization: 0.0
         colorizationColor: root.themeIsDark
-            ? Qt.rgba(0.18, 0.22, 0.30, root.tintIntensity)
-            : Qt.rgba(0.92, 0.94, 0.96, root.tintIntensity)
+            ? Qt.rgba(0.16, 0.20, 0.28, root.tintIntensity)
+            : Qt.rgba(0.94, 0.96, 0.98, root.tintIntensity)
 
-        brightness: root.themeIsDark ? -0.02 : 0.04     // muy sutil
-        saturation: root.themeIsDark ? 1.05 : 1.10      // leve boost
+        brightness: root.themeIsDark ? -0.015 : 0.035
+        saturation: root.themeIsDark ? 1.08 : 1.14
+        contrast: root.themeIsDark ? 0.02 : -0.02
 
-        // Borde muy fino 
         maskEnabled: true
         maskSource: ShaderEffectSource {
             sourceItem: Rectangle {
                 width: glassEffect.width
                 height: glassEffect.height
                 radius: root.radiusPx
-                color: "white"          // máscara = borde redondeado
-                border.width: 1
-                border.color: "black"   // borde sutil
+                color: "white"
             }
         }
 
-        // Sombra muy suave 
         shadowEnabled: true
         shadowBlur: root.shadowBlur
         shadowOpacity: root.shadowOpacity
-        shadowColor: Qt.rgba(0,0,0,1)
+        shadowColor: Qt.rgba(0, 0, 0, 1)
         shadowHorizontalOffset: 0
         shadowVerticalOffset: root.themeIsDark ? 1 : 2
     }
 
-    
-    //    Ruido muy sutil (vidrio )
     ShaderEffect {
+        id: noiseLayer
         anchors.fill: glassEffect
         visible: glassEffect.visible && root.noiseOpacity > 0.001
+        blending: true
 
-        property real noiseOpacity: root.noiseOpacity
+        property real time: 0.0
+        property real opacity_val: root.noiseOpacity
+
+        NumberAnimation on time {
+            from: 0; to: 1000
+            duration: 120000
+            loops: Animation.Infinite
+            running: noiseLayer.visible
+        }
 
         fragmentShader: "
             #version 440
             in vec2 qt_TexCoord0;
             out vec4 fragColor;
 
-            float random(vec2 st) {
-                return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+            layout(std140, binding = 0) uniform buf {
+                mat4 qt_Matrix;
+                float qt_Opacity;
+                float time;
+                float opacity_val;
+            };
+
+            float hash(vec2 p) {
+                p = fract(p * vec2(234.34, 435.345));
+                p += dot(p, p + 34.23);
+                return fract(p.x * p.y);
+            }
+
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                return mix(
+                    mix(hash(i), hash(i + vec2(1,0)), f.x),
+                    mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x),
+                    f.y
+                );
             }
 
             void main() {
-                vec2 uv = qt_TexCoord0 * vec2(1280.0, 720.0); // escala del ruido
-                float n = random(uv + mod(qt_TexCoord0 * 0.0001, 1.0)); // animación muy lenta opcional
-                vec4 color = vec4(vec3(n), 1.0);
-                fragColor = mix(vec4(0.0), color, noiseOpacity * 0.6);
-            }"
+                vec2 uv = qt_TexCoord0 * vec2(420.0, 240.0) + time * 0.08;
+                float n = noise(uv) * 0.55 + noise(uv * 2.1 + 7.3) * 0.30 + noise(uv * 4.3 + 2.1) * 0.15;
+                float grain = n * opacity_val * qt_Opacity;
+                fragColor = vec4(vec3(1.0) * grain, grain * 0.7);
+            }
+        "
     }
 
-        ShaderEffect {
-        id: iridescenceShader
-        anchors.fill: parent
-        anchors.margins: root.outerMargin
+    ShaderEffect {
+        id: iridescenceLayer
+        anchors.fill: glassEffect
+        visible: glassEffect.visible && root.iridescenceStrength > 0.01
 
-        visible: root.useGlassMode && !root.showSolidBackground && root.iridescenceStrength > 0.01
-        property var source: blurSource
-        property real aberration: root.chromaticAberration
-        property real iridescence: root.iridescenceStrength
+        property real strength: root.iridescenceStrength
+        property real time: 0.0
+
+        NumberAnimation on time {
+            from: 0; to: 6.2831
+            duration: 12000
+            loops: Animation.Infinite
+            running: iridescenceLayer.visible
+        }
+
+        fragmentShader: "
+            #version 440
+            in vec2 qt_TexCoord0;
+            out vec4 fragColor;
+
+            layout(std140, binding = 0) uniform buf {
+                mat4 qt_Matrix;
+                float qt_Opacity;
+                float strength;
+                float time;
+            };
+
+            vec3 spectral(float t) {
+                return vec3(
+                    0.5 + 0.5 * cos(6.2831 * (t + 0.00)),
+                    0.5 + 0.5 * cos(6.2831 * (t + 0.33)),
+                    0.5 + 0.5 * cos(6.2831 * (t + 0.67))
+                );
+            }
+
+            void main() {
+                vec2 uv = qt_TexCoord0;
+                float angle = atan(uv.y - 0.5, uv.x - 0.5);
+                float r = length(uv - 0.5);
+                float wave = sin(angle * 3.0 + time * 0.4 + r * 6.0) * 0.5 + 0.5;
+                float edgeFade = smoothstep(0.5, 0.15, r);
+                float topBias = pow(1.0 - uv.y, 2.2) * 0.6;
+                float alpha = wave * edgeFade * topBias * strength * qt_Opacity;
+                vec3 col = spectral(wave * 0.18 + time * 0.04);
+                fragColor = vec4(col * alpha, alpha * 0.65);
+            }
+        "
     }
 
     Item {
@@ -134,3 +204,4 @@ Item {
         anchors.margins: root.outerMargin + root.basePadding
     }
 }
+

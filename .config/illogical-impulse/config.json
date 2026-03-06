@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "smoke_blue"
+            "type": "orng"
         },
         "transparency": {
             "automatic": true,
@@ -137,7 +137,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/1348174.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -151,9 +151,9 @@
                     "dialNumberStyle": "full",
                     "hourHandStyle": "hollow",
                     "hourMarks": true,
-                    "minuteHandStyle": "thin",
+                    "minuteHandStyle": "medium",
                     "secondHandStyle": "classic",
-                    "sides": 23,
+                    "sides": 14,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -178,8 +178,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 377.5898437499999,
-                "y": 405.8828125
+                "x": 220.8749999999999,
+                "y": 587.05078125
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -205,8 +205,8 @@
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2724.26953125,
-                "y": 765.1132812499998
+                "x": 2136.9570312500005,
+                "y": 177.39453124999977
             }
         }
     },
