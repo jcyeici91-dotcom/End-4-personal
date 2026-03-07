@@ -136,8 +136,8 @@ Item {
     }
 
     // Ajustados para encajar en la barra.
-    property int individualIconBoxHeight: 15 // Reducido de 24
-    property int iconBoxWrapperSize: 18    // Reducido de 28
+    property int individualIconBoxHeight: 24 // Reducido de 24
+    property int iconBoxWrapperSize: 28    // Reducido de 28
     property real iconRatio: 0.8
     property bool showIcons: Config.options.bar.workspaces.showAppIcons
 

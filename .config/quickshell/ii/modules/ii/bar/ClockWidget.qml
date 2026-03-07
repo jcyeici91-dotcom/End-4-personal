@@ -78,7 +78,7 @@ Item {
         anchors.centerIn: parent
         spacing: 8
 
-        Row {
+        RowLayout {
             id: timeGroup
             spacing: 2
             Layout.alignment: Qt.AlignVCenter
@@ -86,17 +86,19 @@ Item {
             StyledText {
                 text: root.h1
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.large * 1.35
+                font.pixelSize: Appearance.font.pixelSize.large * 1.30  // hora
                 font.weight: Font.Black
                 color: root.colH1
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
                 text: root.h2
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.large * 1.35
+                font.pixelSize: Appearance.font.pixelSize.large * 1.30 //hora
                 font.weight: Font.Black
                 color: root.colH2
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
@@ -107,46 +109,49 @@ Item {
                 color: root.colPuntos
                 leftPadding: 2
                 rightPadding: 2
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
                 text: root.m1
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.large * 1.15
+                font.pixelSize: Appearance.font.pixelSize.large * 1.25           // minutos 
                 font.weight: Font.Black
                 color: root.colM1
-                Layout.alignment: Qt.AlignVCenter
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
                 text: root.m2
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.large * 1.15
+                font.pixelSize: Appearance.font.pixelSize.large * 1.25       // minutos
                 font.weight: Font.Black
                 color: root.colM2
-                Layout.alignment: Qt.AlignVCenter
+                Layout.alignment: Qt.AlignBaseline
             }
         }
 
-        Row {
+        RowLayout {
             spacing: 2
             Layout.alignment: Qt.AlignVCenter
-            leftPadding: 4
-            
+
             StyledText {
                 text: root.s1
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.normal * 1.15
+                font.pixelSize: Appearance.font.pixelSize.normal * 0.95         //segundos 
                 font.weight: Font.Black
                 color: root.colS1
+                Layout.alignment: Qt.AlignBaseline
+                leftPadding: 4
             }
 
             StyledText {
                 text: root.s2
                 font.family: "Anton, Archivo Black, Arial Black, sans-serif"
-                font.pixelSize: Appearance.font.pixelSize.normal * 1.15
+                font.pixelSize: Appearance.font.pixelSize.normal * 0.95    //segundos
                 font.weight: Font.Black
                 color: root.colS2
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
@@ -158,10 +163,11 @@ Item {
                 color: root.colSuffix
                 opacity: 0.8
                 leftPadding: 4
+                Layout.alignment: Qt.AlignBaseline
             }
         }
 
-        Row {
+        RowLayout {
             visible: root.expanded
             spacing: 4
             Layout.alignment: Qt.AlignVCenter
@@ -172,6 +178,7 @@ Item {
                 font.pixelSize: Appearance.font.pixelSize.normal
                 font.weight: Font.Black
                 color: root.colDateDot
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
@@ -181,6 +188,7 @@ Item {
                 font.pixelSize: Appearance.font.pixelSize.normal
                 font.weight: Font.Bold
                 color: root.colDateW
+                Layout.alignment: Qt.AlignBaseline
             }
 
             StyledText {
@@ -189,6 +197,7 @@ Item {
                 font.pixelSize: Appearance.font.pixelSize.normal
                 font.weight: Font.Bold
                 color: root.colDateN
+                Layout.alignment: Qt.AlignBaseline
             }
         }
     }

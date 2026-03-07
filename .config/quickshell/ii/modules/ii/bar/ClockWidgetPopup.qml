@@ -25,38 +25,36 @@ StyledPopup {
         return Qt.locale().standaloneMonthName(calMonth, Locale.LongFormat) + " " + calYear
     }
 
+    // Corregido: En JS los meses van de 0 (Enero) a 11 (Diciembre).
+    // Fechas ajustadas a los días exactos de El Salvador.
     property var salvadorHolidays: [
-        { month: 4, day: 30, label: "Día del Trabajo" },
-        { month: 5, day: 9,  label: "Día de la Madre" },
-        { month: 6, day: 16, label: "Día del Padre" },
-        { month: 5, day: 29, label: "Día del Servidor Judicial" },
-        { month: 7, day: 5,  label: "Fiestas Agostinas / Divino Salvador" },
-        { month: 8, day: 14, label: "Día de la Independencia" },
-        { month: 10, day: 1, label: "Día de los Difuntos" },
-        { month: 11, day: 24, label: "Navidad" }
+        { month: 4, day: 1,  label: "Día del Trabajo" },
+        { month: 4, day: 10, label: "Día de la Madre" },
+        { month: 5, day: 17, label: "Día del Padre" },
+        { month: 5, day: 29, label: "Día del Servidor Judicial" }, // Asumiendo 29 de Junio
+        { month: 7, day: 6,  label: "Fiestas Agostinas" },
+        { month: 8, day: 15, label: "Día de la Independencia" },
+        { month: 10, day: 2, label: "Día de los Difuntos" },
+        { month: 11, day: 25, label: "Navidad" }
     ]
 
+    // Ahora devuelve un arreglo de objetos para armar la UI dinámicamente
     function getUpcomingHolidays() {
-        let today = currentDate
-        let upcoming = salvadorHolidays.filter(h => {
+        // Normalizamos "hoy" a medianoche para evitar bugs de horas
+        let today = new Date(calYear, calMonth, calToday); 
+        
+        return salvadorHolidays.filter(h => {
             let hDate = new Date(calYear, h.month, h.day)
             return hDate >= today
         }).slice(0, 5)
-
-        if (upcoming.length === 0) return "No hay feriados próximos"
-
-        return upcoming.map(h => {
-            let d = new Date(calYear, h.month, h.day)
-            let dayStr = d.toLocaleDateString(Qt.locale(), "dd MMM")
-            return dayStr + " – " + h.label
-        }).join("\n")
     }
 
     ColumnLayout {
         id: columnLayout
         anchors.centerIn: parent
-        spacing: 12
+        spacing: 16 // Aumentamos un poco el espaciado general para que respire
 
+        // --- CALENDARIO ---
         Item {
             Layout.fillWidth: true
             implicitHeight: calendarColumn.implicitHeight
@@ -65,14 +63,14 @@ StyledPopup {
                 id: calendarColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
-                spacing: 10
+                spacing: 12
 
                 Rectangle {
                     width: monthLabel.implicitWidth + 32
                     height: monthLabel.implicitHeight + 12
                     radius: height / 2
                     color: Appearance.colors.colPrimary
-                    opacity: 0.20
+                    opacity: 0.15 // Un fondo un poco más sutil
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     StyledText {
@@ -81,7 +79,7 @@ StyledPopup {
                         text: root.calMonthLabel.toUpperCase()
                         font.pixelSize: Appearance.font.pixelSize.medium
                         font.weight: Font.Bold
-                        font.letterSpacing: 1.8
+                        font.letterSpacing: 1.5
                         color: Appearance.colors.colPrimary
                     }
                 }
@@ -91,7 +89,7 @@ StyledPopup {
                     anchors.right: parent.right
                     spacing: 0
 
-                    readonly property var dayNames: ["Mo","Tu","We","Th","Fr","Sa","Su"]
+                    readonly property var dayNames: ["Lu","Ma","Mi","Ju","Vi","Sá","Do"] // Español por defecto
 
                     Repeater {
                         model: 7
@@ -104,7 +102,7 @@ StyledPopup {
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.DemiBold
                                 color: (index >= 5) ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
-                                opacity: 0.75
+                                opacity: 0.6 // Reduce el peso visual de los encabezados
                             }
                         }
                     }
@@ -115,7 +113,7 @@ StyledPopup {
                     anchors.right: parent.right
                     height: 1
                     color: Appearance.colors.colOnSurface
-                    opacity: 0.15
+                    opacity: 0.10 // Divisor más elegante
                 }
 
                 Grid {
@@ -142,7 +140,7 @@ StyledPopup {
                                 height: width
                                 radius: width / 2
                                 color: Appearance.colors.colPrimary
-                                opacity: dayCell.isToday ? 0.85 : 0
+                                opacity: dayCell.isToday ? 0.9 : 0
                                 Behavior on opacity { NumberAnimation { duration: 180 } }
                             }
 
@@ -157,7 +155,7 @@ StyledPopup {
                                     if (dayCell.isWeekend) return Appearance.colors.colPrimary
                                     return Appearance.colors.colOnSurface
                                 }
-                                opacity: dayCell.isToday ? 1.0 : (dayCell.isWeekend ? 0.9 : 0.8)
+                                opacity: dayCell.isToday ? 1.0 : (dayCell.isWeekend ? 0.8 : 0.7)
                             }
                         }
                     }
@@ -165,39 +163,81 @@ StyledPopup {
             }
         }
 
-        StyledPopupValueRow {
-            icon: "timelapse"
-            label: Translation.tr("System uptime")
-            value: root.formattedUptime
-            Layout.topMargin: 4
-        }
-
+        // --- SEPARADOR Y UPTIME ---
         Rectangle {
             Layout.fillWidth: true
             height: 1
             color: Appearance.colors.colOnSurface
-            opacity: 0.12
+            opacity: 0.10
+            Layout.topMargin: 4
+            Layout.bottomMargin: 4
         }
 
+        StyledPopupValueRow {
+            icon: "timelapse"
+            label: Translation.tr("Tiempo de actividad")
+            value: root.formattedUptime
+            Layout.fillWidth: true
+        }
+
+        // --- PRÓXIMOS FERIADOS ---
         ColumnLayout {
-            spacing: 6
+            spacing: 8
             Layout.fillWidth: true
 
             StyledPopupValueRow {
                 icon: "celebration"
-                label: Translation.tr("Próximos asuetos / feriados")
-                value: ""
+                label: Translation.tr("Próximos feriados")
+                value: "" // Funciona como título
+                Layout.fillWidth: true
             }
 
-            StyledText {
+            // Nueva lista de feriados más estructurada y elegante
+            ColumnLayout {
                 Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: Appearance.colors.colOnSurfaceVariant
-                font.pixelSize: Appearance.font.pixelSize.small + 1
-                lineHeight: 1.3
-                text: getUpcomingHolidays()
+                Layout.leftMargin: 32 // Alineado con el texto del row anterior (asumiendo el espacio del ícono)
+                spacing: 6
+
+                property var upcomingList: root.getUpcomingHolidays()
+
+                StyledText {
+                    visible: parent.upcomingList.length === 0
+                    text: "No hay feriados próximos"
+                    color: Appearance.colors.colOnSurfaceVariant
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    opacity: 0.7
+                }
+
+                Repeater {
+                    model: parent.upcomingList
+                    delegate: RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        StyledText {
+                            // Fecha
+                            text: {
+                                let d = new Date(root.calYear, modelData.month, modelData.day)
+                                return d.toLocaleDateString(Qt.locale(), "dd MMM")
+                            }
+                            color: Appearance.colors.colPrimary
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: Font.DemiBold
+                            Layout.alignment: Qt.AlignTop
+                        }
+
+                        StyledText {
+                            // Nombre del feriado
+                            text: modelData.label
+                            color: Appearance.colors.colOnSurface
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                            opacity: 0.85
+                        }
+                    }
+                }
             }
         }
     }
 }
-

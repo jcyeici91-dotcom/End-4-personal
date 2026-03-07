@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "smoke_blue"
+            "type": "cocoa_rose"
         },
         "transparency": {
             "automatic": true,
@@ -137,7 +137,7 @@
             "workspaceZoom": 1
         },
         "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/65495-514501835_small.mp4.jpg",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/07.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/47.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -147,13 +147,13 @@
                     "backgroundStyle": "cookie",
                     "constantlyRotate": true,
                     "dateInClock": true,
-                    "dateStyle": "bubble",
-                    "dialNumberStyle": "none",
-                    "hourHandStyle": "fill",
+                    "dateStyle": "rect",
+                    "dialNumberStyle": "full",
+                    "hourHandStyle": "classic",
                     "hourMarks": true,
-                    "minuteHandStyle": "medium",
-                    "secondHandStyle": "dot",
-                    "sides": 9,
+                    "minuteHandStyle": "classic",
+                    "secondHandStyle": "classic",
+                    "sides": 14,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -205,8 +205,8 @@
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2128.83203125,
-                "y": 204.30468749999977
+                "x": 2289.390625,
+                "y": 181.73828124999977
             }
         }
     },
@@ -228,7 +228,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rect",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -350,8 +350,8 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 35,
-            "width": 45
+            "height": 40,
+            "width": 40
         },
         "timers": {
             "showPomodoro": true,
