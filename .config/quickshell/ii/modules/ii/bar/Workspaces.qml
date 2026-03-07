@@ -135,8 +135,9 @@ Item {
         return visibleWorkspaces.indexOf(id)
     }
 
-    property int individualIconBoxHeight: 24
-    property int iconBoxWrapperSize: 28
+    // Ajustados para encajar en la barra.
+    property int individualIconBoxHeight: 15 // Reducido de 24
+    property int iconBoxWrapperSize: 18    // Reducido de 28
     property real iconRatio: 0.8
     property bool showIcons: Config.options.bar.workspaces.showAppIcons
 
@@ -401,8 +402,8 @@ Item {
 
         y: root.vertical ? Math.round(indicatorPosition) : 0
         x: root.vertical ? 0 : Math.round(indicatorPosition)
-        implicitHeight: root.vertical ? Math.round(indicatorLength) : individualIconBoxHeight
-        implicitWidth: root.vertical ? individualIconBoxHeight : Math.round(indicatorLength)
+        implicitHeight: root.vertical ? Math.round(indicatorLength) : baseHeight // CORRECCIÓN: Usar baseHeight (que es wrapperSize)
+        implicitWidth: root.vertical ? baseHeight : Math.round(indicatorLength)
 
         SequentialAnimation {
             running: fxEnabled && premiumActiveIndicatorPulse && fxActiveIndicatorPill
@@ -862,8 +863,7 @@ Item {
                                     id: mainAppIcon
                                     source: modelData.icon
 
-                                    readonly property int superExtraDown: 3
-                                    readonly property int cornerOffset: Math.max(-8, Math.min(8, root.workspaceIconMarginShrinked))
+                                  readonly property int cornerOffset: Math.max(-8, Math.min(8, root.workspaceIconMarginShrinked))
 
                                     width: Math.round(root.iconBoxWrapperSize * (
                                         root.superShowNumbers ? root.workspaceIconSizeShrinkFactor : root.workspaceIconSizeFactor
@@ -893,9 +893,8 @@ Item {
                                         ? Math.round(iconFxBox.height - height - cornerOffset)
                                         : Math.round((iconFxBox.height - height) / 2))
                                        + focusYOffset
-                                       + (root.superShowNumbers ? superExtraDown : 0)
-
-                                    scale: iconCell.isFocusedIconExact ? 1.08 : (iconHover.containsMouse ? 1.05 : 1.0)
+                                      
+                                      scale: iconCell.isFocusedIconExact ? 1.08 : (iconHover.containsMouse ? 1.05 : 1.0)
 
                                     Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                                     Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -904,54 +903,54 @@ Item {
                                     Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 }
-                            }
 
-                            Rectangle {
-                                visible: fxEnabled && premium && !iconCell.superFx
-                                    && root.bottomActiveDotEnabled
-                                    && iconCell.isFocusedIconExact
-                                    && !background.showCenteredActiveDot
+                                Rectangle {
+                                    visible: fxEnabled && premium && !iconCell.superFx
+                                        && root.bottomActiveDotEnabled
+                                        && iconCell.isFocusedIconExact
+                                        && !background.showCenteredActiveDot
 
-                                width: root.activeDotWidth
-                                height: root.activeDotHeight
-                                radius: root.activeDotRadius
+                                    width: root.activeDotWidth
+                                    height: root.activeDotHeight
+                                    radius: root.activeDotRadius
 
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: root.bottomActiveDotBottomMargin
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: root.bottomActiveDotBottomMargin
 
-                                color: Appearance.colors.colPrimary
-                                opacity: 1.0
+                                    color: Appearance.colors.colPrimary
+                                    opacity: 1.0
 
-                                border.width: root.bottomActiveDotOutline ? 1 : 0
-                                border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
+                                    border.width: root.bottomActiveDotOutline ? 1 : 0
+                                    border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
 
-                                layer.enabled: fxEnabled && root.bottomActiveDotGlow
-                                layer.effect: MultiEffect {
-                                    shadowEnabled: true
-                                    shadowBlur: root.bottomActiveDotGlowBlur
-                                    shadowOpacity: root.bottomActiveDotGlowOpacity
-                                    shadowColor: Appearance.colors.colPrimary
-                                    shadowHorizontalOffset: 0
-                                    shadowVerticalOffset: 0
-                                }
-                            }
-
-                            Loader {
-                                active: Config.options.bar.workspaces.monochromeIcons
-                                anchors.fill: mainAppIcon
-                                sourceComponent: Item {
-                                    Desaturate {
-                                        id: desaturatedIcon
-                                        visible: false
-                                        anchors.fill: parent
-                                        source: mainAppIcon
-                                        desaturation: 0.8
+                                    layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                                    layer.effect: MultiEffect {
+                                        shadowEnabled: true
+                                        shadowBlur: root.bottomActiveDotGlowBlur
+                                        shadowOpacity: root.bottomActiveDotGlowOpacity
+                                        shadowColor: Appearance.colors.colPrimary
+                                        shadowHorizontalOffset: 0
+                                        shadowVerticalOffset: 0
                                     }
-                                    ColorOverlay {
-                                        anchors.fill: desaturatedIcon
-                                        source: desaturatedIcon
-                                        color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                }
+
+                                Loader {
+                                    active: Config.options.bar.workspaces.monochromeIcons
+                                    anchors.fill: mainAppIcon
+                                    sourceComponent: Item {
+                                        Desaturate {
+                                            id: desaturatedIcon
+                                            visible: false
+                                            anchors.fill: parent
+                                            source: mainAppIcon
+                                            desaturation: 0.8
+                                        }
+                                        ColorOverlay {
+                                            anchors.fill: desaturatedIcon
+                                            source: desaturatedIcon
+                                            color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                        }
                                     }
                                 }
                             }
@@ -1150,4 +1149,3 @@ Item {
         burstToken = burstToken + 1
     }
 }
-

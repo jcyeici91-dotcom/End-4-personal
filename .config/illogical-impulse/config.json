@@ -74,7 +74,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "smoke_blue"
         },
         "transparency": {
             "automatic": true,
@@ -226,9 +226,9 @@
         "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 2,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": false
@@ -350,7 +350,7 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 45,
+            "height": 35,
             "width": 45
         },
         "timers": {
@@ -540,7 +540,7 @@
     },
     "overview": {
         "centerIcons": true,
-        "centerTopPaddingRatio": 3,
+        "centerTopPaddingRatio": 5,
         "columns": 1,
         "enable": true,
         "hyprscrollingImplementation": {
