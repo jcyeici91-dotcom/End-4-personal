@@ -21,9 +21,13 @@ Item { // Wrapper
 
     property string searchingText: LauncherSearch.query
     property bool showResults: searchingText != ""
-    property string overviewPosition: "top" // REALLYFIXME: a fallback value for now, its not used anymore 
+    property string overviewPosition: Config.options.overview.position
     implicitWidth: searchWidgetContent.implicitWidth + Appearance.sizes.elevationMargin * 2
     implicitHeight: searchWidgetContent.implicitHeight + searchBar.verticalPadding * 2 + Appearance.sizes.elevationMargin * 2
+
+    function clearResults() {
+        resultModel.values = [];
+    }
 
     function focusFirstItem() {
         appResults.currentIndex = 0;
@@ -108,6 +112,8 @@ Item { // Wrapper
         implicitHeight: gridLayout.implicitHeight
         radius: searchBar.height / 2 + searchBar.verticalPadding
         color: Appearance.colors.colBackgroundSurfaceContainer
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
 
         Behavior on implicitHeight {
             id: searchHeightBehavior
@@ -146,7 +152,7 @@ Item { // Wrapper
 
             Rectangle {
                 // Separator
-                visible: root.showResults
+                visible: root.showResults && appResults.count > 0
                 Layout.fillWidth: true
                 height: 1
                 color: Appearance.colors.colOutlineVariant
@@ -155,9 +161,9 @@ Item { // Wrapper
 
             ListView { // App results
                 id: appResults
-                visible: root.showResults
+                visible: root.showResults && count > 0
                 Layout.fillWidth: true
-                implicitHeight: Math.min(600, appResults.contentHeight + topMargin + bottomMargin)
+                implicitHeight: Math.min(360, appResults.contentHeight + topMargin + bottomMargin)
                 clip: true
                 topMargin: 10
                 bottomMargin: 10

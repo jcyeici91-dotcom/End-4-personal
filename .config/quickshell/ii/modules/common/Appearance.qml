@@ -30,7 +30,7 @@ Singleton {
         let y = 0.5768 * (x * x) - 0.759 * (x) + 0.2896
         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
     }
-    property real autoContentTransparency: 0.9
+    property real autoContentTransparency: 0
     property real backgroundTransparency: Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
     property real contentTransparency: Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
 
@@ -208,6 +208,7 @@ Singleton {
         property int verylarge: 30
         property int full: 9999
         property int screenRounding: large
+        property int drawingPanelRounding: large
         property int windowRounding: 18
     }
 
@@ -236,8 +237,8 @@ Singleton {
         }
         property QtObject pixelSize: QtObject {
             property int smallest: 10
-            property int smaller: 12
-            property int smallie: 13
+            property int smaller: 13
+            property int smallie: 14
             property int small: 15
             property int normal: 16
             property int large: 17

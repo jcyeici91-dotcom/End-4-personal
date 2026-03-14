@@ -5,12 +5,16 @@ import qs.modules.common
 Item {
     id: root
     
+    property real r: Appearance.rounding.windowRounding ?? 18
+    
     implicitWidth: layout.implicitWidth + 24
-    implicitHeight: layout.implicitHeight + 30
+    // MODIFICADO: Sumamos el espacio de las curvas a la altura total
+    implicitHeight: layout.implicitHeight + (r * 2) + 30
 
     SessionBackground {
         anchors.fill: parent
         attachEdge: "right"
+        rounding: root.r
     }
 
     ColumnLayout {

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import qs.modules.ii.bar.weather
 import QtQuick
 import QtQuick.Layouts
@@ -9,7 +11,6 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
-import qs.modules.ii.ui 1.0
 import "." as Bar
 
 Item {
@@ -18,31 +19,13 @@ Item {
     property var screen: root.QsWindow?.window?.screen ?? null
     property int monitorIndex: -1
     property var brightnessMonitor: null
-
-    function recomputeBrightnessMonitor() {
-        root.brightnessMonitor = Brightness.getMonitorForScreen(root.screen)
-    }
-
     property bool hasActiveWindows: false
+
+    property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
+    readonly property int centerSideModuleWidth: (useShortenedForm == 2) ? Appearance.sizes.barCenterSideModuleWidthHellaShortened : (useShortenedForm == 1) ? Appearance.sizes.barCenterSideModuleWidthShortened : Appearance.sizes.barCenterSideModuleWidth
 
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
-
-    function _styleFromConfig(v) {
-        switch (v) {
-            case 0: return "glass"
-            case 1: return "solid"
-            case 2: return "adaptive"
-            case 3: return "crystal"
-            default: return "solid"
-        }
-    }
-
-    function _styleFromUIState() {
-        const s = UIState.surfaceStyle
-        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
-    }
-
     readonly property string resolvedStyle: {
         if (followGlobalBarStyle) {
             const s = _styleFromUIState()
@@ -54,10 +37,9 @@ Item {
     readonly property bool bgIsGlass: resolvedStyle === "glass"
     readonly property bool bgIsSolid: resolvedStyle === "solid"
     readonly property bool bgIsAdaptive: resolvedStyle === "adaptive"
-    readonly property bool bgIsCrystal: resolvedStyle === "crystal"
 
     readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
-    readonly property bool useGlassMode: bgIsGlass || bgIsCrystal || (bgIsAdaptive && !hasActiveWindows)
+    readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
 
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
     readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
@@ -65,6 +47,30 @@ Item {
 
     readonly property int hybridResizeMs: 85
     readonly property int pillGap: 8
+
+    property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
+    property var leftList: []
+    property var centerList: []
+    property var rightList: []
+
+    function recomputeBrightnessMonitor() {
+        root.brightnessMonitor = Brightness.getMonitorForScreen(root.screen)
+    }
+
+    function _styleFromConfig(v) {
+        switch (v) {
+            case 0: return "glass"
+            case 1: return "solid"
+            case 2: return "adaptive"
+            default: return "solid"
+        }
+    }
+
+    function _styleFromUIState() {
+        if (typeof UIState === 'undefined') return ""
+        const s = UIState.surfaceStyle
+        return (s === "solid" || s === "glass" || s === "adaptive") ? s : ""
+    }
 
     function resolveMonitorForThisBar() {
         if (!HyprlandData) return null
@@ -96,6 +102,39 @@ Item {
         )
     }
 
+    function sendWrappedFrameState() {
+        try {
+            Quickshell.Io.Ipc.call("wrappedFrame", "setBarState", [
+                root.resolvedStyle,
+                root.hasActiveWindows,
+                root.useHybridGroups,
+                root.cornerStyle
+            ])
+        } catch (e) {}
+    }
+
+    function recomputeCenterSplit() {
+        const model = root.fullModel
+        if (!model || model.length === undefined) {
+            root.leftList = []
+            root.centerList = []
+            root.rightList = []
+            return
+        }
+        const idx = model.findIndex(item => item && item.centered === true)
+
+        if (idx === -1) {
+            root.leftList = []
+            root.centerList = model
+            root.rightList = []
+            return
+        }
+
+        root.leftList = model.slice(0, idx)
+        root.centerList = [model[idx]]
+        root.rightList = model.slice(idx + 1)
+    }
+
     Timer {
         id: hyprRecomputeTimer
         interval: 60
@@ -111,94 +150,62 @@ Item {
     }
 
     onMonitorIndexChanged: if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
-
     onScreenChanged: {
         recomputeBrightnessMonitor()
         if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
-    }
-
-    function sendWrappedFrameState() {
-        try {
-            Quickshell.Io.Ipc.call("wrappedFrame", "setBarState", [
-                root.resolvedStyle,
-                root.hasActiveWindows,
-                root.useHybridGroups,
-                root.cornerStyle
-            ])
-        } catch (e) {}
     }
 
     onHasActiveWindowsChanged: sendWrappedFrameState()
     onResolvedStyleChanged: sendWrappedFrameState()
     onUseHybridGroupsChanged: sendWrappedFrameState()
     onCornerStyleChanged: sendWrappedFrameState()
-
-    property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
-    property var leftList: []
-    property var centerList: []
-    property var rightList: []
-
-    function recomputeCenterSplit() {
-        const model = root.fullModel
-        if (!model || model.length === undefined) {
-            root.leftList = []
-            root.centerList = []
-            root.rightList = []
-            return
-        }
-        const idx = model.findIndex(item => item && item.centered === true)
-        if (idx === -1) {
-            root.leftList = []
-            root.centerList = model
-            root.rightList = []
-            return
-        }
-        root.leftList = model.slice(0, idx)
-        root.centerList = [model[idx]]
-        root.rightList = model.slice(idx + 1)
-    }
-
     onFullModelChanged: recomputeCenterSplit()
 
-    FocusedScrollMouseArea {
-        id: barLeftSideMouseArea
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: middleSection.left
-        implicitHeight: Appearance.sizes.baseBarHeight
-        onScrollDown: if (root.brightnessMonitor) root.brightnessMonitor.setBrightness(root.brightnessMonitor.brightness - 0.05)
-        onScrollUp: if (root.brightnessMonitor) root.brightnessMonitor.setBrightness(root.brightnessMonitor.brightness + 0.05)
-        onMovedAway: GlobalStates.osdBrightnessOpen = false
-        onPressed: event => {
-            if (event.button === Qt.LeftButton)
-                GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen
+    Loader {
+        z: -11
+        active: root.showSolidBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
+        anchors.fill: barBackground
+        sourceComponent: StyledRectangularShadow {
+            anchors.fill: undefined
+            target: barBackground
         }
-        ScrollHint {
-            reveal: barLeftSideMouseArea.hovered
-            icon: "light_mode"
-            tooltipText: Translation.tr("Scroll to change brightness")
-            side: "left"
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
+    }
+
+    Rectangle {
+        id: barBackground
+        z: -10
+        anchors {
+            fill: parent
+            margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut - 1) : 0
+        }
+        color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
+        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.full : 0
+        
+        border.width: 0 
+        border.color: "transparent"
+
+        Behavior on color {
+            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
     }
 
     Item {
         id: leftStopper
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.leftMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2))
-        width: 1
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            left: parent.left
+            leftMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
+        }
     }
 
     Loader {
-        id: leftContent
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: leftStopper.right
-        anchors.leftMargin: 6
+        id: leftSectionLoader
+        anchors {
+            top: parent.top
+            topMargin: root.useHybridGroups ? 6 : (root.cornerStyle === 1 ? 6 : 0)
+            left: leftStopper.right
+        }
         active: true
         sourceComponent: root.useHybridGroups ? leftHybridComponent : leftClassicComponent
     }
@@ -208,25 +215,20 @@ Item {
         RowLayout {
             spacing: 4
             Repeater {
+                id: leftRepeater
                 model: Config.options.bar.layouts.left
-                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
+                delegate: BarComponent {
+                    list: Config.options.bar.layouts.left
+                    barSection: 0
+                }
             }
         }
     }
 
     Component {
         id: leftHybridComponent
-        Bar.BarGroup {
-            forcePillStyle: true
-            vertical: false
-            spacing: 4
-            isContainer: true
-            autoHide: false
-            padding: 6
-            edgeInset: 2
-            attachScreenLeft: false
-            width: implicitWidth
-            Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
+        RowLayout {
+            spacing: 6
             Repeater {
                 model: Config.options.bar.layouts.left
                 delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
@@ -236,9 +238,11 @@ Item {
 
     Item {
         id: middleSection
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            horizontalCenter: parent.horizontalCenter
+        }
 
         Loader {
             anchors.fill: parent
@@ -251,11 +255,16 @@ Item {
             Item {
                 anchors.fill: parent
                 RowLayout {
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.right: centerCenter.left
-                    anchors.rightMargin: 4
+                    anchors {
+                        top: parent.top
+                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        bottom: parent.bottom
+                        right: centerCenter.left
+                        rightMargin: 4
+                    }
+                    spacing: 4
                     Repeater {
+                        id: middleLeftRepeater
                         model: root.leftList
                         delegate: BarComponent {
                             list: Config.options.bar.layouts.center
@@ -264,11 +273,16 @@ Item {
                         }
                     }
                 }
+
                 RowLayout {
                     id: centerCenter
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors {
+                        top: parent.top
+                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        bottom: parent.bottom
+                        horizontalCenter: parent.horizontalCenter
+                    }
+                    spacing: 4
                     Repeater {
                         model: root.centerList
                         delegate: BarComponent {
@@ -278,12 +292,18 @@ Item {
                         }
                     }
                 }
+
                 RowLayout {
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.left: centerCenter.right
-                    anchors.leftMargin: 4
+                    anchors {
+                        top: parent.top
+                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        bottom: parent.bottom
+                        left: centerCenter.right
+                        leftMargin: 4
+                    }
+                    spacing: 4
                     Repeater {
+                        id: middleRightRepeater
                         model: root.rightList
                         delegate: BarComponent {
                             list: Config.options.bar.layouts.center
@@ -300,83 +320,60 @@ Item {
             Item {
                 anchors.fill: parent
 
+                RoundCorner {
+                    anchors.right: centerNotch.left
+                    anchors.top: root.isBottom ? centerNotch.top : parent.top
+                    anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
+                    width: height
+                    color: centerNotch.effectiveFill
+                    corner: root.isBottom ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.TopRight
+                }
+
+                RoundCorner {
+                    anchors.left: centerNotch.right
+                    anchors.top: root.isBottom ? centerNotch.top : parent.top
+                    anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
+                    width: height
+                    color: centerNotch.effectiveFill
+                    corner: root.isBottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft
+                }
+
                 Bar.BarGroup {
-                    id: centerCenterGroup
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
+                    id: centerNotch
+                    anchors.top: !root.isBottom ? parent.top : undefined
+                    anchors.bottom: root.isBottom ? parent.bottom : undefined
                     anchors.horizontalCenter: parent.horizontalCenter
                     vertical: false
-                    spacing: 4
-                    isContainer: true
-                    autoHide: true
+                    
+                    spacing: root.pillGap 
                     padding: 6
                     edgeInset: 2
+                    isContainer: true
+                    autoHide: true
+                    
+                    isNotch: true           
+                    showBorder: false       
+                    showHighlight: false    
+                    unifyChildChips: true   
+                    
                     width: implicitWidth
+                    height: implicitHeight + (root.useHybridGroups ? 6 : 0)
+                    
                     Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
+                    Behavior on height { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
+
                     Repeater {
-                        model: root.centerList
+                        model: {
+                            let arr = [];
+                            if (root.leftList) arr = arr.concat(root.leftList);
+                            if (root.centerList) arr = arr.concat(root.centerList);
+                            if (root.rightList) arr = arr.concat(root.rightList);
+                            return arr.filter(Boolean);
+                        }
                         delegate: BarComponent {
                             list: Config.options.bar.layouts.center
                             barSection: 1
                             originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
-                        }
-                    }
-                }
-
-                Loader {
-                    id: centerLeftLoader
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.right: centerCenterGroup.left
-                    anchors.rightMargin: root.pillGap
-                    active: (root.leftList && root.leftList.length > 0)
-                    visible: active
-                    sourceComponent: Bar.BarGroup {
-                        vertical: false
-                        spacing: 4
-                        isContainer: true
-                        autoHide: true
-                        padding: 6
-                        edgeInset: 2
-                        forcePillStyle: true
-                        width: implicitWidth
-                        Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
-                        Repeater {
-                            model: root.leftList
-                            delegate: BarComponent {
-                                list: Config.options.bar.layouts.center
-                                barSection: 1
-                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
-                            }
-                        }
-                    }
-                }
-
-                Loader {
-                    id: centerRightLoader
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.left: centerCenterGroup.right
-                    anchors.leftMargin: root.pillGap
-                    active: (root.rightList && root.rightList.length > 0)
-                    visible: active
-                    sourceComponent: Bar.BarGroup {
-                        vertical: false
-                        spacing: 4
-                        isContainer: true
-                        autoHide: true
-                        padding: 6
-                        edgeInset: 2
-                        forcePillStyle: true
-                        width: implicitWidth
-                        Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
-                        Repeater {
-                            model: root.rightList
-                            delegate: BarComponent {
-                                list: Config.options.bar.layouts.center
-                                barSection: 1
-                                originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
-                            }
                         }
                     }
                 }
@@ -386,18 +383,22 @@ Item {
 
     Item {
         id: rightStopper
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        width: 1
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            right: parent.right
+        }
+        width: -1
     }
 
     Loader {
-        id: rightContent
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.right: rightStopper.left
-        anchors.rightMargin: Math.max(8, Math.ceil(Appearance.rounding.screenRounding / 2)) + 6
+        id: rightSectionLoader
+        anchors {
+            top: parent.top
+            topMargin: root.useHybridGroups ? 6 : (root.cornerStyle === 1 ? 6 : 0)
+            right: rightStopper.left
+            rightMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
+        }
         active: true
         sourceComponent: root.useHybridGroups ? rightHybridComponent : rightClassicComponent
     }
@@ -407,25 +408,20 @@ Item {
         RowLayout {
             spacing: 4
             Repeater {
+                id: rightRepeater
                 model: Config.options.bar.layouts.right
-                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
+                delegate: BarComponent {
+                    list: rightRepeater.model
+                    barSection: 2
+                }
             }
         }
     }
 
     Component {
         id: rightHybridComponent
-        Bar.BarGroup {
-            forcePillStyle: true
-            vertical: false
-            spacing: 4
-            isContainer: true
-            autoHide: false
-            padding: 6
-            edgeInset: 2
-            attachScreenRight: false
-            width: implicitWidth
-            Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
+        RowLayout {
+            spacing: 6
             Repeater {
                 model: Config.options.bar.layouts.right
                 delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
@@ -436,25 +432,17 @@ Item {
     FocusedScrollMouseArea {
         id: barRightSideMouseArea
         z: -1
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: middleSection.right
-        anchors.right: parent.right
-        implicitHeight: Appearance.sizes.baseBarHeight
-        onScrollDown: Audio.decrementVolume()
-        onScrollUp: Audio.incrementVolume()
-        onMovedAway: GlobalStates.osdVolumeOpen = false
-        onPressed: event => {
-            if (event.button === Qt.LeftButton)
-                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            left: middleSection.right
+            right: parent.right
         }
-        ScrollHint {
-            reveal: barRightSideMouseArea.hovered
-            icon: "volume_up"
-            tooltipText: Translation.tr("Scroll to change volume")
-            side: "right"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
+        implicitHeight: Appearance.sizes.baseBarHeight
+        onPressed: event => {
+            if (event.button === Qt.LeftButton) {
+                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+            }
         }
     }
 
@@ -465,4 +453,3 @@ Item {
         sendWrappedFrameState()
     }
 }
-

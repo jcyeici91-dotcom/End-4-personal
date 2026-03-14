@@ -6,9 +6,9 @@ import QtQuick.Layouts
 StyledText {
     Layout.fillWidth: true
     font {
-        family: Appearance.font.family.expressive
+        family: Config.options.background.widgets.clock.digital.font.family
         pixelSize: 20
-        weight: 350
+        weight: 550
         // Set empty to prevent conflicts, not meaningless
         styleName: ""
         variableAxes: ({})

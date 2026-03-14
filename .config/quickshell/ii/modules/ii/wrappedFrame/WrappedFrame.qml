@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import qs
 import qs.modules.common
 import qs.modules.common.widgets
@@ -101,7 +102,31 @@ Item {
 
                 property int index: wrappedFrameVariant.variantModel.indexOf(monitorScope.modelData)
                 property bool hasActiveWindows: false
-                property bool showBarBackground: monitorScope.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
+                
+                // --- LÓGICA DEL MARCO ACTUALIZADA ---
+                property bool showBarBackground: {
+                    let style = Config.options.bar.barBackgroundStyle;
+                    let groupStyle = Config.options.bar.groupBackgroundStyle;
+                    let cornerStyle = Config.options.bar.cornerStyle;
+
+                    let isHybrid = groupStyle === "hybrid";
+                    let isHugTranspRect = (cornerStyle === 0 && style === 0 && (groupStyle === "rect" || groupStyle === "pills" || groupStyle === "rounded" || groupStyle === ""));
+                    
+                    // Nueva condición para Adaptive (2) cuando NO hay ventanas y estamos en modo Hug (0) o Float (1)
+                    let isAdaptiveEmpty = (style === 2 && !monitorScope.hasActiveWindows && (cornerStyle === 0 || cornerStyle === 1));
+
+                    // El marco se enciende en:
+                    // 1. Visible (1)
+                    // 2. Adaptive (2) con ventanas activas
+                    // 3. Hybrid
+                    // 4. Hug + Transparente + Rect
+                    // 5. Adaptive SIN ventanas (para mantener el marco cuando se vuelve transparente)
+                    return style === 1 || 
+                           (style === 2 && monitorScope.hasActiveWindows) || 
+                           (isHybrid && (style === 0 || style === 2)) ||
+                           isHugTranspRect ||
+                           isAdaptiveEmpty;
+                }
 
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
@@ -109,14 +134,11 @@ Item {
                     function onWindowListChanged() {
                         const monitor = HyprlandData.monitors.find(m => m.id === monitorScope.index);
                         const wsId = monitor?.activeWorkspace?.id;
-
                         const hasWindow = wsId ? HyprlandData.windowList.some(w => w.workspace.id === wsId && !w.floating) : false;
-
                         monitorScope.hasActiveWindows = hasWindow
                     }
                 }
 
-                // SCREEN CORNERS
                 Loader {
                     active: !(barBottom && !barVertical) && !(barVertical && !barBottom)
                     sourceComponent: ScreenCorner {
@@ -130,7 +152,7 @@ Item {
                     sourceComponent: ScreenCorner {
                         left: true
                         bottom: false
-                        showBackground: showBarBackground
+                        showBackground: monitorScope.showBarBackground
                     }
                 }
                 Loader {
@@ -146,11 +168,9 @@ Item {
                     sourceComponent: ScreenCorner {
                         left: false
                         bottom: true
-                        showBackground: showBarBackground
+                        showBackground: monitorScope.showBarBackground
                     }
                 }
-
-                // FRAMES
 
                 Loader {
                     active: !(!barVertical && barBottom)
@@ -165,7 +185,7 @@ Item {
                     sourceComponent: HorizontalFrame {
                         screen: monitorScope.modelData
                         anchors.top: true
-                        showBackground: showBarBackground
+                        showBackground: monitorScope.showBarBackground
                     }
                 }
                 Loader {
@@ -173,7 +193,7 @@ Item {
                     sourceComponent: VerticalFrame {
                         screen: monitorScope.modelData
                         anchors.right: true
-                        showBackground: showBarBackground
+                        showBackground: monitorScope.showBarBackground
                     }
                 }
                 Loader {
@@ -181,7 +201,7 @@ Item {
                     sourceComponent: VerticalFrame {
                         screen: monitorScope.modelData
                         anchors.left: true
-                        showBackground: showBarBackground
+                        showBackground: monitorScope.showBarBackground
                     }
                 }
             }

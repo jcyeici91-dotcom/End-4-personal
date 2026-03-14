@@ -1,4 +1,5 @@
 pragma ComponentBehavior: Bound
+
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.models
@@ -16,9 +17,7 @@ import "../../common/utils"
 Item {
     id: root
 
-    // -Orientación ---
     property bool vertical: false
-    // Propiedad útil para saber si la barra está a la derecha
     property bool rightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
 
     readonly property bool barIsVertical: root.vertical || (
@@ -33,12 +32,13 @@ Item {
     property int islandExpandedHeight: root.barHeightLimit
     property int islandRadius: 999
 
-    property int islandPaddingH: Math.round(8 + 4 * root.barT)
+    property int islandPaddingH: Math.max(6, Math.round(10 * root.autoScaleFactor))
     property int islandPaddingV: {
-    if (root.barHeightLimit <= 34) return 1
-    if (root.barHeightLimit <= 38) return 2
-    return Math.round(2 + 3 * root.barT)  // menos agresivo que 4
-}
+        if (root.barHeightLimit <= 34) return 1
+        if (root.barHeightLimit <= 38) return 2
+        if (root.barHeightLimit <= 42) return 3
+        return 4
+    }
 
     property int islandExpandAnimMs: 240
     property int islandFadeAnimMs: 170
@@ -47,24 +47,21 @@ Item {
     property int  islandPulseAnimMs: 220
     property real islandPulseScale: 1.000
 
-    property int islandBorderWidthCollapsed: Math.round(2 + 2 * root.barT)
-    property int islandBorderWidthExpanded:  Math.round(2 + 2 * root.barT)
+    property int islandBorderWidthCollapsed: Math.max(1, Math.round(2 * root.autoScaleFactor))
+    property int islandBorderWidthExpanded:  Math.max(1, Math.round(2 * root.autoScaleFactor))
     property int islandMaxWidth: 780
 
-     // EFECTOS VISUALES
-     property bool fxDropShadows: true
+    property bool fxDropShadows: true
     property bool fxCoverMaskCircle: false
     property bool fxCoverRing: false
     property bool fxWaves: true
     property bool fxLyricsGradientMask: true
 
-    // ANIMACIONES
     property bool animEnabled: true
     property bool animMarquee: true
     property bool animLyricScroller: true
     property bool animLayoutTransitions: true
 
-    // 1.4) “ALIVE FX” & OVERSHOOT
     property bool islandAliveFx: true
 
     property real islandBreatheScaleIdle: tunedBreatheIdle
@@ -86,7 +83,6 @@ Item {
     property int ringCycleMsPlay: tunedRingMsPlay
     property int ringCycleMsIdle: tunedRingMsIdle
 
-    // MPRIS
     property int _mprisRefreshTick: 0
 
     Timer {
@@ -117,7 +113,6 @@ Item {
     readonly property string trackArtist: (activePlayer ? activePlayer.trackArtist : "") || ""
     readonly property string fullText: trackTitle + (trackArtist ? " • " + trackArtist : "")
 
-    // THEME
     function _luma(c) {
         return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
     }
@@ -144,7 +139,6 @@ Item {
         ? Qt.rgba(1.0, 1.0, 1.0, 0.35)
         : Qt.rgba(0.0, 0.0, 0.0, 0.55)
 
-    // ART
     function normalizeArtUrl(u) {
         if (!u) return ""
         if (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("file://") || u.startsWith("image://"))
@@ -165,7 +159,6 @@ Item {
     }
     readonly property string trackArt: normalizeArtUrl(trackArtRaw)
 
-    // LYRICS
     readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
     readonly property bool useGradientMask: Config.options.bar.mediaPlayer.lyrics.useGradientMask
     readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style
@@ -253,13 +246,12 @@ Item {
         ? (lyricsLoader.item?.currentIndex ?? -1)
         : -1
 
-    // WIDTH
     property int maxWidthLyrics: 900
     property int maxWidthNoLyrics: 430
     property int minWidthNoLyrics: 180
     property int noLyricsSidePadding: 14
     property int lyricsSidePadding: 30
-    property int rowSpacing: 8
+    property int rowSpacing: Math.max(4, Math.round(8 * root.autoScaleFactor))
     property int rightMargin: 10
     property int leftMargin: 0
 
@@ -268,20 +260,20 @@ Item {
 
     TextMetrics {
         id: lyricMetrics
-        font.pixelSize: Appearance.font.pixelSize.smallie + 2
+        font.pixelSize: Math.max(10, Math.round((Appearance.font.pixelSize.smallie + 2) * root.autoScaleFactor))
         font.bold: true
         text: root.currentLyricText
     }
 
     TextMetrics {
         id: titleMetrics
-        font.pixelSize: Appearance.font.pixelSize.smallie + 2
+        font.pixelSize: Math.max(10, Math.round((Appearance.font.pixelSize.smallie + 2) * root.autoScaleFactor))
         font.bold: true
         text: root.fullText
     }
 
-    readonly property int coverW: 38
-    readonly property int bongoH: Math.max(22, root.islandExpandedHeight - 8)
+    readonly property int coverW: Math.round(38 * root.autoScaleFactor)
+    readonly property int bongoH: Math.max(16, Math.min(30, root.targetIslandHeight - 4))
     readonly property int bongoW: Math.round(bongoH * 1.35)
 
     readonly property int lyricsImplicitWidth: {
@@ -370,7 +362,6 @@ Item {
         }
     }
 
-    // WAVEVISUALIZER (cava)
     property list<real> visualizerPoints: []
 
     Process {
@@ -399,7 +390,6 @@ Item {
         }
     }
 
-    // Anti-recorte y adaptabilidad
     property int _bootRefresh: 0
 
     Timer {
@@ -413,7 +403,6 @@ Item {
 
     readonly property int _parentBarThickness: {
         if (!root.parent) return 0
-        // En vertical, el ancho de la barra es el grosor. En horizontal es el alto.
         return Math.floor(root.vertical ? root.parent.width : root.parent.height)
     }
 
@@ -429,10 +418,8 @@ Item {
         return Math.max(24, t)
     }
 
-    readonly property real barT: {
-        var t = (root.barHeightLimit - 30) / 20.0
-        return Math.max(0.0, Math.min(1.0, t))
-    }
+    readonly property real barT: Math.max(0.0, Math.min(1.0, (root.barHeightLimit - 30) / 20.0))
+    readonly property real autoScaleFactor: Math.max(0.7, Math.min(1.0, root.barHeightLimit / 44.0))
 
     readonly property real tunedOvershootExpand: 1.012 + (0.010 * barT)
     readonly property real tunedOvershootCollapse: 0.992 - (0.006 * barT)
@@ -446,7 +433,6 @@ Item {
     readonly property int tunedRingMsIdle: Math.round(1850 + 250 * barT)
     readonly property int tunedRingMsPlay: Math.round(1050 + 200 * barT)
 
-    // 8) Expand/Collapse y Tamaños
     readonly property bool islandExpanded: !root.vertical && root.hasMedia && (
         GlobalStates.mediaControlsOpen ||
         (root.islandEnabled && root.expandOnHover && islandHover.hovered) ||
@@ -471,38 +457,19 @@ Item {
         return Math.min(w, root.islandMaxWidth)
     }
 
-  readonly property int targetIslandHeight: {
-    if (!root.hasMedia) return 0
-
-    if (root.vertical) {
-        var pad = root.islandPaddingV * 2
-        var thickness = Math.max(1, root.targetIslandWidth - pad)
-        var slotSize = Math.max(16, Math.min(26, thickness))
-        var spc = Math.round(4 + 3 * root.barT)
-        return pad + slotSize + spc + slotSize
+    readonly property int targetIslandHeight: {
+        if (!root.hasMedia) return 0
+        if (root.vertical) {
+            var pad = root.islandPaddingV * 2
+            var thickness = Math.max(1, root.targetIslandWidth - pad)
+            var slotSize = Math.max(16, Math.min(26, thickness))
+            var spc = Math.round(4 + 3 * root.barT)
+            return pad + slotSize + spc + slotSize
+        }
+        var hLimit = Math.floor(root.barHeightLimit)
+        var maxIslandH = hLimit - (root.islandPaddingV * 2)
+        return Math.max(20, maxIslandH)
     }
-
-    // Horizontal
-    var hLimit = Math.max(28, Math.floor(root.barHeightLimit))   
-    var padV   = root.islandPaddingV * 2
-
-    // Espacio útil real para contenido
-    var usableH = hLimit - padV
-
-    // Tamaños más pequeños y seguros
-    var contentMin = Math.max(26, Math.round(hLimit * 0.75))   
-
-    var desired;
-    if (root.islandEnabled && !root.islandExpanded) {
-        // Colapsado: que quepa todo sin recorte
-        desired = Math.max(contentMin, Math.min(usableH, hLimit - 2))
-    } else {
-        // Expandido: casi todo el alto disponible
-        desired = Math.max(contentMin, hLimit - Math.max(2, padV))
-    }
-
-    return Math.max(28, Math.min(hLimit, desired))
-}
 
     property real hoverAmount: islandHover.hovered ? 1.0 : 0.0
     Behavior on hoverAmount {
@@ -582,14 +549,12 @@ Item {
         }
     }
 
-    // DIMENSIONES RAÍZ
     Layout.alignment: Qt.AlignVCenter
     Layout.fillHeight: false
     Layout.fillWidth: false
 
     Layout.minimumHeight: root.targetIslandHeight
     Layout.preferredHeight: root.targetIslandHeight
-
     Layout.minimumWidth: root.targetIslandWidth
     Layout.preferredWidth: root.targetIslandWidth
 
@@ -613,7 +578,6 @@ Item {
         NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
     }
 
-    // SHELL VISUAL
     Item {
         id: islandShell
         anchors.fill: parent
@@ -756,44 +720,44 @@ Item {
         }
 
        MouseArea {
-    id: mouseControl
-    anchors.fill: parent
-    hoverEnabled: true
-    z: 50
-    preventStealing: true
-    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton | Qt.BackButton | Qt.ForwardButton
+            id: mouseControl
+            anchors.fill: parent
+            hoverEnabled: true
+            z: 50
+            preventStealing: true
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton | Qt.BackButton | Qt.ForwardButton
 
-    onPressed: function (event) {
-        event.accepted = true
-        if (!root.activePlayer) return
+            onPressed: function (event) {
+                event.accepted = true
+                if (!root.activePlayer) return
 
-        if (event.button === Qt.MiddleButton) {
-            root.activePlayer.togglePlaying()
-        } else if (event.button === Qt.BackButton) {
-            root.activePlayer.previous()
-        } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
-            root.activePlayer.next()
-        } else if (event.button === Qt.LeftButton) {
+                if (event.button === Qt.MiddleButton) {
+                    root.activePlayer.togglePlaying()
+                } else if (event.button === Qt.BackButton) {
+                    root.activePlayer.previous()
+                } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
+                    root.activePlayer.next()
+                } else if (event.button === Qt.LeftButton) {
 
-            var globalPos = root.mapToItem(null, 0, 0)
+                    var globalPos = root.mapToItem(null, 0, 0)
 
-            Persistent.states.media.popupRect = Qt.rect(
-                globalPos.x,
-                globalPos.y,
-                root.width,
-                root.height
-            )
+                    Persistent.states.media.popupRect = Qt.rect(
+                        globalPos.x,
+                        globalPos.y,
+                        root.width,
+                        root.height
+                    )
 
-            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+                    GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+                }
+            }
+
+            onWheel: function (wheel) {
+                wheel.accepted = true
+                if (wheel.angleDelta.y > 0) Audio.incrementVolume()
+                else Audio.decrementVolume()
+            }
         }
-    }
-
-    onWheel: function (wheel) {
-        wheel.accepted = true
-        if (wheel.angleDelta.y > 0) Audio.incrementVolume()
-        else Audio.decrementVolume()
-    }
-}
 
         Item {
             id: contentRoot
@@ -827,7 +791,6 @@ Item {
                 }
             ]
 
-            // Vista COLAPSADA (Horizontal y Vertical)
             Item {
                 id: collapsedView
                 anchors.fill: parent
@@ -839,11 +802,11 @@ Item {
                     ? Math.max(1, width - (root.islandPaddingV * 2)) 
                     : Math.max(1, height - (root.islandPaddingV * 2))
 
-               readonly property int _bongoH: Math.max(14, Math.min(24, _contentThickness))
+                readonly property int _bongoH: Math.max(14, Math.min(24, _contentThickness))
                 readonly property int _bongoW: Math.round(_bongoH * 1.35)
-             readonly property int _coverSlot: Math.max(16, Math.min(24, _contentThickness))
+                readonly property int _coverSlot: Math.max(16, Math.min(24, _contentThickness))
                 readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 24))
-                readonly property int _dotSize: Math.max(6, Math.min(8, Math.round(_contentThickness * 0.28)))
+                readonly property int _dotSize: Math.max(4, Math.min(8, Math.round(_contentThickness * 0.25)))
 
                 GridLayout {
                     anchors.fill: parent
@@ -853,14 +816,13 @@ Item {
                     anchors.topMargin: root.islandPaddingV
                     anchors.bottomMargin: root.islandPaddingV
                     
-                    rowSpacing: Math.round(6 + 4 * root.barT)
-                    columnSpacing: Math.round(6 + 4 * root.barT)
+                    rowSpacing: root.rowSpacing
+                    columnSpacing: root.rowSpacing
 
                     columns: root.vertical ? 1 : 4
                     rows: root.vertical ? 4 : 1
                     flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
 
-                    // Bongo Cat (Solo horizontal)
                     BongoCat {
                         Layout.alignment: Qt.AlignCenter
                         Layout.preferredWidth: collapsedView._bongoW
@@ -874,7 +836,6 @@ Item {
                         isVertical: false
                     }
 
-                    // Slot de la Portada
                     Item {
                         id: coverSlotSmall
                         Layout.alignment: Qt.AlignCenter
@@ -914,14 +875,13 @@ Item {
                                 anchors.centerIn: parent
                                 text: "music_note"
                                 fill: 1
-                                iconSize: Math.max(12, Math.round(coverCircleSmall.width * 0.65))
+                                iconSize: Math.max(10, Math.round(coverCircleSmall.width * 0.65))
                                 color: Qt.rgba(1, 1, 1, 0.80)
                                 visible: (coverImgSmall.status !== Image.Ready)
                             }
                         }
                     }
 
-                    // Botón Play/Pause grande (Solo vertical)
                     Item {
                         visible: root.vertical && root.hasMedia
                         Layout.alignment: Qt.AlignCenter
@@ -944,13 +904,12 @@ Item {
                                 anchors.centerIn: parent
                                 text: root.isPlaying ? "pause" : "play_arrow"
                                 fill: 1
-                                iconSize: Math.max(12, Math.round(parent.width * 0.7))
+                                iconSize: Math.max(10, Math.round(parent.width * 0.7))
                                 color: "white"
                             }
                         }
                     }
 
-                    // Textos (Solo horizontal)
                     ColumnLayout {
                         visible: !root.vertical
                         Layout.fillWidth: true
@@ -962,7 +921,7 @@ Item {
                             text: root.trackArtist.length ? root.trackArtist
                                  : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
                             color: root.islandTextPrimary
-                            font.pixelSize: Appearance.font.pixelSize.smallie 
+                            font.pixelSize: Math.max(9, Math.round(Appearance.font.pixelSize.smallie * root.autoScaleFactor)) 
                             font.bold: true
                             elide: Text.ElideRight
                             maximumLineCount: 1
@@ -972,7 +931,7 @@ Item {
                         Item {
                             id: collapsedLyricViewport
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(11, Math.min(13, Math.round(collapsedView._contentThickness * 0.40)))
+                            Layout.preferredHeight: Math.max(9, Math.min(13, Math.round(collapsedView._contentThickness * 0.40)))
                             clip: true
                             visible: root.hasMedia
 
@@ -982,7 +941,7 @@ Item {
 
                             TextMetrics {
                                 id: collapsedLyricMetrics
-                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.pixelSize: Math.max(8, Math.round(Appearance.font.pixelSize.smaller * root.autoScaleFactor))
                                 text: collapsedLyricViewport.lineText
                             }
 
@@ -1004,7 +963,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: collapsedLyricViewport.lineText
                                 color: root.islandTextSecondary
-                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.pixelSize: Math.max(8, Math.round(Appearance.font.pixelSize.smaller * root.autoScaleFactor))
                                 elide: Text.ElideNone
                             }
 
@@ -1025,7 +984,6 @@ Item {
                         }
                     }
 
-                    // Indicador de estado (Dot) (Solo horizontal)
                     Rectangle {
                         visible: !root.vertical && root.isPlaying
                         Layout.alignment: Qt.AlignCenter
@@ -1044,7 +1002,6 @@ Item {
                 }
             }
 
-            // Vista EXPANDIDA (Solo Horizontal)
             Item {
                 id: expandedView
                 anchors.fill: parent
@@ -1053,10 +1010,8 @@ Item {
                 clip: true
 
                 readonly property int contentH: Math.max(1, height - (root.islandPaddingV * 2))
-                readonly property int bongoH: Math.max(18, Math.min(30, contentH))
-                readonly property int bongoW: Math.round(bongoH * 1.35)
                 readonly property int coverSlotSize: Math.max(20, Math.min(root.coverW, contentH))
-                readonly property int coverCircleSize: Math.max(18, Math.min(24, coverSlotSize - 2))
+                readonly property int coverCircleSize: Math.max(16, Math.min(36, coverSlotSize - 2))
 
                 RowLayout {
                     id: rowLayout
@@ -1074,8 +1029,8 @@ Item {
                         Layout.leftMargin: 2
                         visible: root.hasMedia
                         animate: root.animEnabled && root.isPlaying
-                        Layout.preferredHeight: expandedView.bongoH
-                        Layout.preferredWidth: expandedView.bongoW
+                        Layout.preferredHeight: root.bongoH
+                        Layout.preferredWidth: root.bongoW
                         gifSource: Qt.resolvedUrl("../../../assets/gifs/bongo-cat.gif")
                         isVertical: false
                         layer.enabled: false
@@ -1118,7 +1073,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "music_note"
                                 fill: 1
-                                iconSize: Math.max(14, Math.round(expandedView.coverCircleSize * 0.75))
+                                iconSize: Math.max(12, Math.round(expandedView.coverCircleSize * 0.75))
                                 color: Qt.rgba(1, 1, 1, 0.70)
                                 visible: (coverImg.status !== Image.Ready)
                             }
@@ -1189,7 +1144,6 @@ Item {
                         }
                     }
 
-                    // LYRICS SCROLLER
                     Item {
                         id: lyricScroller
                         Layout.fillWidth: false
@@ -1200,7 +1154,7 @@ Item {
                         visible: root.lyricsEnabled && root.hasSyncedLines
                         implicitWidth: root.lyricsImplicitWidth
 
-                        readonly property int rowHeight: Math.max(12, Math.min(Math.floor(height / 3), Appearance.font.pixelSize.smallie + 2))
+                        readonly property int rowHeight: Math.max(10, Math.min(Math.floor(height / 3), Math.round((Appearance.font.pixelSize.smallie + 2) * root.autoScaleFactor)))
                         readonly property real baseY: Math.max(0, Math.round((height - rowHeight * 3) / 2))
                         readonly property real downScale: Math.max(0.86, Appearance.font.pixelSize.smaller / Math.max(1, (Appearance.font.pixelSize.smallie + 2)))
 
@@ -1395,7 +1349,6 @@ Item {
                         }
                     }
 
-                    //  marquee + waves
                     Item {
                         id: marqueeViewport
                         Layout.fillWidth: false
@@ -1425,7 +1378,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.fullText
                             color: root.islandTextPrimary
-                            font.pixelSize: Appearance.font.pixelSize.smallie + 2
+                            font.pixelSize: Math.max(10, Math.round((Appearance.font.pixelSize.smallie + 2) * root.autoScaleFactor))
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                             wrapMode: Text.NoWrap
@@ -1465,7 +1418,7 @@ Item {
                             anchors.right: scrollingText.right
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 0
-                            height: Math.min(18, Math.max(0, marqueeViewport.height - 2))
+                            height: Math.min(Math.round(18 * root.autoScaleFactor), Math.max(0, marqueeViewport.height - 2))
                             opacity: root.hasMedia ? 1 : 0
                             visible: root.hasMedia && root.fxWaves && marqueeViewport.visible
                             clip: true
@@ -1487,7 +1440,6 @@ Item {
         }
     }
 
-    //  LyricLine
     component LyricLine: Item {
         id: lyricLineItem
 
@@ -1497,7 +1449,7 @@ Item {
         property string gradientDirection: "top" 
         property real fillProgress: 0.0
 
-        property int lineHeight: Math.max(12, Appearance.font.pixelSize.smallie + 4)
+        property int lineHeight: Math.max(12, Math.round((Appearance.font.pixelSize.smallie + 4) * root.autoScaleFactor))
         property bool reallyUseGradient: useGradient && root.useGradientMask && root.fxLyricsGradientMask
 
         width: parent.width
@@ -1505,7 +1457,7 @@ Item {
 
         TextMetrics {
             id: textMeasurer
-            font.pixelSize: Appearance.font.pixelSize.smallie + (lyricLineItem.highlight ? 2 : 1)
+            font.pixelSize: Math.max(9, Math.round((Appearance.font.pixelSize.smallie + (lyricLineItem.highlight ? 2 : 1)) * root.autoScaleFactor))
             font.bold: lyricLineItem.highlight
             text: lyricLineItem.text
         }
@@ -1582,7 +1534,7 @@ Item {
                 anchors.fill: parent
                 text: lyricLineItem.text
                 color: Appearance.colors.colSubtext
-                font.pixelSize: Appearance.font.pixelSize.smallie + 1
+                font.pixelSize: Math.max(9, Math.round((Appearance.font.pixelSize.smallie + 1) * root.autoScaleFactor))
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideNone

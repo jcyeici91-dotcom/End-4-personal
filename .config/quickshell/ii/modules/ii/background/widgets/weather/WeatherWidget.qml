@@ -9,8 +9,6 @@ import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.ii.background.widgets
 
-import qs.modules.ii.ui 1.0
-
 AbstractBackgroundWidget {
     id: root
 
@@ -24,11 +22,9 @@ AbstractBackgroundWidget {
 
     function _styleFromConfig(v) {
         switch (v) {
-        case 0: return "glass"
-        case 1: return "solid"
+            case 1: return "solid"
         case 2: return "adaptive"
-        case 3: return "crystal"
-        default: return "solid"
+       default: return "solid"
         }
     }
 

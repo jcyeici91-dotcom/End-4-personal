@@ -16,7 +16,7 @@ Rectangle {
     implicitHeight: implicitSize
     radius: Math.min(width, height) / 2
     color: Appearance.colors.colPrimaryContainer
-    property double baseShapeSize: root.implicitSize * 0.7
+    property double baseShapeSize: root.implicitSize * 0.75
     property double leapZoomSize: root.baseShapeSize * 1.2
     property double leapZoomProgress: 0
     property color shapeColor: Appearance.colors.colOnPrimaryContainer

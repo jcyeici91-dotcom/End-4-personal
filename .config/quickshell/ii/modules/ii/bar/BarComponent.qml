@@ -19,6 +19,10 @@ Item {
     property int originalIndex: index
     property bool vertical: false
 
+// ---> pruebas <---
+    property alias isContainer: wrapper.isContainer
+    property alias forceNoContainer: wrapper.forceNoContainer
+    
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
 
@@ -160,17 +164,19 @@ Item {
         if (item.backgroundColor !== undefined) item.backgroundColor = rootItem.groupBg
     }
 
-    // Wrapper (Grupo)
+// Wrapper (Grupo)
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
         visible: rootItem.effectiveVisible
 
+        forcePillStyle: !rootItem.isCenter //  para que no siga el estilo del centro 
+
         anchors {
             verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
             horizontalCenter: rootItem.vertical ? undefined : rootItem.horizontalCenter
         }
-
+       
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
 

@@ -18,11 +18,10 @@ MouseArea {
 
     readonly property color smartContentColor: Appearance.colors.colOnLayer1
 
-    // --- NUEVO: Orientación ---
     property bool vertical: false
 
     property int resourcesSpacingH: 1
-    property int resourcesSpacingV: 12 // Más espacio en vertical para que respiren los iconos
+    property int resourcesSpacingV: 12
     readonly property int resourcesSpacing: root.vertical ? resourcesSpacingV : resourcesSpacingH
 
     property int resourceInnerSpacingH: 1
@@ -65,7 +64,6 @@ MouseArea {
     preventStealing: true
     propagateComposedEvents: false
 
-    // FIX: Dimensión estricta en vertical para no deformar la barra
     implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : paddedContent.implicitWidth
     implicitHeight: root.vertical ? paddedContent.implicitHeight : Appearance.sizes.barHeight
 
@@ -74,9 +72,10 @@ MouseArea {
 
     onPressed: (mouse) => {
         mouse.accepted = true
-        if (mouse.button === Qt.RightButton) { resourcesPopup.open(); return }
-        if (mouse.button === Qt.LeftButton) { openBtop(); return }
+        if (mouse.button === Qt.LeftButton) { resourcesPopup.open = !resourcesPopup.open; return }
+        if (mouse.button === Qt.RightButton) { openBtop(); return }
     }
+    
     onClicked: (mouse) => { mouse.accepted = true }
 
     function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -265,7 +264,6 @@ MouseArea {
             id: resLayout
             anchors.centerIn: parent
             
-            // En horizontal se alinean a la derecha, en vertical el puntito se pone debajo
             columns: root.vertical ? 1 : 2
             rows: root.vertical ? 2 : 1
             rowSpacing: root.vertical ? 4 : 0
@@ -278,7 +276,6 @@ MouseArea {
                 percentage: wrap.percentage
                 warningThreshold: Math.round(wrap.warningThreshold01 * 100)
                 
-                // OCULTAMOS EL TEXTO EN VERTICAL PARA QUE NO SE CORTE
                 valueOverride: root.vertical ? "" : wrap.valueOverride
 
                 layer.enabled: true
@@ -290,7 +287,6 @@ MouseArea {
 
             PulsingDot {
                 Layout.alignment: Qt.AlignCenter
-                // Alineamos un poquito el punto para que se vea más centrado en modo vertical
                 Layout.topMargin: root.vertical ? -6 : 0
                 color: root.alertColorByPercent(wrap.value01)
                 intensity: wrap.value01 < root.t20 ? 0.10 : wrap.value01 < root.t50 ? 0.35 : wrap.value01 < root.t75 ? 0.70 : 1.00
@@ -324,13 +320,11 @@ MouseArea {
                     active: root.showCatEffective && root.cpuShown && root.enableCatGif
                     visible: active
                     anchors.fill: parent
-                    // mover gif horizontal
-    anchors.topMargin: -8
+                    anchors.topMargin: -8
                     source: "ResourceCat.qml"
                     onLoaded: {
                         if (!item) return
                         item.running = Qt.binding(function() { return root.cpuCatRun })
-                        //rutas personales
                         item.runSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-run.gif"
                         item.sleepSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
                         if (item.hasOwnProperty("vertical")) item.vertical = root.vertical

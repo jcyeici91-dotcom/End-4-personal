@@ -3,7 +3,7 @@ pragma ComponentBehavior: Bound
 import qs
 import qs.services
 import qs.modules.common
-import qs.modules.common.utils //FIXME. remove
+import qs.modules.common.utils
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.common.functions as CF
@@ -24,24 +24,20 @@ Variants {
     id: root
     model: Quickshell.screens
 
-    
-
     PanelWindow {
         id: bgRoot
 
         required property var modelData
 
-        // Hide when fullscreen
         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
         visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
 
-        // Workspaces
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
         property list<var> relevantWindows: HyprlandData.windowList.filter(win => win.monitor == monitor?.id && win.workspace.id >= 0).sort((a, b) => a.workspace.id - b.workspace.id)
         property int firstWorkspaceId: relevantWindows[0]?.workspace.id || 1
         property int lastWorkspaceId: relevantWindows[relevantWindows.length - 1]?.workspace.id || 10
-        // Wallpaper
+        
         property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(".mp4") || Config.options.background.wallpaperPath.endsWith(".webm") || Config.options.background.wallpaperPath.endsWith(".mkv") || Config.options.background.wallpaperPath.endsWith(".avi") || Config.options.background.wallpaperPath.endsWith(".mov")
         property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath
         property bool wallpaperSafetyTriggered: {
@@ -52,15 +48,15 @@ Variants {
         }
         property real wallpaperToScreenRatio: Math.min(wallpaperWidth / screen.width, wallpaperHeight / screen.height)
         property real preferredWallpaperScale: Config.options.background.parallax.workspaceZoom
-        property real effectiveWallpaperScale: 1 // Some reasonable init value, to be updated
-        property int wallpaperWidth: modelData.width // Some reasonable init value, to be updated
-        property int wallpaperHeight: modelData.height // Some reasonable init value, to be updated
+        property real effectiveWallpaperScale: 1
+        property int wallpaperWidth: modelData.width
+        property int wallpaperHeight: modelData.height
         property real movableXSpace: ((wallpaperWidth / wallpaperToScreenRatio * effectiveWallpaperScale) - screen.width) / 2
         property real movableYSpace: ((wallpaperHeight / wallpaperToScreenRatio * effectiveWallpaperScale) - screen.height) / 2
         readonly property bool verticalParallax: (Config.options.background.parallax.autoVertical && wallpaperHeight > wallpaperWidth) || Config.options.background.parallax.vertical
-        // Colors
+        
         property bool shouldBlur: (GlobalStates.screenLocked && Config.options.lock.blur.enable)
-        property color dominantColor: Appearance.colors.colPrimary // Default, to be changed
+        property color dominantColor: Appearance.colors.colPrimary
         property bool dominantColorIsDark: dominantColor.hslLightness < 0.5
         property color colText: {
             if (wallpaperSafetyTriggered)
@@ -71,7 +67,7 @@ Variants {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
 
-        property var zoomLevels: {  // has to be reverted compared to background
+        property var zoomLevels: {
             "in": { default: 1.04, zoomed: 1 },
             "out": { default: 1, zoomed: 1.04 }
         }
@@ -89,11 +85,9 @@ Variants {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
 
-        // Layer props
         screen: modelData
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: (GlobalStates.screenLocked && !scaleAnim.running) ? WlrLayer.Top : WlrLayer.Bottom
-        // WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "quickshell:background"
         anchors {
             top: true
@@ -112,10 +106,8 @@ Variants {
 
         onWallpaperPathChanged: {
             bgRoot.updateZoomScale();
-            // Clock position gets updated after zoom scale is updated
         }
 
-        // Wallpaper zoom scale
         function updateZoomScale() {
             getWallpaperSizeProc.path = bgRoot.wallpaperPath;
             getWallpaperSizeProc.running = true;
@@ -134,10 +126,8 @@ Variants {
                     bgRoot.wallpaperHeight = height;
 
                     if (width <= screenWidth || height <= screenHeight) {
-                        // Undersized/perfectly sized wallpapers
                         bgRoot.effectiveWallpaperScale = Math.max(screenWidth / width, screenHeight / height);
                     } else {
-                        // Oversized = can be zoomed for parallax, yay
                         bgRoot.effectiveWallpaperScale = Math.min(bgRoot.preferredWallpaperScale, width / screenWidth, height / screenHeight);
                     }
                 }
@@ -148,6 +138,25 @@ Variants {
         onMediaModeOpenChanged: {
             if (!mediaModeOpen) {
                 Wallpapers.apply(Config.options.background.wallpaperPath)
+            }
+        }
+
+        property var visualizerPoints: []
+
+        Process {
+            id: cavaProc
+            running: mediaModeVisualLoader.active && (Config.options.background.mediaMode.showVisualizer ?? true)
+            onRunningChanged: {
+                if (!cavaProc.running) {
+                    bgRoot.visualizerPoints = []
+                }
+            }
+            command: ["cava", "-p", `${CF.FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
+            stdout: SplitParser {
+                onRead: data => {
+                    let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p))
+                    bgRoot.visualizerPoints = points
+                }
             }
         }
 
@@ -167,14 +176,12 @@ Variants {
                 animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
             }
 
-            // Wallpaper
             StyledImage {
                 id: wallpaper
                 visible: opacity > 0 && !blurLoader.active
                 opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo) ? 1 : 0
                 cache: false
                 smooth: false
-                // Range = groups that workspaces span on
                 property int chunkSize: Config?.options.bar.workspaces.shown ?? 10
                 property int lower: Math.floor(bgRoot.firstWorkspaceId / chunkSize) * chunkSize
                 property int upper: Math.ceil(bgRoot.lastWorkspaceId / chunkSize) * chunkSize
@@ -358,7 +365,7 @@ Variants {
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
-                            item.requestReset.connect(() => { // hard reset
+                            item.requestReset.connect(() => {
                                 mediaLoader.enableLoading = false
                                 mediaTimer.running = true
                             })
@@ -369,32 +376,53 @@ Variants {
         }
 
         Component.onCompleted: {
-            Persistent.states.background.mediaMode.enabled = false // we use this persistent to access this from outside of this script, cannot be toggled
+            Persistent.states.background.mediaMode.enabled = false 
         }
 
-GlobalShortcut {
-    name: "mediaModeToggle"
-    description: "Toggles media mode on press"
+        GlobalShortcut {
+            name: "mediaModeToggle"
+            description: "Toggles media mode on press"
 
-    onPressed: {
-        if (!monitor.focused && Config.options.background.mediaMode.togglePerMonitor) return
+            onPressed: {
+                if (!monitor.focused && Config.options.background.mediaMode.togglePerMonitor) return
 
-        Persistent.states.background.mediaMode.enabled =
-            !Persistent.states.background.mediaMode.enabled
-    }
-}
+                Persistent.states.background.mediaMode.enabled =
+                    !Persistent.states.background.mediaMode.enabled
+            }
+        }
         
         Loader {
-    id: mediaModeLoader
-    anchors.fill: parent
-    active: Persistent.states.background.mediaMode.enabled
-    asynchronous: true
-    sourceComponent: MediaMode {}
-    opacity: status === Loader.Ready ? 1 : 0
+            id: mediaModeVisualLoader
+            anchors.fill: parent
+            active: Persistent.states.background.mediaMode.enabled
+            asynchronous: true
+            sourceComponent: MediaMode {}
+            opacity: status === Loader.Ready ? 1 : 0
 
-    Behavior on opacity {
-        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-    }
-}
+            Behavior on opacity {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
+        }
+
+        WaveVisualizer {
+            id: bottomVisualizer
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+            }
+            height: 250
+            
+            points: bgRoot.visualizerPoints
+            live: mediaModeVisualLoader.active
+            color: Appearance.m3colors.m3primary
+            
+            opacity: (mediaModeVisualLoader.active && (Config.options.background.mediaMode.showVisualizer ?? true)) ? 1 : 0
+            z: mediaModeVisualLoader.z + 1
+            
+            Behavior on opacity {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(bottomVisualizer)
+            }
+        }
     }
 }

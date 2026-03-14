@@ -39,6 +39,7 @@ DockButton {
         active: isSeparator
         anchors {
             fill: parent
+            // Mantenemos esto igual, usa la variable margin dinámica del dockBackground
             topMargin: dockVisualBackground.margin + dockRow.padding + Appearance.rounding.normal
             bottomMargin: dockVisualBackground.margin + dockRow.padding + Appearance.rounding.normal
         }

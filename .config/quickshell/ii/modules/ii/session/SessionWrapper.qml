@@ -2,88 +2,79 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import qs.services
 import "../../components"
 
 PanelWindow {
     id: root
 
-    anchors { right: true }
+    anchors {
+        right: true
+    }
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
+    WlrLayershell.layer: WlrLayer.Overlay // encima de las ventanas
 
-    property int handleWidth: 10
+    //área para atrapar el mouse sea más gruesa
+    property int handleWidth: 10 
     property bool open: false
 
     readonly property int contentWidth: contentItem.implicitWidth
     readonly property int contentHeight: contentItem.implicitHeight
 
-    visible: implicitWidth > 0
-    implicitWidth: open ? contentWidth : handleWidth
+    // TAMAÑO FIJO
+    implicitWidth: contentWidth
     implicitHeight: contentHeight
 
-    Behavior on implicitWidth {
-        NumberAnimation {
-            duration: 250
-            easing.type: Easing.OutQuart
-        }
-    }
-
-    function openNow() {
-        closeDebounce.stop()
-        open = true
-    }
-
-    function closeNowIfOutside() {
-        // Solo cierra si NO está el mouse en ninguna zona activa
-        if (!panelHover.containsMouse && !handle.containsMouse) {
-            open = false
-        }
-    }
-
-    // Pequeño retardo para evitar falsos "Exited" en el borde/animación
-    Timer {
-        id: closeDebounce
-        interval: 80
-        repeat: false
-        onTriggered: root.closeNowIfOutside()
-    }
-
-    Item {
-        anchors.fill: parent
-        clip: true
-
-        SessionContent {
-            id: contentItem
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        MouseArea {
-            id: panelHover
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-
-            onEntered: root.openNow()
-            onExited: closeDebounce.restart()
-        }
+    // Permite hacer clic en las ventanas de fondo cuando el panel está oculto
+    mask: Region {
+        item: panelHover
     }
 
     MouseArea {
-        id: handle
-        z: 9999
-
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
+        id: panelHover
+        width: root.contentWidth
+        height: root.contentHeight
+        
         anchors.right: parent.right
-        width: root.handleWidth
+        anchors.verticalCenter: parent.verticalCenter
+        
+        // Cuando se oculta, empuja el contenido hacia la derecha (fuera de la pantalla)
+        anchors.rightMargin: root.open ? 0 : -(root.contentWidth - root.handleWidth)
 
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
 
-        onEntered: root.openNow()
-        onExited: closeDebounce.restart()
+        Behavior on anchors.rightMargin {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutQuart
+            }
+        }
+
+        onEntered: {
+            closeDebounce.stop()
+            root.open = true
+        }
+        onExited: {
+            closeDebounce.restart()
+        }
+
+        SessionContent {
+            id: contentItem
+            anchors.fill: parent
+        }
+    }
+
+    Timer {
+        id: closeDebounce
+        interval: 150 // Un retardo ligeramente mayor para evitar que parpadee al salir rápido
+        repeat: false
+        onTriggered: {
+            if (!panelHover.containsMouse) {
+                root.open = false
+            }
+        }
     }
 }
-

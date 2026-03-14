@@ -10,6 +10,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.ii.bar.drawers
 
 Scope {
     id: bar
@@ -78,7 +79,7 @@ Scope {
                     Appearance.sizes.baseVerticalBarWidth + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
                 WlrLayershell.namespace: "quickshell:verticalBar"
                 // WlrLayershell.layer: WlrLayer.Overlay // TODO enable this when bar can hide when fullscreen
-                implicitWidth: Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding
+                implicitWidth: modelData.width // Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding
                 mask: Region {
                     item: hoverMaskRegion
                 }
@@ -222,6 +223,30 @@ Scope {
                         }
                     }
                 }
+
+                // Loader {
+                //     anchors.fill: parent
+                //     active: (DrawerVisibilityConfig.barOsdVisible || DrawerVisibilityConfig.barSearchOverviewVisible) && !barLoader.fullscreen
+                //     sourceComponent: Item {
+                //         clip: true
+                //         anchors { 
+                //             fill: parent
+                //             topMargin: -1
+                //         }
+
+                //         Backgrounds {
+                //             id: backgrounds
+                //             panels: panels
+                //         }
+
+                //         Panels {
+                //             id: panels
+
+                //             screen: barLoader.modelData
+                //             visibilities: Visibilities.getForScreen(barLoader.modelData)
+                //         }
+                //     }
+                // }
             }
         }
     }

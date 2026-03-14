@@ -70,14 +70,12 @@ ShellRoot {
         }
     }
 
-
     GlobalShortcut {
         name: "panelFamilyCycle"
         description: "Cycles panel family"
 
         onPressed: root.cyclePanelFamily()
     }
-    
-     SessionMod.SessionWrapper {}
+         SessionMod.SessionWrapper {}
 }
 

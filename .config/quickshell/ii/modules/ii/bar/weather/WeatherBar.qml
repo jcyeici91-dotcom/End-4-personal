@@ -19,18 +19,15 @@ MouseArea {
     property real crystalTintOpacity: 0.00
     property bool crystalBordersOnHoverOnly: true
     property real crystalBorderHoverStrength: 1.0
-
     property int padX: root.vertical ? 8 : 14
     property int padY: root.vertical ? 8 : 12
     property int gap: 10
     property int radius: 16
-
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
     preventStealing: true
     cursorShape: Qt.PointingHandCursor
     Layout.fillHeight: true
-
     implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : (contentGrid.implicitWidth + padX * 2)
     implicitHeight: root.vertical ? (contentGrid.implicitHeight + padY * 2) : Math.max(36, contentGrid.implicitHeight + padY * 2)
 
@@ -39,10 +36,8 @@ MouseArea {
     readonly property color fgSoft: Appearance.colors.colOnLayer2
     readonly property color plateBase: Appearance.colors.colLayer1
     readonly property color plateBorderBase: Appearance.colors.colLayer3
-
     property real hoverAmount: containsMouse ? 1.0 : 0.0
     Behavior on hoverAmount { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
     property real pressAmount: pressed ? 1.0 : 0.0
     Behavior on pressAmount { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
 
@@ -119,9 +114,17 @@ MouseArea {
         return Qt.rgba(base.r * (1.0 - t) + a.r * t, base.g * (1.0 - t) + a.g * t, base.b * (1.0 - t) + a.b * t, 1.0)
     }
 
-    onPressed: (mouse) => {
-        if (!root.interactionsEnabled) { mouse.accepted = false; return }
-        if (mouse.button === Qt.RightButton) {
+    onClicked: (mouse) => {
+        if (!root.interactionsEnabled) return
+
+        if (mouse.button === Qt.LeftButton) {
+            if (root.allowPopup && weatherPopupLoader.item) {
+                weatherPopupLoader.item.triggerItem = root
+                weatherPopupLoader.item.defaultIndex = 1
+                weatherPopupLoader.item.open = !weatherPopupLoader.item.open
+            }
+        }
+        else if (mouse.button === Qt.RightButton) {
             Weather.getData()
             Quickshell.execDetached([
                 "notify-send",
@@ -129,12 +132,6 @@ MouseArea {
                 Translation.tr("Refreshing (manually triggered)"),
                 "-a", "Shell"
             ])
-            mouse.accepted = false
-            return
-        }
-        if (mouse.button === Qt.LeftButton) {
-            weatherPopup.open(root)
-            mouse.accepted = true
         }
     }
 
@@ -197,12 +194,12 @@ MouseArea {
             visible: plate.borderAmt > 0.01
         }
 
-        // Efecto Aura
         Item {
             anchors.fill: parent
             visible: root.enableWeatherAura
             opacity: 0.20 + 0.20 * root.hoverAmount
             clip: true
+
             Rectangle {
                 width: parent.width * 0.60
                 height: parent.height * 1.3
@@ -287,8 +284,8 @@ MouseArea {
         }
     }
 
-    WeatherPopup {
-        id: weatherPopup
-        hoverTarget: root
+    Loader {
+        id: weatherPopupLoader
+        source: "../ClockWidgetPopup.qml"
     }
 }

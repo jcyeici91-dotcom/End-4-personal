@@ -1,2 +1,0 @@
-module qs.modules.ii.ui
-singleton UIState 1.0 UIState.qml

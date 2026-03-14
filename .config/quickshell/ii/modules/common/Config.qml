@@ -139,6 +139,11 @@ Singleton {
                     property string accentColor: ""
                 }
                 property list<string> customColorSchemes: []
+                property JsonObject panelAnimation: JsonObject {
+                    property bool enableBackgroundAnimation: true
+                    property int enterDuration: 450
+                    property int exitDuration: 500
+                }
             }
 
             property JsonObject audio: JsonObject {
@@ -251,6 +256,7 @@ Singleton {
                     property string backgroundShape: "Square"
                     property bool enableBackgroundAnimation: true // It **may** cause nausea for someone
                     property bool changeShellColor: true // Changes the shell color to the album color
+                    property bool showVisualizer: true
                     property JsonObject backgroundAnimation: JsonObject {
                         property bool enable: true
                         property int speedScale: 10 // 1: very slow, 10: default, 20: 2x speed etc.
@@ -279,7 +285,7 @@ Singleton {
                 
                 property bool bottom: false // Instead of top
                 
-                       // prueba 
+                      // prueba 
                     // 0: Hug | 1: Float | 2: Rect | 3: Hybrid (Notch)
                 property int cornerStyle: 0
 
@@ -287,8 +293,7 @@ Singleton {
                 property bool borderless: false // true for no grouping of items
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
 
-                // IMPORTANT: actualizado para Crystal
-                // 0: Transparent | 1: Visible | 2: Adaptive | 3: Crystal
+              // 0: Transparent | 1: Visible | 2: Adaptive | 
                 property int barBackgroundStyle: 1
 
                 property bool verbose: true
@@ -298,9 +303,12 @@ Singleton {
                 property string groupBackgroundStyle: "rounded"
                 
                 // fin prueba 
-                            
+                
                 property JsonObject mediaPlayer: JsonObject {
+                    property bool useCustomSize: false
+                    property bool useColumnLayout: true
                     property int customSize: 250
+                    property int updateInterval: 1000
                     property JsonObject lyrics: JsonObject {
                         property bool enable: true
                         property int customSize: 400
@@ -357,26 +365,95 @@ Singleton {
                     }
                 }
                 property JsonObject layouts: JsonObject {
-                    // Only adding place-essential components to left-center-right and adding the dynamic components to leftover
-                    // Not adding default values, they are initialized later
-                    // Scrolling is defined through component's id
+                    // Only adding place-essential components to left-center-right
+                    // And adding the dynamic components to leftover
                     property list<var> availableComps: [
-                        { id: "record_indicator", icon: "screen_record", title: "Record indicator", visible: false },
-                        { id: "screen_share_indicator", icon: "screen_share", title: "Screen share indicator", visible: false },
-                        { id: "date", icon: "date_range", title: "Date" },
-                        { id: "battery", icon: "battery_android_6", title: "Battery" },
-                        { id: "timer", icon: "timer", title: "Timer & Pomodoro" },
-                        { id: "weather", icon: "weather_mix", title: "Weather" },
-                        { id: "utility_buttons", icon: "build", title: "Utility buttons" }
+                        {
+                            id: "record_indicator", 
+                            icon: "screen_record", 
+                            title: "Record indicator", 
+                            centered: false, // centered or not (only in center section)
+                            visible: false, 
+                            scrollTo: "" // scroll to this component when clicked (has also to be configured in BarConfig)
+                        },
+                        {
+                            id: "screen_share_indicator",
+                            icon: "screen_share",
+                            title: "Screen share indicator",
+                            centered: false,
+                            visible: false,
+                            scrollTo: ""
+                        },
+                        {
+                            id: "date",
+                            icon: "date_range",
+                            title: "Date",
+                            centered: false,
+                            visible: true,
+                            scrollTo: ""
+                        },
+                        {
+                            id: "battery",
+                            icon: "battery_android_6",
+                            title: "Battery",
+                            centered: false,
+                            visible: true,
+                            scrollTo: ""
+                        },
+                        {
+                            id: "timer",
+                            icon: "timer",
+                            title: "Timer & Pomodoro",
+                            centered: false,
+                            visible: true,
+                            scrollTo: "timerAndPomodoro"
+                        },
+                        {
+                            id: "weather",
+                            icon: "weather_mix",
+                            title: "Weather",
+                            centered: false,
+                            visible: true,
+                            scrollTo: ""
+                        },
+                        {
+                            id: "utility_buttons",
+                            icon: "build",
+                            title: "Utility buttons",
+                            centered: false,
+                            visible: true,
+                            scrollTo: "utility_buttons"
+                        }
                     ]
                     property list<var> left: [
                         { id: "policies_panel_button", icon: "star", title: "Policies panel button" },
                         { id: "active_window", icon: "label", title: "Active window" }
                     ]
                     property list<var> center: [
-                        { id: "music_player", icon: "music_note", title: "Music player" },
-                        { id: "workspaces", icon: "workspaces", title: "Workspaces", centered: true },
-                        { id: "system_monitor", icon: "monitor_heart", title: "System monitor" }
+                        {
+                            id: "music_player",
+                            icon: "music_note",
+                            title: "Music player",
+                            centered: false,
+                            visible: true,
+                            scrollTo: "music_player"
+                        },
+                        {
+                            id: "workspaces",
+                            icon: "workspaces",
+                            title: "Workspaces",
+                            centered: true,
+                            visible: true,
+                            scrollTo: "workspaces"
+                        },
+                        {
+                            id: "system_monitor",
+                            icon: "monitor_heart",
+                            title: "System monitor",
+                            centered: false,
+                            visible: true,
+                            scrollTo: ""
+                        }
                     ]
                     property list<var> right: [
                         { id: "clock", icon: "nest_clock_farsight_analog", title: "Clock" }, 
@@ -516,7 +593,7 @@ Singleton {
             }
 
             property JsonObject osd: JsonObject {
-                property int timeout: 2500
+                property int timeout: 2000
             }
 
             property JsonObject osk: JsonObject {
@@ -721,6 +798,7 @@ Singleton {
             property JsonObject time: JsonObject {
                 // https://doc.qt.io/qt-6/qtime.html#toString
                 property string format: "hh:mm"
+                property string formatSeconds: "hh:mm:ss"
                 property string shortDateFormat: "dd/MM"
                 property string longDateFormat: "dd/MM/yyyy"
                 property string dateWithYearFormat: "dd/MM/yyyy"
@@ -733,7 +811,7 @@ Singleton {
                     property int focus: 1500
                     property int longBreak: 900
                 }
-                property bool secondPrecision: false
+                property bool secondPrecision: true
             }
 
             property JsonObject updates: JsonObject {

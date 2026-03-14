@@ -9,20 +9,7 @@ ContentPage {
     id: page
     forceWidth: true
 
-    /*
-      Reorganización (más “natural” para configurar una barra):
-      1) Layout (qué va a la izquierda/centro/derecha)
-      2) Posición + Auto-hide (dónde está y cómo se comporta)
-      3) Apariencia (esquinas, grupos, fondo)
-      4) Tamaños (ajuste fino al final)
-      5) Componentes (Workspaces, Active window, Media, Tray, Utility, Timer, Notifications, Tooltips)
-
-      Además:
-      - En opciones: textos cortos seguidos y el más largo al final.
-      - ConfigRow con uniform:true donde conviene para alineación visual.
-    */
-
-    property var componentMap: ({
+     property var componentMap: ({
         "workspaces": workspaces,
         "active_window": activeWindow,
         "music_player": musicPlayer,
@@ -37,9 +24,7 @@ ContentPage {
         page.contentY = item.y
     }
 
-    // =========================================================
-    // 1) LAYOUT
-    // =========================================================
+    // LAYOUT
     ContentSection {
         icon: "mobile_layout"
         title: Translation.tr("Bar layout")
@@ -99,9 +84,7 @@ ContentPage {
         }
     }
 
-    // =========================================================
-    // 2) POSITIONING (posición + auto-hide)
-    // =========================================================
+    // POSITIONING (posición + auto-hide)
     ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")
@@ -147,10 +130,8 @@ ContentPage {
         }
     }
 
-    // =========================================================
-    // 3) APPEARANCE (esquinas, grupos, fondo)
-    // =========================================================
-    ContentSection {
+      //  APPEARANCE (esquinas, grupos, fondo)
+        ContentSection {
         icon: "palette"
         title: Translation.tr("Appearance")
 
@@ -222,20 +203,17 @@ ContentPage {
                     Config.options.bar.barBackgroundStyle = newValue;
                 }
 
-                // 0: Transparent | 1: Visible | 2: Adaptive | 3: Crystal
+                // 0: Transparent | 1: Visible | 2: Adaptive | 
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
                     { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 },
-                    { displayName: Translation.tr("Crystal"),     icon: "auto_awesome",        value: 3 },
-                    { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 }
+                  { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 }
                 ]
             }
         }
     }
 
-    // =========================================================
-    // 4) SIZES (ajustes finos)
-    // =========================================================
+    // SIZES 
     ContentSection {
         icon: "open_in_full"
         title: Translation.tr("Bar sizes")
@@ -269,9 +247,7 @@ ContentPage {
         }
     }
 
-    // =========================================================
-    // 5) COMPONENTES
-    // =========================================================
+     // COMPONENTES
 
     ContentSection {
         id: workspaces

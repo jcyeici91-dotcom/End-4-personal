@@ -58,9 +58,9 @@ Scope {
             active: GlobalStates.sidebarRightOpen || Config?.options.sidebar.keepRightSidebarLoaded
             sourceComponent: SidebarDashboardContent {}
             
-            width: root.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
-            height: parent.height - (Appearance.sizes.hyprlandGapsOut * 2)
-            y: Appearance.sizes.hyprlandGapsOut
+            width: root.sidebarWidth
+            height: parent.height
+            y: 0
 
             focus: GlobalStates.sidebarRightOpen
             
@@ -75,7 +75,7 @@ Scope {
                     }
                     PropertyChanges {
                         target: sidebarContentLoader
-                        anchors.rightMargin: Appearance.sizes.hyprlandGapsOut
+                        anchors.rightMargin: 0
                         anchors.leftMargin: 0
                     }
                 },
@@ -88,7 +88,7 @@ Scope {
                     }
                     PropertyChanges {
                         target: sidebarContentLoader
-                        anchors.leftMargin: Appearance.sizes.hyprlandGapsOut
+                        anchors.leftMargin: 0
                         anchors.rightMargin: 0
                     }
                 }

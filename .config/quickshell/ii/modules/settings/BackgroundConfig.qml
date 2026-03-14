@@ -26,6 +26,7 @@ ContentPage {
             }
         }
 
+
         ConfigRow {
             uniform: true
             ConfigSwitch {
@@ -63,7 +64,7 @@ ContentPage {
         title: Translation.tr("Media mode")
         tooltip: Translation.tr("Toggle the mode with a keybind that executes 'quickshell:mediaModeToggle'\nExample: bindd = Super, Z, Toggle media mode, global, quickshell:mediaModeToggle")
 
-  ConfigSwitch {
+ConfigSwitch {
     buttonIcon: "play_circle"
     text: Translation.tr("Enable media mode")
     checked: Persistent.states.background.mediaMode.enabled
@@ -71,7 +72,8 @@ ContentPage {
     onCheckedChanged: {
         Persistent.states.background.mediaMode.enabled = checked;
     }
-}
+} 
+
         ConfigRow {
 
             ConfigSwitch {
@@ -177,6 +179,16 @@ ContentPage {
             }
         }
 
+// --- CÓDIGO NUEVO PARA EL VISUALIZADOR WAVE ---
+        ConfigSwitch {
+            buttonIcon: "waves" // Puedes usar "bar_chart" si prefieres otro ícono
+            text: Translation.tr("Show wave visualizer")
+            checked: Config.options.background.mediaMode.showVisualizer ?? true
+            onCheckedChanged: {
+                Config.options.background.mediaMode.showVisualizer = checked;
+            }
+        }
+        
         ContentSubsection {
             title: Translation.tr("Text highlight style")
             ConfigSelectionArray {

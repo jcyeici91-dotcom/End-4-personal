@@ -33,8 +33,8 @@ Item {
     property bool activeParticles: false
 
     property bool premiumIconHoverDot: false
-    property int hoverDotSize: 8
-    property int hoverDotBottomMargin: 3
+    property int hoverDotSize: Math.round(8 * autoScaleFactor)
+    property int hoverDotBottomMargin: Math.round(3 * autoScaleFactor)
     property bool premiumIconHoverPulse: true
 
     property bool premiumFocusedIconFx: true
@@ -55,7 +55,7 @@ Item {
     property bool sameAppGlow: true
 
     property bool bottomActiveDotEnabled: true
-    property int bottomActiveDotSize: 10
+    property int bottomActiveDotSize: Math.round(10 * autoScaleFactor)
     property int bottomActiveDotBottomMargin: 0
     property bool bottomActiveDotGlow: true
     property bool bottomActiveDotOutline: true
@@ -69,10 +69,11 @@ Item {
 
     property real workspaceIconSizeFactor: 0.69
     property real workspaceIconSizeShrinkFactor: 0.55
-
     property int workspaceIconMarginShrinked: -4
-
     property real workspaceIconOpacityShrinked: 1.0
+
+    readonly property real currentBarHeight: Appearance.sizes.barHeight
+    readonly property real autoScaleFactor: Math.min(1.0, currentBarHeight / 42.0)
 
     property int hoverPillWidth: hoverDotSize
     property int hoverPillHeight: Math.max(2, Math.round(hoverDotSize / 3))
@@ -82,9 +83,9 @@ Item {
     property int activeDotHeight: Math.max(2, Math.round(bottomActiveDotSize / 3))
     property int activeDotRadius: Math.round(activeDotHeight / 2)
 
-    property int wsIndicatorPillWidth: 10
-    property int wsIndicatorPillHeight: 4
-    property int wsIndicatorPillGap: 4
+    property int wsIndicatorPillWidth: Math.round(10 * autoScaleFactor)
+    property int wsIndicatorPillHeight: Math.round(4 * autoScaleFactor)
+    property int wsIndicatorPillGap: Math.round(4 * autoScaleFactor)
     property int wsIndicatorPillRadius: Math.round(wsIndicatorPillHeight / 2)
 
     property real activeIndicatorInsetEmptyFactor: 0.07
@@ -92,15 +93,6 @@ Item {
     property real activeIndicatorInsetDefaultFactor: 0.10
 
     property int activeParticlesCount: 5
-
-    function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
-    function _isDark(c) { return _lin(c) < 0.65 }
-
-    readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode)
-        ? Appearance.m3colors.darkmode
-        : _isDark(Appearance.colors.colLayer0)
-
-    readonly property color smartTextColor: Appearance.colors.colOnLayer1
 
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
     readonly property Toplevel activeWindow: ToplevelManager.activeToplevel
@@ -111,15 +103,10 @@ Item {
     property int workspaceOffset: useWorkspaceMap ? (workspaceMap[monitorIndex] ?? 0) : 0
 
     readonly property int workspacesShown: Config.options.bar.workspaces.shown
-    readonly property int workspaceGroup: Math.floor(
-        (monitor?.activeWorkspace?.id - root.workspaceOffset - 1) / root.workspacesShown
-    )
+    readonly property int workspaceGroup: Math.floor((monitor?.activeWorkspace?.id - root.workspaceOffset - 1) / root.workspacesShown)
 
     readonly property bool hyprReady: !!(Hyprland && Hyprland.workspaces && Hyprland.workspaces.values)
-    readonly property bool appAwake: (
-        Qt.application.state !== Qt.ApplicationSuspended &&
-        Qt.application.state !== Qt.ApplicationHidden
-    )
+    readonly property bool appAwake: (Qt.application.state !== Qt.ApplicationSuspended && Qt.application.state !== Qt.ApplicationHidden)
     readonly property bool fxEnabled: premium && visible && hyprReady && appAwake
 
     property list<bool> workspaceOccupied: []
@@ -135,9 +122,13 @@ Item {
         return visibleWorkspaces.indexOf(id)
     }
 
-    // Ajustados para encajar en la barra.
-    property int individualIconBoxHeight: 24 // Reducido de 24
-    property int iconBoxWrapperSize: 28    // Reducido de 28
+    property int individualIconBoxHeight: Math.max(20, Math.round(24 * autoScaleFactor))
+    property int iconBoxWrapperSize: {
+        if (autoScaleFactor >= 1.0) return 28;
+        const scaledWrapperSize = Math.round(28 * autoScaleFactor);
+        const scaledVisualChipHeight = individualIconBoxHeight + Math.round(8 * autoScaleFactor);
+        return Math.max(24, Math.max(scaledWrapperSize, scaledVisualChipHeight));
+    }
     property real iconRatio: 0.8
     property bool showIcons: Config.options.bar.workspaces.showAppIcons
 
@@ -171,9 +162,7 @@ Item {
 
         const inGroup = new Set(slots)
 
-        let outsideOccupied = Array.from(occupiedSet)
-            .filter(id => id > 0 && !inGroup.has(id))
-            .sort((a, b) => a - b)
+        let outsideOccupied = Array.from(occupiedSet).filter(id => id > 0 && !inGroup.has(id)).sort((a, b) => a - b)
 
         let replaceIdx = []
         for (let i = 0; i < shown; i++) {
@@ -198,12 +187,7 @@ Item {
 
         workspaceOccupied = Array.from({ length: shown }, (_, i) => {
             const wsId = base + i + 1
-            return list.some(w =>
-                w &&
-                !w.floating &&
-                (w.monitor === root.monitorIndex) &&
-                (w.workspace?.id === wsId)
-            )
+            return list.some(w => w && !w.floating && (w.monitor === root.monitorIndex) && (w.workspace?.id === wsId))
         })
 
         const occSet = new Set()
@@ -225,17 +209,13 @@ Item {
     }
 
     function getWindowCount(workspaceId) {
-        return HyprlandData.windowList
-            .filter(w => w.workspace.id === workspaceId && !w.floating)
-            .length
+        return HyprlandData.windowList.filter(w => w.workspace.id === workspaceId && !w.floating).length
     }
 
     Connections {
         target: HyprlandData
         function onWindowListChanged() {
-            const windowsOnMonitor = HyprlandData.windowList
-                .filter(win => win.monitor === root.monitorIndex && !win.floating)
-
+            const windowsOnMonitor = HyprlandData.windowList.filter(win => win.monitor === root.monitorIndex && !win.floating)
             windowsOnMonitor.sort((a, b) => a.at[0] - b.at[0])
 
             root.monitorWindows = windowsOnMonitor.map(win => ({
@@ -322,13 +302,8 @@ Item {
         }
     }
 
-    implicitWidth: root.vertical
-        ? Appearance.sizes.verticalBarWidth
-        : contentLayout.implicitWidth
-
-    implicitHeight: root.vertical
-        ? contentLayout.implicitHeight
-        : Appearance.sizes.barHeight
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : contentLayout.implicitWidth
+    implicitHeight: root.vertical ? contentLayout.implicitHeight : Appearance.sizes.barHeight
 
     Behavior on implicitHeight {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
@@ -360,9 +335,7 @@ Item {
         property int baseHeight: root.iconBoxWrapperSize
         property int index: Math.max(0, root.activeVisibleIndex)
 
-        property int wsId: (root.visibleWorkspaces && root.visibleWorkspaces.length > index)
-            ? root.visibleWorkspaces[index]
-            : -1
+        property int wsId: (root.visibleWorkspaces && root.visibleWorkspaces.length > index) ? root.visibleWorkspaces[index] : -1
 
         property int windowCount: (wsId > 0) ? getWindowCount(wsId) : 0
         property bool isEmptyWorkspace: windowCount === 0
@@ -391,19 +364,13 @@ Item {
         readonly property real baseIndicatorPosition: pairMin * root.iconBoxWrapperSize
         readonly property real baseIndicatorLength: (pairAbs + 1) * root.iconBoxWrapperSize
 
-        property real indicatorPosition: baseIndicatorPosition
-            + accumulatedPreviousOffsets
-            - currentItemOffset
-            + visualInset
-
-        property real indicatorLength: baseIndicatorLength
-            + currentItemOffset
-            - visualInset * 2
+        property real indicatorPosition: baseIndicatorPosition + accumulatedPreviousOffsets - currentItemOffset + visualInset
+        property real indicatorLength: baseIndicatorLength + currentItemOffset - visualInset * 2
 
         y: root.vertical ? Math.round(indicatorPosition) : 0
         x: root.vertical ? 0 : Math.round(indicatorPosition)
-        implicitHeight: root.vertical ? Math.round(indicatorLength) : baseHeight // CORRECCIÓN: Usar baseHeight (que es wrapperSize)
-        implicitWidth: root.vertical ? baseHeight : Math.round(indicatorLength)
+        implicitHeight: root.vertical ? Math.round(indicatorLength) : individualIconBoxHeight
+        implicitWidth: root.vertical ? individualIconBoxHeight : Math.round(indicatorLength)
 
         SequentialAnimation {
             running: fxEnabled && premiumActiveIndicatorPulse && fxActiveIndicatorPill
@@ -412,18 +379,12 @@ Item {
             NumberAnimation {
                 target: activeIndicatorPulse
                 property: "pulsePhase"
-                from: 0
-                to: 1
-                duration: 2000
-                easing.type: Easing.InOutSine
+                from: 0; to: 1; duration: 2000; easing.type: Easing.InOutSine
             }
             NumberAnimation {
                 target: activeIndicatorPulse
                 property: "pulsePhase"
-                from: 1
-                to: 0
-                duration: 2000
-                easing.type: Easing.InOutSine
+                from: 1; to: 0; duration: 2000; easing.type: Easing.InOutSine
             }
         }
 
@@ -445,9 +406,9 @@ Item {
                     angle: root.spinningAngle
                     gradient: Gradient {
                         GradientStop { position: 0.00; color: "transparent" }
-                        GradientStop { position: 0.25; color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.30) }
+                        GradientStop { position: 0.25; color: Qt.rgba(1, 1, 1, 0.7) }
                         GradientStop { position: 0.50; color: "transparent" }
-                        GradientStop { position: 0.75; color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.30) }
+                        GradientStop { position: 0.75; color: Qt.rgba(1, 1, 1, 0.7) }
                         GradientStop { position: 1.00; color: "transparent" }
                     }
                 }
@@ -471,12 +432,7 @@ Item {
             visible: premiumActiveIndicatorBorder && fxActiveIndicatorPill
             color: "transparent"
             border.width: 1
-            border.color: Qt.rgba(
-                Appearance.colors.colOnLayer1.r,
-                Appearance.colors.colOnLayer1.g,
-                Appearance.colors.colOnLayer1.b,
-                0.15 + (activeIndicatorPulse.pulsePhase * 0.08)
-            )
+            border.color: Qt.rgba(1, 1, 1, 0.15 + (activeIndicatorPulse.pulsePhase * 0.08))
         }
 
         Repeater {
@@ -486,7 +442,7 @@ Item {
                 height: width
                 radius: width / 2
                 antialiasing: true
-                color: Appearance.colors.colOnLayer1
+                color: "white"
                 opacity: 0.2 + Math.random() * 0.4
 
                 x: Math.round(Math.random() * activeIndicator.width)
@@ -535,13 +491,8 @@ Item {
                     ? root.visibleWorkspaces[index]
                     : (workspaceOffset + workspaceGroup * root.workspacesShown + index + 1)
 
-                implicitWidth: root.vertical
-                    ? root.iconBoxWrapperSize
-                    : (contentLayout.children[index]?.width ?? root.iconBoxWrapperSize)
-
-                implicitHeight: root.vertical
-                    ? (contentLayout.children[index]?.height ?? root.iconBoxWrapperSize)
-                    : root.iconBoxWrapperSize
+                implicitWidth: root.vertical ? root.iconBoxWrapperSize : (contentLayout.children[index]?.width ?? root.iconBoxWrapperSize)
+                implicitHeight: root.vertical ? (contentLayout.children[index]?.height ?? root.iconBoxWrapperSize) : root.iconBoxWrapperSize
 
                 radius: Math.min(width, height) / 2
                 topLeftRadius: radius
@@ -549,13 +500,9 @@ Item {
                 bottomLeftRadius: radius
                 bottomRightRadius: radius
 
-                color: ColorUtils.transparentize(
-                    Appearance.m3colors.m3secondaryContainer,
-                    premium ? 0.30 : 0.40
-                )
+                color: ColorUtils.transparentize(Appearance.m3colors.m3secondaryContainer, premium ? 0.30 : 0.40)
 
-                readonly property bool isOccupied: (root.workspaceOccupiedById && root.workspaceOccupiedById[wsId] === true) &&
-                    !(!activeWindow?.activated && monitor?.activeWorkspace?.id === wsId)
+                readonly property bool isOccupied: (root.workspaceOccupiedById && root.workspaceOccupiedById[wsId] === true) && !(!activeWindow?.activated && monitor?.activeWorkspace?.id === wsId)
 
                 opacity: isOccupied ? 1 : 0
 
@@ -583,13 +530,8 @@ Item {
                 id: background
                 Layout.alignment: Qt.AlignCenter
 
-                implicitWidth: root.vertical
-                    ? root.iconBoxWrapperSize
-                    : Math.max(layout.implicitWidth + 8, root.iconBoxWrapperSize)
-
-                implicitHeight: root.vertical
-                    ? Math.max(layout.implicitHeight + 8, root.iconBoxWrapperSize)
-                    : root.iconBoxWrapperSize
+                implicitWidth: root.vertical ? root.iconBoxWrapperSize : Math.max(layout.implicitWidth + 8, root.iconBoxWrapperSize)
+                implicitHeight: root.vertical ? Math.max(layout.implicitHeight + 8, root.iconBoxWrapperSize) : root.iconBoxWrapperSize
 
                 hoverEnabled: true
 
@@ -599,14 +541,10 @@ Item {
 
                 readonly property bool isActive: (monitor?.activeWorkspace?.id === workspaceValue)
 
-                readonly property bool hasIconsHere: showIcons && (
-                    (monitorWindows?.some(w => w && w.workspace === workspaceValue)) ?? false
-                )
+                readonly property bool hasIconsHere: showIcons && ((monitorWindows?.some(w => w && w.workspace === workspaceValue)) ?? false)
 
                 readonly property var winsHere: root.showIcons
-                    ? (root.monitorWindows
-                        ?.filter(win => win && win.workspace === workspaceValue)
-                        ?.slice(0, Config.options.bar.workspaces.maxWindowCount) ?? [])
+                    ? (root.monitorWindows?.filter(win => win && win.workspace === workspaceValue)?.slice(0, Config.options.bar.workspaces.maxWindowCount) ?? [])
                     : []
 
                 function appKeyFor(w) {
@@ -650,7 +588,6 @@ Item {
                             if ((winsHere[k2]?.title ?? "") === focusedTitle) return k2
                         }
                     }
-
                     return -1
                 }
 
@@ -724,16 +661,9 @@ Item {
                             clip: false
 
                             readonly property bool superFx: root.superShowNumbers
-
                             readonly property bool isFocusedIconExact: background.isActive && (index === background.focusedIconIndex)
-
                             readonly property string myAppKey: background.appKeyFor(modelData)
-                            readonly property bool isSameAppAsFocused: background.isActive
-                                && root.highlightSameAppInstances
-                                && (background.focusedAppKey && background.focusedAppKey.length > 0)
-                                && (myAppKey === background.focusedAppKey)
-                                && (background.focusedAppCountHere > 1)
-
+                            readonly property bool isSameAppAsFocused: background.isActive && root.highlightSameAppInstances && (background.focusedAppKey && background.focusedAppKey.length > 0) && (myAppKey === background.focusedAppKey) && (background.focusedAppCountHere > 1)
                             readonly property bool showSameAppFx: isSameAppAsFocused && !isFocusedIconExact
 
                             MouseArea {
@@ -743,37 +673,21 @@ Item {
                                 acceptedButtons: Qt.NoButton
                                 onEntered: background.hoveredIconIndex = index
                                 onExited: {
-                                    if (background.hoveredIconIndex === index)
-                                        background.hoveredIconIndex = -1
+                                    if (background.hoveredIconIndex === index) background.hoveredIconIndex = -1
                                 }
                             }
 
                             Rectangle {
                                 anchors.centerIn: parent
-                                width: parent.width + 8
-                                height: parent.height + 8
+                                width: parent.width + Math.round(8 * root.autoScaleFactor)
+                                height: parent.height + Math.round(8 * root.autoScaleFactor)
                                 radius: 999
-                                visible: fxEnabled && premium && !iconCell.superFx
-                                    && premiumFocusedIconFx && root.focusedIconChip
-                                    && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
-
-                                color: Qt.rgba(
-                                    Appearance.colors.colPrimary.r,
-                                    Appearance.colors.colPrimary.g,
-                                    Appearance.colors.colPrimary.b,
-                                    iconCell.isFocusedIconExact ? root.focusedChipOpacity : root.sameAppChipOpacity
-                                )
+                                visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconChip && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
+                                color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipOpacity : root.sameAppChipOpacity)
                                 border.width: 1
-                                border.color: Qt.rgba(
-                                    Appearance.colors.colPrimary.r,
-                                    Appearance.colors.colPrimary.g,
-                                    Appearance.colors.colPrimary.b,
-                                    iconCell.isFocusedIconExact ? root.focusedChipBorderOpacity : root.sameAppChipBorderOpacity
-                                )
-
+                                border.color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipBorderOpacity : root.sameAppChipBorderOpacity)
                                 opacity: visible ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-
                                 layer.enabled: fxEnabled && (root.focusedIconGlow || root.sameAppGlow)
                                 layer.effect: MultiEffect {
                                     shadowEnabled: true
@@ -787,22 +701,13 @@ Item {
 
                             Rectangle {
                                 anchors.centerIn: parent
-                                width: parent.width + 6
-                                height: parent.height + 6
+                                width: parent.width + Math.round(6 * root.autoScaleFactor)
+                                height: parent.height + Math.round(6 * root.autoScaleFactor)
                                 radius: 999
-                                visible: fxEnabled && premium && !iconCell.superFx
-                                    && premiumFocusedIconFx && root.focusedIconRing
-                                    && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
-
+                                visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconRing && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
                                 color: "transparent"
                                 border.width: 2
-                                border.color: Qt.rgba(
-                                    Appearance.colors.colOnLayer1.r,
-                                    Appearance.colors.colOnLayer1.g,
-                                    Appearance.colors.colOnLayer1.b,
-                                    iconCell.isFocusedIconExact ? 0.75 : root.sameAppRingOpacity
-                                )
-
+                                border.color: Qt.rgba(1, 1, 1, iconCell.isFocusedIconExact ? 0.75 : root.sameAppRingOpacity)
                                 opacity: visible ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                             }
@@ -810,13 +715,10 @@ Item {
                             Rectangle {
                                 id: focusedPulse
                                 anchors.centerIn: parent
-                                width: parent.width + 6
-                                height: parent.height + 6
+                                width: parent.width + Math.round(6 * root.autoScaleFactor)
+                                height: parent.height + Math.round(6 * root.autoScaleFactor)
                                 radius: 999
-                                visible: fxEnabled && premium && !iconCell.superFx
-                                    && premiumFocusedIconFx && root.focusedIconPulse
-                                    && iconCell.isFocusedIconExact
-
+                                visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconPulse && iconCell.isFocusedIconExact
                                 color: Appearance.colors.colPrimary
                                 opacity: 0
 
@@ -834,20 +736,8 @@ Item {
                                     PropertyAction { target: focusedPulse; property: "opacity"; value: 0.0 }
                                     PropertyAction { target: focusedPulse; property: "scale"; value: 1.0 }
                                     ParallelAnimation {
-                                        NumberAnimation {
-                                            target: focusedPulse
-                                            property: "opacity"
-                                            from: 0.28; to: 0.0
-                                            duration: 260
-                                            easing.type: Easing.OutCubic
-                                        }
-                                        NumberAnimation {
-                                            target: focusedPulse
-                                            property: "scale"
-                                            from: 1.0; to: 1.55
-                                            duration: 260
-                                            easing.type: Easing.OutCubic
-                                        }
+                                        NumberAnimation { target: focusedPulse; property: "opacity"; from: 0.28; to: 0.0; duration: 260; easing.type: Easing.OutCubic }
+                                        NumberAnimation { target: focusedPulse; property: "scale"; from: 1.0; to: 1.55; duration: 260; easing.type: Easing.OutCubic }
                                     }
                                 }
                             }
@@ -862,39 +752,25 @@ Item {
                                 Image {
                                     id: mainAppIcon
                                     source: modelData.icon
+                                    readonly property int superExtraDown: 3
+                                    readonly property int cornerOffset: Math.max(-8, Math.min(8, root.workspaceIconMarginShrinked))
 
-                                  readonly property int cornerOffset: Math.max(-8, Math.min(8, root.workspaceIconMarginShrinked))
-
-                                    width: Math.round(root.iconBoxWrapperSize * (
-                                        root.superShowNumbers ? root.workspaceIconSizeShrinkFactor : root.workspaceIconSizeFactor
-                                    ))
+                                    width: Math.round(root.iconBoxWrapperSize * (root.superShowNumbers ? root.workspaceIconSizeShrinkFactor : root.workspaceIconSizeFactor))
                                     height: width
-
                                     opacity: root.superShowNumbers ? root.workspaceIconOpacityShrinked : 1.0
-
                                     fillMode: Image.PreserveAspectFit
                                     smooth: true
                                     mipmap: true
                                     asynchronous: true
                                     cache: true
-
                                     sourceSize.width: 64
                                     sourceSize.height: 64
 
-                                    readonly property real focusYOffset: (root.bottomActiveDotEnabled
-                                        && iconCell.isFocusedIconExact
-                                        && !background.showCenteredActiveDot) ? -2 : 0
+                                    readonly property real focusYOffset: (root.bottomActiveDotEnabled && iconCell.isFocusedIconExact && !background.showCenteredActiveDot) ? -2 : 0
 
-                                    x: root.superShowNumbers
-                                        ? Math.round(iconFxBox.width - width - cornerOffset)
-                                        : Math.round((iconFxBox.width - width) / 2)
-
-                                    y: (root.superShowNumbers
-                                        ? Math.round(iconFxBox.height - height - cornerOffset)
-                                        : Math.round((iconFxBox.height - height) / 2))
-                                       + focusYOffset
-                                      
-                                      scale: iconCell.isFocusedIconExact ? 1.08 : (iconHover.containsMouse ? 1.05 : 1.0)
+                                    x: root.superShowNumbers ? Math.round(iconFxBox.width - width - cornerOffset) : Math.round((iconFxBox.width - width) / 2)
+                                    y: (root.superShowNumbers ? Math.round(iconFxBox.height - height - cornerOffset) : Math.round((iconFxBox.height - height) / 2)) + focusYOffset + (root.superShowNumbers ? superExtraDown : 0)
+                                    scale: iconCell.isFocusedIconExact ? 1.08 : (iconHover.containsMouse ? 1.05 : 1.0)
 
                                     Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                                     Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -903,54 +779,46 @@ Item {
                                     Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 }
+                            }
 
-                                Rectangle {
-                                    visible: fxEnabled && premium && !iconCell.superFx
-                                        && root.bottomActiveDotEnabled
-                                        && iconCell.isFocusedIconExact
-                                        && !background.showCenteredActiveDot
-
-                                    width: root.activeDotWidth
-                                    height: root.activeDotHeight
-                                    radius: root.activeDotRadius
-
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: root.bottomActiveDotBottomMargin
-
-                                    color: Appearance.colors.colPrimary
-                                    opacity: 1.0
-
-                                    border.width: root.bottomActiveDotOutline ? 1 : 0
-                                    border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
-
-                                    layer.enabled: fxEnabled && root.bottomActiveDotGlow
-                                    layer.effect: MultiEffect {
-                                        shadowEnabled: true
-                                        shadowBlur: root.bottomActiveDotGlowBlur
-                                        shadowOpacity: root.bottomActiveDotGlowOpacity
-                                        shadowColor: Appearance.colors.colPrimary
-                                        shadowHorizontalOffset: 0
-                                        shadowVerticalOffset: 0
-                                    }
+                            Rectangle {
+                                visible: fxEnabled && premium && !iconCell.superFx && root.bottomActiveDotEnabled && iconCell.isFocusedIconExact && !background.showCenteredActiveDot
+                                width: root.activeDotWidth
+                                height: root.activeDotHeight
+                                radius: root.activeDotRadius
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: root.bottomActiveDotBottomMargin
+                                color: Appearance.colors.colPrimary
+                                opacity: 1.0
+                                border.width: root.bottomActiveDotOutline ? 1 : 0
+                                border.color: Qt.rgba(0, 0, 0, root.bottomActiveDotOutlineOpacity)
+                                layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true
+                                    shadowBlur: root.bottomActiveDotGlowBlur
+                                    shadowOpacity: root.bottomActiveDotGlowOpacity
+                                    shadowColor: Appearance.colors.colPrimary
+                                    shadowHorizontalOffset: 0
+                                    shadowVerticalOffset: 0
                                 }
+                            }
 
-                                Loader {
-                                    active: Config.options.bar.workspaces.monochromeIcons
-                                    anchors.fill: mainAppIcon
-                                    sourceComponent: Item {
-                                        Desaturate {
-                                            id: desaturatedIcon
-                                            visible: false
-                                            anchors.fill: parent
-                                            source: mainAppIcon
-                                            desaturation: 0.8
-                                        }
-                                        ColorOverlay {
-                                            anchors.fill: desaturatedIcon
-                                            source: desaturatedIcon
-                                            color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
-                                        }
+                            Loader {
+                                active: Config.options.bar.workspaces.monochromeIcons
+                                anchors.fill: mainAppIcon
+                                sourceComponent: Item {
+                                    Desaturate {
+                                        id: desaturatedIcon
+                                        visible: false
+                                        anchors.fill: parent
+                                        source: mainAppIcon
+                                        desaturation: 0.8
+                                    }
+                                    ColorOverlay {
+                                        anchors.fill: desaturatedIcon
+                                        source: desaturatedIcon
+                                        color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
                                     }
                                 }
                             }
@@ -961,10 +829,7 @@ Item {
                 Item {
                     anchors.fill: layout
                     z: 5
-                    visible: background.showCenteredActiveDot
-                        && (background.focusedAppFirstIndex >= 0)
-                        && (background.focusedAppSecondIndex >= 0)
-
+                    visible: background.showCenteredActiveDot && (background.focusedAppFirstIndex >= 0) && (background.focusedAppSecondIndex >= 0)
                     readonly property real iconW: root.individualIconBoxHeight
                     readonly property real centerA: (background.focusedAppFirstIndex + 0.5) * iconW
                     readonly property real centerB: (background.focusedAppSecondIndex + 0.5) * iconW
@@ -974,16 +839,12 @@ Item {
                         width: root.activeDotWidth
                         height: root.activeDotHeight
                         radius: root.activeDotRadius
-
                         x: parent.midCenter - width / 2
                         y: parent.height - height - root.bottomActiveDotBottomMargin
-
                         color: Appearance.colors.colPrimary
                         opacity: 1.0
-
                         border.width: root.bottomActiveDotOutline ? 1 : 0
-                        border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
-
+                        border.color: Qt.rgba(0, 0, 0, root.bottomActiveDotOutlineOpacity)
                         layer.enabled: fxEnabled && root.bottomActiveDotGlow
                         layer.effect: MultiEffect {
                             shadowEnabled: true
@@ -999,14 +860,7 @@ Item {
                 Item {
                     anchors.fill: parent
                     z: 3.9
-
-                    visible: fxEnabled
-                        && premium
-                        && premiumIconHoverDot
-                        && root.showIcons
-                        && background.isActive
-                        && background.hoveringAnyIcon
-
+                    visible: fxEnabled && premium && premiumIconHoverDot && root.showIcons && background.isActive && background.hoveringAnyIcon
                     readonly property int count: background.winsHere.length
                     readonly property real iconW: root.individualIconBoxHeight
                     readonly property real totalW: count * iconW
@@ -1018,10 +872,8 @@ Item {
                         height: root.hoverPillHeight
                         radius: root.hoverPillRadius
                         color: Appearance.colors.colPrimary
-
                         x: startX + idx * iconW + (iconW - width) / 2
                         y: background.height - height - root.hoverDotBottomMargin
-
                         opacity: parent.visible ? 1 : 0
                         Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                         Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
@@ -1031,107 +883,86 @@ Item {
         }
     }
 
-    component WorkspaceBackgroundIndicator: Item {
-        property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers
-        property int workspaceValue
-        property bool activeWorkspace
-        property bool suppressed: false
+component WorkspaceBackgroundIndicator: Item {
+    property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers
+    property int workspaceValue
+    property bool activeWorkspace
+    property bool suppressed: false
+    property int iconsImplicitHeight: 0
+    property int iconsImplicitWidth: 0
+    property int wrapperSize: 28
+    property int paddingGuard: 8
 
-        property int iconsImplicitHeight: 0
-        property int iconsImplicitWidth: 0
-        property int wrapperSize: 28
-        property int paddingGuard: 8
+    readonly property bool hasWindows: (root.workspaceOccupiedById && root.workspaceOccupiedById[workspaceValue] === true)
+    readonly property int windowCount: (activeWorkspace && hasWindows) ? getWindowCount(workspaceValue) : 0
+    readonly property int iconsFootprint: Math.max(iconsImplicitWidth, iconsImplicitHeight)
 
-        readonly property bool hasWindows: (root.workspaceOccupiedById && root.workspaceOccupiedById[workspaceValue] === true)
-        readonly property int windowCount: (activeWorkspace && hasWindows) ? getWindowCount(workspaceValue) : 0
+    readonly property bool baseVisible: !suppressed && (showNumbers ? true : (iconsFootprint + paddingGuard < wrapperSize))
+    readonly property bool showPill: baseVisible && !showNumbers && activeWorkspace && hasWindows
+    readonly property bool showNumber: baseVisible && showNumbers
 
-        readonly property int iconsFootprint: Math.max(iconsImplicitWidth, iconsImplicitHeight)
+    anchors.centerIn: parent
+    width: wrapperSize
+    height: wrapperSize
+    visible: baseVisible
 
-        readonly property bool baseVisible: !suppressed && (
-            showNumbers ? true : (iconsFootprint + paddingGuard < wrapperSize)
-        )
+    readonly property color indColor: Appearance.colors.colPrimary
 
-        readonly property bool showPill: baseVisible && !showNumbers && activeWorkspace && hasWindows
-        readonly property bool showNumber: baseVisible && showNumbers
-
+    StyledText {
+        z: 50
+        visible: showNumber
+        opacity: showNumber ? 1 : 0
         anchors.centerIn: parent
-        width: wrapperSize
-        height: wrapperSize
-        visible: baseVisible
+        text: Config.options?.bar.workspaces.numberMap[workspaceValue - 1] || workspaceValue
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
+        color: activeWorkspace ? Qt.rgba(1, 1, 1, 1) : (hasWindows ? Qt.rgba(1, 1, 1, 0.75) : Qt.rgba(1, 1, 1, 0.45))
+        Behavior on opacity { animation: Appearance.animation.elementMove.numberAnimation.createObject(this) }
+    }
 
-        readonly property color indColor: Appearance.colors.colPrimary
+    Item {
+        id: pillLayer
+        visible: showPill
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 3
 
-        StyledText {
-            z: 50
+        readonly property int pillW: root.wsIndicatorPillWidth
+        readonly property int pillH: root.wsIndicatorPillHeight
+        readonly property int gap: root.wsIndicatorPillGap
+        readonly property int pills: (windowCount >= 2) ? 2 : 1
 
-            visible: showNumber
-            opacity: showNumber ? 1 : 0
+        width: (pills === 2) ? (pillW * 2 + gap) : pillW
+        height: pillH
+
+        Row {
             anchors.centerIn: parent
+            spacing: pillLayer.gap
 
-            text: Config.options?.bar.workspaces.numberMap[workspaceValue - 1] || workspaceValue
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-
-            color: activeWorkspace
-                ? root.smartTextColor
-                : (hasWindows
-                    ? ColorUtils.transparentize(root.smartTextColor, 0.05)
-                    : ColorUtils.transparentize(root.smartTextColor, 0.35))
-
-            style: Text.Outline
-            styleColor: ColorUtils.transparentize(Appearance.colors.colLayer0, root.themeIsDark ? 0.30 : 0.20)
-
-            Behavior on opacity {
-                animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-            }
-        }
-
-        Item {
-            id: pillLayer
-            visible: showPill
-
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 3
-
-            readonly property int pillW: root.wsIndicatorPillWidth
-            readonly property int pillH: root.wsIndicatorPillHeight
-            readonly property int gap: root.wsIndicatorPillGap
-            readonly property int pills: (windowCount >= 2) ? 2 : 1
-
-            width: (pills === 2) ? (pillW * 2 + gap) : pillW
-            height: pillH
-
-            Row {
-                anchors.centerIn: parent
-                spacing: pillLayer.gap
-
-                Repeater {
-                    model: pillLayer.pills
-                    delegate: Rectangle {
-                        width: pillLayer.pillW
-                        height: pillLayer.pillH
-                        radius: root.wsIndicatorPillRadius
-                        color: indColor
-
-                        border.width: 1
-                        border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
-
-                        layer.enabled: fxEnabled && root.bottomActiveDotGlow
-                        layer.effect: MultiEffect {
-                            shadowEnabled: true
-                            shadowBlur: root.bottomActiveDotGlowBlur
-                            shadowOpacity: root.bottomActiveDotGlowOpacity * 0.75
-                            shadowColor: indColor
-                            shadowHorizontalOffset: 0
-                            shadowVerticalOffset: 0
-                        }
+            Repeater {
+                model: pillLayer.pills
+                delegate: Rectangle {
+                    width: pillLayer.pillW
+                    height: pillLayer.pillH
+                    radius: root.wsIndicatorPillRadius
+                    color: indColor
+                    border.width: 1
+                    border.color: Qt.rgba(0, 0, 0, 0.25)
+                    layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true
+                        shadowBlur: root.bottomActiveDotGlowBlur
+                        shadowOpacity: root.bottomActiveDotGlowOpacity * 0.75
+                        shadowColor: indColor
+                        shadowHorizontalOffset: 0
+                        shadowVerticalOffset: 0
                     }
                 }
             }
         }
     }
+}
 
     function triggerOccupiedBurst(index, strength) {
         if (!premium) return
@@ -1139,10 +970,7 @@ Item {
         if (!fxOccupiedBackground) return
         if (index < 0 || index >= workspacesShown) return
 
-        const wsId = (root.visibleWorkspaces && root.visibleWorkspaces.length > index)
-            ? root.visibleWorkspaces[index]
-            : -1
-
+        const wsId = (root.visibleWorkspaces && root.visibleWorkspaces.length > index) ? root.visibleWorkspaces[index] : -1
         if (!(root.workspaceOccupiedById && root.workspaceOccupiedById[wsId] === true)) return
 
         burstIndex = index

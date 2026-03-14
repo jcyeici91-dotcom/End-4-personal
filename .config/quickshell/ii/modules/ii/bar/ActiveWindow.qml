@@ -4,7 +4,6 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
-import qs.modules.ii.ui 1.0  
 
 import QtQuick
 import QtQuick.Layouts
@@ -43,11 +42,9 @@ Item {
             if (s !== "") return s
         }
         switch (barBackgroundStyleFromConfig) {
-        case 0: return "glass"
         case 1: return "solid"
         case 2: return "adaptive"
-        case 3: return "crystal"
-        case 4: return "line"
+              case 4: return "line"
         default: return "solid"
         }
     }

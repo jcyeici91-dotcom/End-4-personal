@@ -728,9 +728,7 @@ ContentPage {
         }
     }
 
-    // --------------------------------------------
     // Main section
-    // --------------------------------------------
     ContentSection {
         icon: "format_paint"
         title: Translation.tr("Wallpaper & Colors")
@@ -924,9 +922,8 @@ ContentPage {
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
                     { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 },
-                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 },
-                    { displayName: Translation.tr("Crystal"),     icon: "diamond",            value: 3 }
-                ]
+                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
+                    ]
             }
         }
     }

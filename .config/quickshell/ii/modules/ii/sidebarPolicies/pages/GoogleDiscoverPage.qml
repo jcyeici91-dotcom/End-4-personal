@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import qs.modules.common
-import "../../bar" as Bar
 
 Item {
     id: root
@@ -59,9 +58,6 @@ Item {
     readonly property color danger: (Appearance.colors.colError !== undefined) ? Appearance.colors.colError : "#ff4d4d"
     readonly property color success: (Appearance.colors.colSuccess !== undefined) ? Appearance.colors.colSuccess : "#34A853"
     readonly property color warn: (Appearance.colors.colWarning !== undefined) ? Appearance.colors.colWarning : "#fbbc04"
-
-    readonly property bool useCrystalCards: true
-    readonly property real cardTintOpacity: themeIsDark ? 0.18 : 0.14
 
     readonly property int esOffsetMinutes: -6 * 60
 
@@ -225,7 +221,8 @@ Item {
                     height: 118
                     radius: 16
 
-                    color: "transparent"
+                    // Agregado el color de fondo aquí para reemplazar el cristal
+                    color: Appearance.colors.colLayer0
                     clip: true
 
                     border.width: 1
@@ -237,29 +234,6 @@ Item {
                         shadowBlur: 0.65
                         shadowVerticalOffset: 1
                         shadowColor: root.shadowCol
-                    }
-
-                        Bar.BarBgOverlayGlassBlur {
-                        anchors.fill: parent
-                        z: 0
-
-                        useGlassMode: root.useCrystalCards
-                        showSolidBackground: false
-                        backgroundColor: Appearance.colors.colLayer0
-                        cornerStyle: 0
-                        
-                        basePadding: 0
-                        content: [ Item { } ]
-                    }
-
-                    Bar.BarBgCrystalOverlay {
-                        anchors.fill: parent
-                        z: 1
-
-                        useGlassMode: root.useCrystalCards
-                        showSolidBackground: false
-                        backgroundColor: "transparent"
-                        cornerStyle: 0
                     }
 
                     ColumnLayout {
@@ -571,32 +545,6 @@ Item {
             shadowBlur: (arrow.hovered || arrow.activeFocus) ? 0.9 : 0.7
             shadowVerticalOffset: 1
             shadowColor: root.shadowCol
-        }
-
-        Item {
-            anchors.fill: parent
-            visible: root.useCrystalCards
-            clip: true
-
-                Bar.BarBgOverlayGlassBlur {
-                anchors.fill: parent
-                z: 0
-                useGlassMode: true
-                showSolidBackground: false
-                backgroundColor: Appearance.colors.colLayer0
-                cornerStyle: 0
-                basePadding: 0
-                content: [ Item { } ]
-            }
-
-            Bar.BarBgCrystalOverlay {
-                anchors.fill: parent
-                z: 1
-                useGlassMode: true
-                showSolidBackground: false
-                backgroundColor: "transparent"
-                cornerStyle: 0
-            }
         }
 
         MaterialSymbol {
@@ -1542,6 +1490,5 @@ Item {
     Component.onCompleted: {
         procNews.loadNews()
         procScores.startLoadScores()
-        
-           }
+    }
 }

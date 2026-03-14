@@ -118,6 +118,48 @@ ContentPage {
             }
         }
     }
+
+    ContentSection {
+        icon: "transition_slide"
+        title: Translation.tr("Panel animation")
+
+        ConfigSwitch {
+            buttonIcon: "animation"
+            text: Translation.tr("Enable background animation")
+            checked: Config.options.appearance.panelAnimation.enableBackgroundAnimation
+            onCheckedChanged: {
+                Config.options.appearance.panelAnimation.enableBackgroundAnimation = checked;
+            }
+        }
+
+        ConfigRow {
+            ConfigSpinBox {
+                enabled: Config.options.appearance.panelAnimation.enableBackgroundAnimation
+                icon: "clock_arrow_down"
+                text: Translation.tr("Enter duration")
+                value: Config.options.appearance.panelAnimation.enterDuration
+                from: 200
+                to: 1000
+                stepSize: 50
+                onValueChanged: {
+                    Config.options.appearance.panelAnimation.enterDuration = value;
+                }
+            }
+            ConfigSpinBox {
+                enabled: Config.options.appearance.panelAnimation.enableBackgroundAnimation
+                icon: "clock_arrow_up"
+                text: Translation.tr("Exit duration")
+                value: Config.options.appearance.panelAnimation.exitDuration
+                from: 200
+                to: 1000
+                stepSize: 50
+                onValueChanged: {
+                    Config.options.appearance.panelAnimation.exitDuration = value;
+                }
+            }
+        }
+    }
+
     ContentSection {
         icon: "call_to_action"
         title: Translation.tr("Dock")

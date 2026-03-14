@@ -12,8 +12,8 @@ QuickToggleModel {
     toggled: PowerProfiles.profile !== PowerProfile.Balanced
     icon: switch(PowerProfiles.profile) {
         case PowerProfile.PowerSaver: return "energy_savings_leaf"
-        case PowerProfile.Balanced: return "airwave"
-        case PowerProfile.Performance: return "local_fire_department"
+        case PowerProfile.Balanced: return "balance"
+        case PowerProfile.Performance: return "rocket_launch"
     }
     statusText: switch(PowerProfiles.profile) {
         case PowerProfile.PowerSaver: return "Power Saver"

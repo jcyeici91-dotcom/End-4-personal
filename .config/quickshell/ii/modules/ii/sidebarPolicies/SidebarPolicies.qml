@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import qs
 import qs.services
 import qs.modules.common
@@ -7,8 +8,6 @@ import Quickshell.Io
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import qs.modules.ii.ui 1.0
-import "../bar" as Bar
 
 Scope {
     id: root
@@ -19,73 +18,14 @@ Scope {
     property Item sidebarContent
 
     readonly property bool isOnLeft: {
-        const pos = Config.options.sidebar.position
-        return pos === "default" || pos === "left"
+        const pos = Config.options.sidebar.position;
+        return pos === "default" || pos === "left";
     }
 
-    readonly property bool safeNoEffects: false
-    readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
-    readonly property var _opts: ((typeof Config !== "undefined") && Config) ? Config.options : null
-    readonly property bool followGlobalSidebarStyle: (_opts?.sidebar?.followGlobalSidebarStyle ?? false)
-
-    readonly property int styleIntFromConfig: {
-        const o = _opts
-        if (o?.sidebar?.dashboardRightBackgroundStyle !== undefined) return o.sidebar.dashboardRightBackgroundStyle
-        if (o?.sidebar?.rightBackgroundStyle          !== undefined) return o.sidebar.rightBackgroundStyle
-        if (o?.sidebar?.sidebarBackgroundStyle        !== undefined) return o.sidebar.sidebarBackgroundStyle
-        if (o?.sidebar?.backgroundStyle               !== undefined) return o.sidebar.backgroundStyle
-        if (o?.bar?.barBackgroundStyle                !== undefined) return o.bar.barBackgroundStyle
-        return 1
-    }
-
-    function _styleFromConfig(v) {
-        switch (v) {
-            case 0:  return "glass"
-            case 1:  return "solid"
-            case 2:  return "adaptive"
-            case 3:  return "crystal"
-            default: return "solid"
-        }
-    }
-
-    function _normalizeStyle(v) {
-        if (typeof v === "number") return _styleFromConfig(v)
-        if (typeof v !== "string") return "solid"
-        const s = v.toLowerCase().trim()
-        if (s === "visible")     return "solid"
-        if (s === "transparent") return "glass"
-        return s
-    }
-
-    function _effectiveSidebarStyle(requested) {
-        const s = _normalizeStyle(requested)
-        if (s === "solid" || s === "glass") return "visible"
-        if (s === "crystal") return "crystal"
-        if (s === "adaptive") {
-            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined)
-                ? UIState.hasWindows
-                : false
-            return hw ? "visible" : "crystal"
-        }
-        return "visible"
-    }
-
-    readonly property string requestedStyle: followGlobalSidebarStyle
-        ? ((typeof UIState !== "undefined" && UIState) ? UIState.surfaceStyle : "solid")
-        : _styleFromConfig(styleIntFromConfig)
-
-    readonly property string sidebarStyle:    _effectiveSidebarStyle(requestedStyle)
-    readonly property bool   bgIsVisible:     sidebarStyle === "visible"
-    readonly property bool   bgIsCrystal:     sidebarStyle === "crystal"
-    readonly property bool   useCrystalEffects: bgIsCrystal && !safeNoEffects
-
-    readonly property real crystalTintIntensity: Appearance.colors.isDark ? 0.22 : 0.18
-
-    function toggleDetach() { root.detach = !root.detach }
+    function toggleDetach() { root.detach = !root.detach; }
 
     Process {
         id: pinWithFunnyHyprlandWorkaroundProc
-
         property var hook: null
         property int cursorX
         property int cursorY
@@ -142,74 +82,6 @@ Scope {
         }
     }
 
-    component CrystalShell: Item {
-        id: crystalShell
-
-        required property Item targetBackground
-        required property bool useCrystal
-        required property bool isVisible
-
-        anchors.fill: parent
-
-        Bar.BarBgOverlayGlassBlur {
-            anchors.fill: parent
-            z: 0
-            useGlassMode:        crystalShell.useCrystal
-            showSolidBackground: crystalShell.isVisible
-            backgroundColor:     Appearance.colors.colLayer0
-            cornerStyle:         0
-            tintIntensity:       root.crystalTintIntensity
-            basePadding:         0
-            content: [Item {}]
-        }
-
-        Bar.BarBgCrystalOverlay {
-            anchors.fill: parent
-            z: 1
-            useGlassMode:        crystalShell.useCrystal
-            showSolidBackground: crystalShell.isVisible
-            cornerStyle:         0
-            iridescenceStrength: 0.05
-        }
-
-        Item {
-            anchors.fill: parent
-            visible: crystalShell.useCrystal
-            z: 2
-
-            Rectangle {
-                anchors.fill: parent
-                radius: crystalShell.targetBackground.radius
-                color: "transparent"
-                border.width: 1
-                border.color: Appearance.colors.isDark
-                    ? Qt.rgba(0, 0, 0, 0.45)
-                    : Qt.rgba(0, 0, 0, 0.15)
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: Math.max(0, crystalShell.targetBackground.radius - 1)
-                color: "transparent"
-                border.width: 1
-                border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
-            }
-
-            Rectangle {
-                readonly property real _r: crystalShell.targetBackground.radius
-                anchors.top:         parent.top
-                anchors.left:        parent.left
-                anchors.right:       parent.right
-                anchors.leftMargin:  _r > 0 ? _r / 1.2 : 1
-                anchors.rightMargin: _r > 0 ? _r / 1.2 : 1
-                anchors.topMargin:   1
-                height: 1
-                color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.35 : 0.70)
-            }
-        }
-    }
-
     Loader {
         id: sidebarLoader
         active: true
@@ -230,22 +102,22 @@ Scope {
             property var contentParent: sidebarLeftContentContainer
             function hide() { GlobalStates.sidebarLeftOpen = false }
 
-            exclusionMode:  ExclusionMode.Normal
-            exclusiveZone:  root.pin ? sidebarWidth : 0
-            implicitWidth:  Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
+            exclusionMode: ExclusionMode.Normal
+            exclusiveZone: root.pin ? sidebarWidth : 0
+            implicitWidth: sidebarWidth
+            
+            height: parent ? parent.height : 1080
 
-            WlrLayershell.namespace:     root.isOnLeft ? "quickshell:sidebarLeft" : "quickshell:sidebarRight"
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            WlrLayershell.namespace: root.isOnLeft ? "quickshell:sidebarLeft" : "quickshell:sidebarRight"
+            WlrLayershell.keyboardFocus: GlobalStates.sidebarLeftOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
 
             anchors {
-                top:    true
-                left:   root.isOnLeft
-                right:  !root.isOnLeft
+                top: true
+                left: root.isOnLeft
+                right: !root.isOnLeft
                 bottom: true
             }
-
-            mask: Region { item: sidebarLeftBackground }
 
             onVisibleChanged: {
                 if (visible) GlobalFocusGrab.addDismissable(panelWindow)
@@ -257,82 +129,23 @@ Scope {
                 function onDismissed() { panelWindow.hide() }
             }
 
-            StyledRectangularShadow {
-                target: sidebarLeftBackground
-                radius: sidebarLeftBackground.radius
-            }
-
-            Rectangle {
+            Item {
                 id: sidebarLeftBackground
-
-                readonly property real _gap: Appearance.sizes.hyprlandGapsOut
-
-                radius:       Appearance.rounding.screenRounding - _gap + 1
-                antialiasing: true
-                clip:         true
-                color:        root.bgIsVisible ? Appearance.colors.colLayer0 : "transparent"
-                border.width: root.bgIsVisible ? 1 : 0
-                border.color: Appearance.colors.colLayer0Border
-
-                height: parent.height - (_gap * 2)
-                y:      _gap
-                width:  panelWindow.sidebarWidth - _gap - Appearance.sizes.elevationMargin
-
-                Behavior on width {
-                    animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-                }
-
-                CrystalShell {
-                    targetBackground: sidebarLeftBackground
-                    useCrystal:       root.useCrystalEffects
-                    isVisible:        root.bgIsVisible
-                }
+                anchors.fill: parent
 
                 Item {
                     id: sidebarLeftContentContainer
                     anchors.fill: parent
-                    z: 10
                 }
+            }
 
-                state: root.isOnLeft ? "left" : "right"
-
-                states: [
-                    State {
-                        name: "left"
-                        AnchorChanges {
-                            target: sidebarLeftBackground
-                            anchors.left:  parent.left
-                            anchors.right: undefined
-                        }
-                        PropertyChanges {
-                            target: sidebarLeftBackground
-                            anchors.leftMargin:  sidebarLeftBackground._gap
-                            anchors.rightMargin: 0
-                        }
-                    },
-                    State {
-                        name: "right"
-                        AnchorChanges {
-                            target: sidebarLeftBackground
-                            anchors.left:  undefined
-                            anchors.right: parent.right
-                        }
-                        PropertyChanges {
-                            target: sidebarLeftBackground
-                            anchors.rightMargin: sidebarLeftBackground._gap
-                            anchors.leftMargin:  0
-                        }
-                    }
-                ]
-
-                Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_Escape) panelWindow.hide()
-                    if (event.modifiers === Qt.ControlModifier) {
-                        if      (event.key === Qt.Key_O) panelWindow.extend = !panelWindow.extend
-                        else if (event.key === Qt.Key_D) root.toggleDetach()
-                        else if (event.key === Qt.Key_P) root.togglePin()
-                        event.accepted = true
-                    }
+            Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_Escape) panelWindow.hide()
+                if (event.modifiers === Qt.ControlModifier) {
+                    if      (event.key === Qt.Key_O) panelWindow.extend = !panelWindow.extend
+                    else if (event.key === Qt.Key_D) root.toggleDetach()
+                    else if (event.key === Qt.Key_P) root.togglePin()
+                    event.accepted = true
                 }
             }
         }
@@ -344,7 +157,6 @@ Scope {
 
         sourceComponent: FloatingWindow {
             id: detachedSidebarRoot
-
             property var contentParent: detachedSidebarContentContainer
             color: "transparent"
             visible: GlobalStates.sidebarLeftOpen
@@ -355,22 +167,13 @@ Scope {
 
             Rectangle {
                 id: detachedSidebarBackground
-
-                readonly property real _gap: Appearance.sizes.hyprlandGapsOut
-
                 anchors.fill: parent
-                radius:       Appearance.rounding.screenRounding - _gap + 1
+                radius: Appearance.rounding.screenRounding
                 antialiasing: true
-                clip:         true
-                color:        root.bgIsVisible ? Appearance.colors.colLayer0 : "transparent"
-                border.width: root.bgIsVisible ? 1 : 0
+                clip: true
+                color: Appearance.colors.colLayer0
+                border.width: 1
                 border.color: Appearance.colors.colLayer0Border
-
-                CrystalShell {
-                    targetBackground: detachedSidebarBackground
-                    useCrystal:       root.useCrystalEffects
-                    isVisible:        root.bgIsVisible
-                }
 
                 Item {
                     id: detachedSidebarContentContainer
@@ -419,4 +222,3 @@ Scope {
         onPressed: { root.detach = !root.detach }
     }
 }
-

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import qs
 import qs.services
 import qs.modules.common
@@ -6,14 +7,11 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Hyprland
-
-import qs.modules.ii.ui 1.0
-
-import "../bar" as Bar
 
 import qs.modules.ii.sidebarDashboard.quickToggles
 import qs.modules.ii.sidebarDashboard.quickToggles.classicStyle
@@ -36,63 +34,23 @@ Item {
     property bool showWifiDialog: false
     property bool editMode: false
 
-    readonly property bool safeNoEffects: false
     readonly property bool _configReady: (typeof Config !== "undefined") && Config && (Config.ready === true)
     readonly property var _opts: ((typeof Config !== "undefined") && Config) ? Config.options : null
 
-    readonly property bool followGlobalSidebarStyle: (_opts?.sidebar?.followGlobalSidebarStyle ?? false)
-
-    readonly property int styleIntFromConfig: {
-        const o = _opts
-        if (o?.sidebar?.dashboardRightBackgroundStyle !== undefined) return o.sidebar.dashboardRightBackgroundStyle
-        if (o?.sidebar?.rightBackgroundStyle !== undefined) return o.sidebar.rightBackgroundStyle
-        if (o?.sidebar?.sidebarBackgroundStyle !== undefined) return o.sidebar.sidebarBackgroundStyle
-        if (o?.sidebar?.backgroundStyle !== undefined) return o.sidebar.backgroundStyle
-        if (o?.bar?.barBackgroundStyle !== undefined) return o.bar.barBackgroundStyle
-        return 1
+    readonly property bool isOnRight: {
+        const pos = _opts?.sidebar?.position;
+        return pos === "default" || pos === "right"; 
     }
 
-    function _styleFromConfig(v) {
-        switch (v) {
-        case 0: return "glass"
-        case 1: return "solid"
-        case 2: return "adaptive"
-        case 3: return "crystal"
-        default: return "solid"
-        }
-    }
+    readonly property real shapeRadius: Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18
 
-    function _normalizeStyle(v) {
-        if (typeof v === "number") return _styleFromConfig(v)
-        if (typeof v !== "string") return "solid"
-        const s = v.toLowerCase().trim()
-        if (s === "visible") return "solid"
-        if (s === "transparent") return "glass"
-        return s
-    }
-
-    function _effectiveSidebarStyle(requested) {
-        const s = _normalizeStyle(requested)
-        if (s === "solid" || s === "glass") return "visible"
-        if (s === "crystal") return "crystal"
-
-        if (s === "adaptive") {
-            const hw = (typeof UIState !== "undefined" && UIState && UIState.hasWindows !== undefined) ? UIState.hasWindows : false
-            return hw ? "visible" : "crystal"
-        }
-        return "visible"
-    }
-
-    readonly property var requestedStyle: followGlobalSidebarStyle
-        ? ((typeof UIState !== "undefined" && UIState) ? UIState.surfaceStyle : "solid")
-        : _styleFromConfig(styleIntFromConfig)
-
-    readonly property string sidebarStyle: _effectiveSidebarStyle(requestedStyle)
-    readonly property bool bgIsVisible: sidebarStyle === "visible"
-    readonly property bool bgIsCrystal: sidebarStyle === "crystal"
+    // --- LÓGICA DE FLOTACIÓN (HUG/DOCKED) ---
+    readonly property bool isFloatOrHybrid: _opts ? ((_opts.bar?.cornerStyle === 1) || (_opts.bar?.barBackgroundStyle === 0) || (_opts.bar?.barBackgroundStyle === 3)) : false
+    readonly property int floatingGap: 12
+    // ----------------------------------------
 
     property real pillSpacing: sidebarPadding
-    readonly property real pillsRowWidth: sidebarRightBackground.width - sidebarPadding * 2
+    readonly property real pillsRowWidth: sidebarWidth - sidebarPadding * 2 - shapeRadius
     readonly property real twoUpPillWidth: Math.floor((pillsRowWidth - pillSpacing) / 2)
 
     Connections {
@@ -108,74 +66,118 @@ Item {
         }
     }
 
-    implicitHeight: sidebarRightBackground.implicitHeight
-    implicitWidth: sidebarRightBackground.implicitWidth
+    implicitHeight: parent ? parent.height : 1080
+    implicitWidth: sidebarWidth
 
-    StyledRectangularShadow {
-        target: sidebarRightBackground
-    }
-
-    Rectangle {
+    Item {
         id: sidebarRightBackground
         anchors.fill: parent
-        implicitHeight: parent.height - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) * 2
-        implicitWidth: sidebarWidth - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) * 2
+        
+        // Se aplican márgenes si la barra está flotando
+        anchors.topMargin: root.isFloatOrHybrid ? root.floatingGap : 0
+        anchors.bottomMargin: root.isFloatOrHybrid ? root.floatingGap : 0
+        anchors.leftMargin: root.isFloatOrHybrid && !root.isOnRight ? root.floatingGap : 0
+        anchors.rightMargin: root.isFloatOrHybrid && root.isOnRight ? root.floatingGap : 0
 
-        radius: (Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18) - (Appearance.sizes ? (Appearance.sizes.hyprlandGapsOut || 0) : 0) + 1
-        antialiasing: true
-        clip: true
-
-        // ¡AQUÍ ESTÁ LA CLAVE! 100% transparente para que el fondo brille sin neblina gris.
-        color: root.bgIsVisible 
-            ? Appearance.colors.colLayer0 
-            : "transparent"
-
-        border.width: root.bgIsVisible ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
-
-        // ==============================================================
-        // CRISTAL INVISIBLE 100% PURO: Cero colores de relleno.
-        // Solo dibujamos los bordes brillantes del vidrio.
-        // ==============================================================
-        Item {
+        // Loader para cambiar dinámicamente entre la forma unida o la forma flotante
+        Loader {
             anchors.fill: parent
-            visible: root.bgIsCrystal && !root.safeNoEffects
+            sourceComponent: root.isFloatOrHybrid ? floatingBgComponent : unitedBgComponent
+        }
 
-            // 1. Borde Exterior (Corte limpio)
+        Component {
+            id: floatingBgComponent
             Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                color: "transparent" // CERO RELLENO
+                color: Appearance.colors.colLayer0
+                radius: root.shapeRadius
                 border.width: 1
-                border.color: Appearance.colors.isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.15)
+                border.color: Appearance.colors.colLayer0Border
             }
+        }
 
-            // 2. Bisel Interno Apple (El grosor 3D del vidrio)
-            Rectangle {
+        Component {
+            id: unitedBgComponent
+            Shape {
+                id: bgShape
                 anchors.fill: parent
-                anchors.margins: 1
-                radius: Math.max(0, parent.radius - 1)
-                color: "transparent" // CERO RELLENO
-                border.width: 1
-                border.color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.15 : 0.40)
-            }
+                preferredRendererType: Shape.CurveRenderer
 
-            // 3. Highlight Superior (Destello sutil en el techo del panel)
-            Rectangle {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.leftMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
-                anchors.rightMargin: parent.radius > 0 ? parent.radius / 1.2 : 1
-                anchors.topMargin: 1
-                height: 1
-                color: Qt.rgba(1, 1, 1, Appearance.colors.isDark ? 0.35 : 0.70)
+                property real w: width
+                property real h: height
+                property real rad: root.shapeRadius
+
+                ShapePath {
+                    fillColor: Appearance.colors.colLayer0
+                    strokeColor: "transparent"
+                    strokeWidth: 0
+                    startX: root.isOnRight ? 0 : bgShape.w
+                    startY: 0
+
+                    PathQuad {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.rad
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.h - bgShape.rad
+                    }
+                    PathQuad {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: bgShape.h
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: bgShape.h
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.w : 0
+                        y: bgShape.h
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.w : 0
+                        y: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: 0
+                    }
+                }
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Appearance.colors.colLayer0Border
+                    strokeWidth: 1
+                    capStyle: ShapePath.FlatCap
+                    startX: root.isOnRight ? 0 : bgShape.w
+                    startY: 0
+
+                    PathQuad {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.rad
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.h - bgShape.rad
+                    }
+                    PathQuad {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: bgShape.h
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: bgShape.h
+                    }
+                }
             }
         }
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: sidebarPadding
+            anchors.topMargin: sidebarPadding
+            anchors.bottomMargin: sidebarPadding
+            // Ajuste de margen interior para que sea simétrico si está flotando
+            anchors.leftMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? root.shapeRadius : 0))
+            anchors.rightMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? 0 : root.shapeRadius))
             spacing: sidebarPadding
 
             SystemButtonRow {
@@ -198,7 +200,7 @@ Item {
                         active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showBrightness)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
-                        Layout.minimumWidth: 160
+                        Layout.minimumWidth: 150
                         
                         sourceComponent: Component {
                             QuickSliders { showBrightness: true; showVolume: false; showMic: false }
@@ -211,7 +213,7 @@ Item {
                         active: true
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
-                        Layout.minimumWidth: 160
+                        Layout.minimumWidth: 150
                         
                         sourceComponent: Component { NightLightPill {} }
                     }
@@ -227,7 +229,7 @@ Item {
                         active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showVolume)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
-                        Layout.minimumWidth: 160
+                        Layout.minimumWidth: 150
                         
                         sourceComponent: Component {
                             QuickSliders { showBrightness: false; showVolume: true; showMic: false }
@@ -240,7 +242,7 @@ Item {
                         active: !!(root._configReady && root._opts?.sidebar?.quickSliders?.enable && root._opts?.sidebar?.quickSliders?.showMic)
                         Layout.fillWidth: false
                         Layout.preferredWidth: root.twoUpPillWidth
-                        Layout.minimumWidth: 160
+                        Layout.minimumWidth: 150
                         
                         sourceComponent: Component {
                             QuickSliders { showBrightness: false; showVolume: false; showMic: true }

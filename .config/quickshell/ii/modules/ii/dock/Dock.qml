@@ -1,7 +1,9 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 import QtCore
 
@@ -15,7 +17,6 @@ import Quickshell.Widgets
 import qs
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.ii.ui 1.0
 import qs.services
 
 import "../bar" as Bar
@@ -25,25 +26,37 @@ Scope {
 
     property int dockHeightNudge: 4
 
-    property string qualityPreset: "auto"
+    // Limpiamos lo de auto/high refresh como pediste
     property bool manualOverrides: false
 
-    readonly property real detectedRefreshRateHz: {
-        const w = Window.window
-        const hz = (w && w.screen) ? w.screen.refreshRate : 0
-        if (!hz || hz < 1) return 60
-        return hz
-    }
-
-    readonly property bool highRefresh: detectedRefreshRateHz >= 90
-    readonly property int revealAnimMs: highRefresh ? 190 : 240
-    readonly property int waveformIntervalMs: highRefresh ? 22 : 33
+    readonly property int revealAnimMs: 240
+    readonly property int waveformIntervalMs: 33
 
     readonly property bool barIsBottom: (Config.options?.bar?.bottom ?? false)
     readonly property bool dockAtTop: barIsBottom
     readonly property string dockEdge: dockAtTop ? "top" : "bottom"
 
-    // Estética / cristal (dock)
+    // --- LÓGICA DE UNIÓN / FLOTACIÓN ESTANDARIZADA ---
+    readonly property bool isFloatOrHybrid: {
+        // 1. Si está explícitamente en "Float" (1), siempre flota.
+        if (Config.options?.bar?.cornerStyle === 1) return true;
+        
+        // 2. Si el estilo de fondo es "Crystal" (3), siempre flota.
+        if (Config.options?.bar?.barBackgroundStyle === 3) return true;
+        
+        // 3. NUEVO: Si está en "Hug" (0) y es "Transparente" (0) [ej. Hybrid + Hug + Transparente], SE UNE al borde.
+        if (Config.options?.bar?.cornerStyle === 0 && Config.options?.bar?.barBackgroundStyle === 0) return false;
+        
+        // 4. Si es Transparente (0) pero no estaba en Hug, flota.
+        if (Config.options?.bar?.barBackgroundStyle === 0) return true;
+        
+        // Por defecto, se une a los bordes (Hug + Solid, etc)
+        return false;
+    }
+    
+    readonly property int floatingGap: 12
+
+    // Estética básica
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.65 }
     readonly property bool themeIsDark: (Appearance.m3colors && Appearance.m3colors.darkmode !== undefined)
@@ -63,60 +76,7 @@ Scope {
 
     readonly property int dockInnerPadX: 10
 
-    function _resolvedPreset() {
-        if (qualityPreset === "auto") return highRefresh ? "high" : "normal"
-        if (qualityPreset === "low") return "low"
-        if (qualityPreset === "high") return "high"
-        return "normal"
-    }
-
-    function applyQualityPreset() {
-        if (manualOverrides) return
-
-        const p = _resolvedPreset()
-        if (p === "low") {
-            premiumDock = true
-            premiumDockGlass = false
-            premiumDockGlow = false
-            premiumWaveform = false
-
-            animEnabled = true
-            animMarquee = false
-            animRevealTransitions = true
-            animWaveform = false
-        } else if (p === "high") {
-            premiumDock = true
-            premiumDockGlass = true
-            premiumDockGlow = true
-            premiumWaveform = true
-
-            animEnabled = true
-            animMarquee = true
-            animRevealTransitions = true
-            animWaveform = true
-        } else {
-            premiumDock = true
-            premiumDockGlass = true
-            premiumDockGlow = true
-            premiumWaveform = true
-
-            animEnabled = true
-            animMarquee = true
-            animRevealTransitions = true
-            animWaveform = true
-        }
-    }
-
-    Component.onCompleted: {
-        applyQualityPreset()
-        initDockSettingsPersistence()
-    }
-
-    onQualityPresetChanged: applyQualityPreset()
-    onManualOverridesChanged: applyQualityPreset()
-
     property bool premiumDock: true
-    property bool premiumDockGlass: true
     property bool premiumDockGlow: true
     property bool premiumWaveform: true
 
@@ -129,29 +89,10 @@ Scope {
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
 
     function _styleFromConfig(v) {
-        switch (v) {
-        case 0: return "glass"
-        case 1: return "solid"
-        case 2: return "adaptive"
-        case 3: return "crystal"
-        default: return "solid"
-        }
+        return "solid" 
     }
 
-    function _styleFromUIState() {
-        const s = typeof UIState !== "undefined" && UIState ? UIState.surfaceStyle : ""
-        return (s === "solid" || s === "glass" || s === "crystal" || s === "adaptive") ? s : ""
-    }
-
-    readonly property string resolvedStyle: {
-        if (followGlobalBarStyle) {
-            const s = _styleFromUIState()
-            if (s !== "") return s
-        }
-        return _styleFromConfig(barBackgroundStyleFromConfig)
-    }
-
-    property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
+    property bool pinned: Config.options?.dock?.pinnedOnStartup ?? false
 
     Loader {
         id: dockSettingsLoader
@@ -164,7 +105,7 @@ Scope {
         Settings {
             id: dockSettings
             category: "dock"
-            property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
+            property bool pinned: Config.options?.dock?.pinnedOnStartup ?? false
             Component.onCompleted: root.pinned = pinned
             onPinnedChanged: root.pinned = pinned
         }
@@ -183,6 +124,10 @@ Scope {
         dockSettingsLoader.active = hasOrg && hasDomain
     }
 
+    Component.onCompleted: {
+        initDockSettingsPersistence()
+    }
+
     onPinnedChanged: {
         if (dockSettingsLoader.item) dockSettingsLoader.item.pinned = pinned
     }
@@ -191,7 +136,6 @@ Scope {
     readonly property int kDockSpacing: 3
     readonly property int kPinButtonSize: 35
 
-    // Más compacto
     readonly property int kMediaTopMargin: 5
     readonly property int kMediaLeftMargin: 6
     readonly property int kMediaExtraWidth: 6
@@ -199,7 +143,6 @@ Scope {
     readonly property int kAlbumSize: 40
     readonly property int kAlbumRadius: 8
 
-    // base de info menor
     readonly property int kInfoWidth: 210
     readonly property int kArtistLineHeight: 14
     readonly property int kTitleLineHeight: 16
@@ -291,7 +234,7 @@ Scope {
         Layout.maximumWidth: visible ? desiredW : 0
 
         Timer {
-            interval: Config.options.resources.updateInterval
+            interval: Config.options?.resources?.updateInterval ?? 1000
             repeat: true
             running: root.animEnabled && media.visible && media.isPlaying
             onTriggered: if (media.activePlayer) media.activePlayer.positionChanged()
@@ -549,6 +492,7 @@ Scope {
             visible: !GlobalStates.screenLocked
             color: "transparent"
             WlrLayershell.namespace: "quickshell:dock"
+            WlrLayershell.layer: WlrLayer.Overlay // Asegura que se vea por encima de las ventanas
 
             property bool hasActiveWindows: false
 
@@ -595,40 +539,34 @@ Scope {
 
             onScreenChanged: if (root.resolvedStyle === "adaptive") hyprRecomputeTimerDock.restart()
 
-            // Resuelve adaptive (solid/glass) por monitor
-            readonly property string styleAfterAdaptive: {
-                if (root.resolvedStyle === "adaptive")
-                    return dockRoot.hasActiveWindows ? "solid" : "glass"
-                return root.resolvedStyle
-            }
-
-             //    - crystal => crystal
-            readonly property string effectiveStyle: (styleAfterAdaptive === "crystal") ? "crystal" : "solid"
-
-            readonly property bool effIsSolid: effectiveStyle === "solid"
-            readonly property bool effIsCrystal: effectiveStyle === "crystal"
-
             property bool reveal: root.pinned
-                                  || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
+                                  || (Config.options?.dock?.hoverToReveal && dockMouseArea.containsMouse)
                                   || dockApps.requestDockShow
                                   || (!ToplevelManager.activeToplevel?.activated)
 
+            property bool isBarBottom: root.barIsBottom
+            property bool isDockBottom: !isBarBottom
+
             anchors {
-                top: root.dockAtTop
-                bottom: !root.dockAtTop
+                bottom: isDockBottom
+                top: !isDockBottom
                 left: true
                 right: true
             }
 
-            exclusiveZone: root.pinned
-                ? implicitHeight - Appearance.sizes.hyprlandGapsOut
-                  - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut)
+            // Exclusión de zona: si está anclado (pinned) pero flotando, dejamos espacio abajo.
+            exclusiveZone: root.pinned 
+                ? (implicitHeight - (root.isFloatOrHybrid ? Appearance.sizes.elevationMargin : 0)) 
                 : 0
 
-            implicitHeight: (Config.options?.dock.height ?? 70)
-                            + root.dockHeightNudge
-                            + Appearance.sizes.elevationMargin
-                            + Appearance.sizes.hyprlandGapsOut
+            // Base radius para redondear bordes si está flotando
+            readonly property int baseRadius: Appearance.rounding.large
+
+            // Medidas implícitas de la ventana
+            implicitWidth: dockBackground.implicitWidth
+            implicitHeight: (Config.options?.dock?.height ?? 70) 
+                            + root.dockHeightNudge 
+                            + (root.isFloatOrHybrid ? Appearance.sizes.elevationMargin : 0)
 
             mask: Region { item: dockMouseArea }
 
@@ -638,29 +576,42 @@ Scope {
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton
 
+                // Ajuste inteligente para no cortar en ningún modo
                 anchors {
-                    top: parent.top
-                    topMargin: topMarginForState()
+                    topMargin: isDockBottom ? (dockRoot.reveal ? 0 : Config.options?.dock?.hoverToReveal ? (dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight) : (dockRoot.implicitHeight + 1)) : 0
+                    bottomMargin: isDockBottom ? 0 : (dockRoot.reveal ? 0 : Config.options?.dock?.hoverToReveal ? (dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight) : (dockRoot.implicitHeight + 1))
                     horizontalCenter: parent.horizontalCenter
                 }
+                
+                // El ancho abarca el flare o el padding sin cortes
+                width: dockBackground.width
 
-                width: dockHoverRegion.width + Appearance.sizes.elevationMargin * 2
-
-                function topMarginForState() {
-                 if (dockRoot.reveal) return 0
-
-                      if (Config.options?.dock.hoverToReveal) {
-                        if (!root.dockAtTop)
-                            return dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight
-                        return -(dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight)
+                state: isDockBottom ? "topAnchored" : "bottomAnchored"
+                states: [
+                    State {
+                        name: "topAnchored"
+                        AnchorChanges {
+                            target: dockMouseArea
+                            anchors.top: parent.top
+                            anchors.bottom: undefined
+                        }
+                    },
+                    State {
+                        name: "bottomAnchored"
+                        AnchorChanges {
+                            target: dockMouseArea
+                            anchors.top: undefined
+                            anchors.bottom: parent.bottom
+                        }
                     }
-
-                    if (!root.dockAtTop)
-                        return dockRoot.implicitHeight + 1
-                    return -(dockRoot.implicitHeight + 1)
-                }
+                ]
 
                 Behavior on anchors.topMargin {
+                    enabled: root.animEnabled && root.animRevealTransitions
+                    NumberAnimation { duration: root.revealAnimMs; easing.type: Easing.OutCubic }
+                }
+
+                Behavior on anchors.bottomMargin {
                     enabled: root.animEnabled && root.animRevealTransitions
                     NumberAnimation { duration: root.revealAnimMs; easing.type: Easing.OutCubic }
                 }
@@ -668,142 +619,149 @@ Scope {
                 Item {
                     id: dockHoverRegion
                     anchors.fill: parent
-                    width: dockBackground.width
-
+                    
+                    // Contenedor principal que se moverá y dibujará el fondo
                     Item {
                         id: dockBackground
-                        anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: isDockBottom ? parent.bottom : undefined
+                        anchors.top: isDockBottom ? undefined : parent.top
+                        
+                        // Calculamos el ancho sumando las curvas (flareSpace)
+                        property real r: dockRoot.baseRadius
+                        property real flareSpace: root.isFloatOrHybrid ? 0 : (r * 2)
 
-                        width: dockRow.implicitWidth + root.kDockPadding * 2 + root.dockInnerPadX * 2
-                        height: parent.height - Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut
+                        // El ancho visible total es el ancho del contenido interno más los bordes necesarios.
+                        width: dockRow.implicitWidth + (root.isFloatOrHybrid ? root.kDockPadding * 2 : flareSpace * 2)
+                        height: parent.height - (root.isFloatOrHybrid ? Appearance.sizes.elevationMargin : 0)
 
-                        Item {
-                            id: dockVisualBackground
-                            anchors {
-                                fill: parent
-                                topMargin: Appearance.sizes.elevationMargin
-                                bottomMargin: Appearance.sizes.hyprlandGapsOut
-                            }
+                        // Componente Inteligente para el Fondo
+                        Loader {
+                            id: bgLoader
+                            anchors.fill: parent
+                            sourceComponent: root.isFloatOrHybrid ? floatingBgComponent : unitedBgComponent
+                        }
 
-                            property int cornerStyle: 1
-                            property int radiusPx: Appearance.rounding.large
-                            readonly property int cancelOuterMargin: Math.max(0, Math.round(Appearance.sizes.hyprlandGapsOut ?? 0))
-
-                            Rectangle {
-                                id: dockShadowShape
+                        // --- COMPONENTE MODO FLOTANTE ---
+                        Component {
+                            id: floatingBgComponent
+                            Item {
                                 anchors.fill: parent
-                                radius: dockVisualBackground.radiusPx
-                                color: "transparent"
-                                antialiasing: true
-                            }
-
-                            StyledRectangularShadow { target: dockShadowShape }
-
-                            Loader {
-                                id: bgLoader
-                                anchors.fill: parent
-                                sourceComponent: dockRoot.effIsCrystal ? crystalBgComponent : solidBgComponent
-                            }
-
-                            Component {
-                                id: solidBgComponent
-                                Item {
+                                
+                                Rectangle {
+                                    id: floatShadowShape
                                     anchors.fill: parent
-
-                                    Rectangle {
-                                        id: solidBase
-                                        anchors.fill: parent
-                                        anchors.margins: 0
-                                        radius: dockVisualBackground.radiusPx
-                                        antialiasing: true
-                                        color: Appearance.colors.colLayer0
-                                        border.width: 1
-                                        border.color: Appearance.colors.colLayer0Border
-                                    }
-
-                                    Rectangle {
-                                        anchors.fill: solidBase
-                                        radius: solidBase.radius
-                                        visible: root.premiumDock && root.premiumDockGlass
-                                        opacity: dockRoot.reveal ? 0.22 : 0.14
-                                        gradient: Gradient {
-                                            orientation: Gradient.Horizontal
-                                            GradientStop { position: 0.0; color: "transparent" }
-                                            GradientStop { position: 0.55; color: Qt.rgba(1, 1, 1, 0.18) }
-                                            GradientStop { position: 1.0; color: "transparent" }
-                                        }
-                                    }
-
-                                    layer.enabled: root.premiumDock && root.premiumDockGlow
-                                    layer.effect: MultiEffect {
-                                        shadowEnabled: true
-                                        shadowBlur: 0.7
-                                        shadowOpacity: dockRoot.reveal ? 0.22 : 0.12
-                                        shadowColor: Appearance.colors.colPrimary
-                                        shadowHorizontalOffset: 0
-                                        shadowVerticalOffset: 0
-                                    }
+                                    radius: dockRoot.baseRadius
+                                    color: "transparent"
+                                    antialiasing: true
                                 }
-                            }
 
-                            Component {
-                                id: crystalBgComponent
-                                Item {
+                                StyledRectangularShadow { target: floatShadowShape }
+
+                                Rectangle {
                                     anchors.fill: parent
-
-                                    Bar.BarBgOverlayGlassBlur {
-                                        anchors.fill: parent
-                                        anchors.margins: -dockVisualBackground.cancelOuterMargin
-
-                                        position: root.dockEdge
-                                        cornerStyle: dockVisualBackground.cornerStyle
-
-                                        useGlassMode: root.premiumDock && root.premiumDockGlass
-                                        showSolidBackground: false
-                                        backgroundColor: Appearance.colors.colLayer0
-
-                                        basePadding: 0
-                                        content: [ Item { } ]
-                                    }
-
-                                    Bar.BarBgCrystalOverlay {
-                                        anchors.fill: parent
-                                        anchors.margins: -dockVisualBackground.cancelOuterMargin
-
-                                        // === AJUSTE: idem para el cristal ===
-                                        position: root.dockEdge
-                                        cornerStyle: dockVisualBackground.cornerStyle
-                                        useGlassMode: true
-                                        showSolidBackground: false
-                                        backgroundColor: "transparent"
-                                        overlayStrength: Appearance.colors.isDark ? 1.0 : 0.95
-                                        visible: true
-                                    }
-
-                                    layer.enabled: root.premiumDock && root.premiumDockGlow
-                                    layer.effect: MultiEffect {
-                                        shadowEnabled: true
-                                        shadowBlur: 0.7
-                                        shadowOpacity: dockRoot.reveal ? 0.22 : 0.12
-                                        shadowColor: Appearance.colors.colPrimary
-                                        shadowHorizontalOffset: 0
-                                        shadowVerticalOffset: 0
-                                    }
+                                    radius: dockRoot.baseRadius
+                                    color: Appearance.colors.colLayer0
+                                    border.width: 1
+                                    border.color: Appearance.colors.colLayer0Border
+                                    antialiasing: true
                                 }
                             }
                         }
 
+                        // --- COMPONENTE MODO UNIDO (Shape curvo abrazando los bordes) ---
+                        Component {
+                            id: unitedBgComponent
+                            Shape {
+                                id: dockVisualBackground
+                                anchors.fill: parent
+                                preferredRendererType: Shape.CurveRenderer
+
+                                property real w: width
+                                property real h: height
+                                property real r: dockBackground.r
+
+                                property real startY: isDockBottom ? h : 0
+
+                                // Puntos para el Shape
+                                property real p1X: r
+                                property real p1Y: isDockBottom ? h - r : r
+                                property real c1X: r
+                                property real c1Y: isDockBottom ? h : 0
+
+                                property real p2X: r
+                                property real p2Y: isDockBottom ? r : h - r
+
+                                property real p3X: 2 * r
+                                property real p3Y: isDockBottom ? 0 : h
+                                property real c2X: r
+                                property real c2Y: isDockBottom ? 0 : h
+
+                                property real p4X: w - 2 * r
+                                property real p4Y: isDockBottom ? 0 : h
+
+                                property real p5X: w - r
+                                property real p5Y: isDockBottom ? r : h - r
+                                property real c3X: w - r
+                                property real c3Y: isDockBottom ? 0 : h
+
+                                property real p6X: w - r
+                                property real p6Y: isDockBottom ? h - r : r
+
+                                property real p7X: w
+                                property real p7Y: isDockBottom ? h : 0
+                                property real c4X: w - r
+                                property real c4Y: isDockBottom ? h : 0
+
+                                ShapePath {
+                                    fillColor: Appearance.colors.colLayer0
+                                    strokeColor: "transparent"
+                                    strokeWidth: 0
+                                    startX: 0
+                                    startY: dockVisualBackground.startY
+
+                                    PathQuad { x: dockVisualBackground.p1X; y: dockVisualBackground.p1Y; controlX: dockVisualBackground.c1X; controlY: dockVisualBackground.c1Y }
+                                    PathLine { x: dockVisualBackground.p2X; y: dockVisualBackground.p2Y }
+                                    PathQuad { x: dockVisualBackground.p3X; y: dockVisualBackground.p3Y; controlX: dockVisualBackground.c2X; controlY: dockVisualBackground.c2Y }
+                                    PathLine { x: dockVisualBackground.p4X; y: dockVisualBackground.p4Y }
+                                    PathQuad { x: dockVisualBackground.p5X; y: dockVisualBackground.p5Y; controlX: dockVisualBackground.c3X; controlY: dockVisualBackground.c3Y }
+                                    PathLine { x: dockVisualBackground.p6X; y: dockVisualBackground.p6Y }
+                                    PathQuad { x: dockVisualBackground.p7X; y: dockVisualBackground.p7Y; controlX: dockVisualBackground.c4X; controlY: dockVisualBackground.c4Y }
+                                    PathLine { x: 0; y: dockVisualBackground.startY }
+                                }
+
+                                ShapePath {
+                                    fillColor: "transparent"
+                                    strokeColor: Appearance.colors.colLayer0Border
+                                    strokeWidth: 1
+                                    capStyle: ShapePath.FlatCap
+                                    startX: 0
+                                    startY: dockVisualBackground.startY
+
+                                    PathQuad { x: dockVisualBackground.p1X; y: dockVisualBackground.p1Y; controlX: dockVisualBackground.c1X; controlY: dockVisualBackground.c1Y }
+                                    PathLine { x: dockVisualBackground.p2X; y: dockVisualBackground.p2Y }
+                                    PathQuad { x: dockVisualBackground.p3X; y: dockVisualBackground.p3Y; controlX: dockVisualBackground.c2X; controlY: dockVisualBackground.c2Y }
+                                    PathLine { x: dockVisualBackground.p4X; y: dockVisualBackground.p4Y }
+                                    PathQuad { x: dockVisualBackground.p5X; y: dockVisualBackground.p5Y; controlX: dockVisualBackground.c3X; controlY: dockVisualBackground.c3Y }
+                                    PathLine { x: dockVisualBackground.p6X; y: dockVisualBackground.p6Y }
+                                    PathQuad { x: dockVisualBackground.p7X; y: dockVisualBackground.p7Y; controlX: dockVisualBackground.c4X; controlY: dockVisualBackground.c4Y }
+                                }
+                            }
+                        }
+
+                        // --- CONTENIDO DEL DOCK ---
                         RowLayout {
                             id: dockRow
-                            anchors.fill: dockVisualBackground
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: root.kDockSpacing
                             property real padding: root.kDockPadding
 
                             Item { width: root.dockInnerPadX; height: 1 }
 
                             VerticalButtonGroup {
-                                Layout.topMargin: 0
-
+                                Layout.topMargin: dockRow.padding
                                 GroupButton {
                                     baseWidth: root.kPinButtonSize
                                     baseHeight: root.kPinButtonSize

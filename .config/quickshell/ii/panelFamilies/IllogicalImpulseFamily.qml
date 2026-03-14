@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 
 import qs.modules.common
-import qs.modules.ii.background
+import qs.modules.ii.background as IiBackground
 import qs.modules.ii.bar
 import qs.modules.ii.cheatsheet
 import qs.modules.ii.dock
@@ -22,8 +22,10 @@ import qs.modules.ii.overlay
 import qs.modules.ii.verticalBar
 import qs.modules.ii.wallpaperSelector
 import qs.modules.ii.wrappedFrame
+import qs.modules.ii.drawers
 
 Scope {
+
     property bool barExtraCondition: true
     readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
     readonly property bool barBot: Config.options.bar.bottom
@@ -41,17 +43,22 @@ Scope {
         Qt.callLater(() => barExtraCondition = true)
     }
 
+    // Shared per-screen visibilities for Bar and Drawers (must be created first)
+    PanelVisibilitiesRegistry {}
+    
     PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
-    PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
+    PanelLoader { component: IiBackground.Background {} }
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
     PanelLoader { component: Lock {} }
     PanelLoader { component: MediaControls {} }
     PanelLoader { component: NotificationPopup {} }
     PanelLoader { component: OnScreenDisplay {} }
+    PanelLoader { extraCondition: Config.options.appearance.panelAnimation.enableBackgroundAnimation; component: Drawers {} }
     PanelLoader { component: OnScreenKeyboard {} }
     PanelLoader { component: Overlay {} }
-    PanelLoader { component: Overview {} }
+    PanelLoader { extraCondition: !Config.options.appearance.panelAnimation.enableBackgroundAnimation; component: Overview {} }
+    // PanelLoader { component: Overview {} }
     PanelLoader { component: Polkit {} }
     PanelLoader { component: RegionSelector {} }
     PanelLoader { component: ScreenCorners {} }

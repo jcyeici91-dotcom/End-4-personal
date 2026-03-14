@@ -75,6 +75,14 @@ Singleton {
         if (!hasSyncedLines) return;
         root.activePlayer.position = root.syncedLines[index].time
     }
+    
+    // https://quickshell.org/docs/master/types/Quickshell.Services.Mpris/MprisPlayer/#position
+    Timer {
+        running: root.activePlayer?.playbackState == MprisPlaybackState.Playing && root.hasSyncedLines && root.isInitialized
+        interval: 250
+        repeat: true
+        onTriggered: root.activePlayer.positionChanged()
+    }
 
     Component.onCompleted: geniusFirstFetchDelay.restart()
     Timer {
@@ -129,9 +137,9 @@ Singleton {
     }
 
     // I dont know if this is the correct place for this, but we only call this from MediaMode so it should be fine
-    function changeShellColor(color) {
+    function changeShellColor(color, force = false) {
         console.log("[Lyrics Service] Color change requested, is it changed: ", shellColorChanged)
-        if (!mediaModeEnabled || shellColorChanged) return;
+        if (!mediaModeEnabled || shellColorChanged && !force) return;
         console.log("[Lyrics Service] Changing the shell color with color:   ", color)
         Quickshell.execDetached([`${Directories.wallpaperSwitchScriptPath}`, "--noswitch", "--color", color])
         shellColorChanged = true
