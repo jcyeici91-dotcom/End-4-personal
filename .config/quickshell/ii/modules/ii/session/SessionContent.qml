@@ -14,50 +14,42 @@ Item {
     property real r: Appearance.rounding.windowRounding ?? 24
     property int viewState: 1 // 1 = Volumen/Brillo, 2 = Sesión
     
-    // Ancho fijo y alto derivado de los layouts
     implicitWidth: 90
     implicitHeight: Math.max(slidersLayout.implicitHeight, sessionLayout.implicitHeight) + (r * 2) + 30
 
-    // ==========================================
-    // FONDO PEGADO AL BORDE (Tu diseño original)
-    // ==========================================
-    SessionBackground {
+     // FONDO PEGADO AL BORDE
+        SessionBackground {
         anchors.fill: parent
         attachEdge: "right"
         rounding: root.r
     }
     
-    // ==========================================
-    // DETECTOR DE GESTOS (ARRASTRE Y SCROLL EN EL FONDO)
-    // ==========================================
-    // Esto te permite arrastrar o usar la rueda en el fondo vacío del panel para cambiar de menú.
-    MouseArea {
+      // DETECTOR DE GESTOS (ARRASTRE Y SCROLL)
+      MouseArea {
         anchors.fill: parent
         property int startX: 0
         
         onPressed: (mouse) => { startX = mouse.x; }
         
-        // Arrastrar de izquierda a derecha en el fondo vacío para cambiar de vista
         onPositionChanged: (mouse) => {
             if (pressed) {
-                if (startX - mouse.x > 30) root.viewState = 2; // Arrastró hacia la izquierda -> Menú Sesión
-                else if (mouse.x - startX > 30) root.viewState = 1; // Arrastró hacia la derecha -> Sliders
+                if (startX - mouse.x > 30) root.viewState = 2; 
+                else if (mouse.x - startX > 30) root.viewState = 1; 
             }
         }
         
-        // Rueda del ratón para cambiar de vista (cuando NO estás sobre las píldoras)
         onWheel: (wheel) => {
-            if (wheel.angleDelta.y < 0) root.viewState = 2; // Scroll abajo -> Menú Sesión
-            else root.viewState = 1; // Scroll arriba -> Sliders
+            if (wheel.angleDelta.y < 0) root.viewState = 2; 
+            else root.viewState = 1; 
         }
     }
 
-    // ==========================================
-    // VISTA 1: PÍLDORAS VERTICALES
-    // ==========================================
-    Item {
+  
+    // PÍLDORAS VERTICALES
+      Item {
         id: slidersView
-        anchors.fill: parent
+        width: parent.width
+        height: parent.height
         opacity: root.viewState === 1 ? 1 : 0
         visible: opacity > 0
         x: root.viewState === 1 ? 0 : -20 
@@ -70,34 +62,62 @@ Item {
             anchors.centerIn: parent
             spacing: 24 
 
-            // Píldora de Volumen (Arriba)
+            // PÍLDORA DE VOLUMEN 
             ControlPill {
                 Layout.alignment: Qt.AlignHCenter
                 value: Audio.value
                 iconName: Audio.sink?.audio?.muted ? "volume_off" : "volume_up"
+                
                 onRequestChange: (newValue) => {
                     if (Audio.sink) Audio.sink.audio.volume = newValue;
                 }
+                
+                onIconClicked: () => {
+                    Audio.toggleMute();
+                }
             }
 
-            // Píldora de Brillo (Abajo)
+            // PÍLDORA DE BRILLO + LUZ NOCTURNA
             ControlPill {
                 Layout.alignment: Qt.AlignHCenter
                 value: Brightness.monitors.length > 0 ? Brightness.monitors[0].brightness : 0
-                iconName: "light_mode"
+                iconName: Hyprsunset.active ? "nightlight" : "light_mode"
+                
                 onRequestChange: (newValue) => {
-                    if (Brightness.monitors.length > 0) Brightness.monitors[0].setBrightness(newValue);
+                    //Ajusta el brillo
+                    if (Brightness.monitors.length > 0) {
+                        Brightness.monitors[0].setBrightness(newValue);
+                    }
+                    
+                    //  luz nocturna está activa, ajusta la temperatura al MISMO porcentaje
+                    if (Hyprsunset.active) {
+                        // 100% de slider (1.0) = 100% de calidez (2500K)
+                        // 0% de slider (0.0) = 0% de calidez (6500K)
+                        let newTemp = 6500 - Math.round(4000 * newValue);
+                        Config.options.light.night.colorTemperature = newTemp;
+                    }
+                }
+                
+                // clic sobre la burbuja del icono
+                onIconClicked: () => {
+                    if (!Hyprsunset.active) {
+                        //  la temperatura al nivel actual del brillo ANTES de encenderla
+                        let currentBright = Brightness.monitors.length > 0 ? Brightness.monitors[0].brightness : 0;
+                        let newTemp = 6500 - Math.round(4000 * currentBright);
+                        Config.options.light.night.colorTemperature = newTemp;
+                    }
+                    // Encendemos o apagamos el servicio
+                    Hyprsunset.toggle();
                 }
             }
         }
     }
 
-    // ==========================================
-    // VISTA 2: BOTONES DE SESIÓN (Visibles en cualquier tema)
-    // ==========================================
-    Item {
+    // BOTONES DE SESIÓN 
+      Item {
         id: sessionView
-        anchors.fill: parent
+        width: parent.width
+        height: parent.height
         opacity: root.viewState === 2 ? 1 : 0
         visible: opacity > 0
         x: root.viewState === 2 ? 0 : 20 
@@ -114,7 +134,6 @@ Item {
             SessionButton { iconName: "logout"; command: "hyprctl dispatch exit" }
             SessionButton { iconName: "power_settings_new"; command: "systemctl poweroff" }
             
-            // Un pequeño gif decorativo
             AnimatedImage {
                 source: Qt.resolvedUrl("../../../assets/gifs/kurukuru.gif")
                 Layout.alignment: Qt.AlignHCenter
@@ -129,61 +148,64 @@ Item {
         }
     }
 
-    // ==========================================
-    // COMPONENTE: PÍLDORA DESLIZABLE (Ajustada a la referencia y visible)
-    // ==========================================
+    // PÍLDORA DESLIZABLE
     component ControlPill: Item {
         id: pill
         property real value: 0
         property string iconName: ""
         
         signal requestChange(real newValue)
+        signal iconClicked() 
 
         implicitWidth: 44
-        implicitHeight: 200 // Píldoras largas
+        implicitHeight: 200
 
-        // Fondo de la píldora (Vacío, translúcido/gris claro)
+        // Fondo de la píldora
         Rectangle {
             anchors.fill: parent
             radius: width / 2
-            color: Qt.rgba(1, 1, 1, 0.05) // Gris muy translúcido
+            color: Qt.rgba(1, 1, 1, 0.05) 
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.1)
 
-            // Relleno coloreado (Barra que sube)
+            // Relleno coloreado
             Rectangle {
                 id: pillFill
                 width: parent.width
                 height: Math.max(width, parent.height * pill.value) 
                 anchors.bottom: parent.bottom
                 radius: parent.width / 2
-                color: Appearance.colors.colPrimary // Primary colored fill
+                color: Appearance.colors.colPrimary 
             }
         }
 
-        // Círculo interactivo que resalta (Como en tu foto de referencia)
+        // Círculo interactivo que resalta
         Rectangle {
+            id: thumbCircle
             width: pill.width - 4
             height: width
             radius: width / 2
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.max(2, pill.height - pillFill.height + 2)
             
-            color: Appearance.colors.colOnSurface // Circulo claro/blanco (Visible)
+            color: Appearance.colors.colOnSurface 
             Behavior on y { enabled: false } 
 
             MaterialSymbol {
                 anchors.centerIn: parent
                 text: pill.iconName
                 font.pixelSize: 20
-                color: Appearance.colors.colLayer0 // Icono oscuro
+                color: Appearance.colors.colLayer0 
             }
         }
 
-        // Control nativo de arrastre y scroll (Aislado)
+        // Lógica de Interacción Táctil y Ratón
         MouseArea {
             anchors.fill: parent
             preventStealing: true 
+            
+            property bool isDragging: false
+            property bool isThumbPress: false
             
             function updateValue(mouseY) {
                 let newValue = 1 - (mouseY / pill.height);
@@ -191,12 +213,35 @@ Item {
                 pill.requestChange(newValue);
             }
 
-            onPressed: (mouse) => updateValue(mouse.y)
-            onPositionChanged: (mouse) => { if (pressed) updateValue(mouse.y) }
+            onPressed: (mouse) => {
+                isDragging = false;
+                
+                let thumbY = thumbCircle.y;
+                let thumbBottom = thumbY + thumbCircle.height;
+                
+                if (mouse.y >= thumbY && mouse.y <= thumbBottom) {
+                    isThumbPress = true; // Tocó el icono
+                } else {
+                    isThumbPress = false; // Tocó el track
+                    updateValue(mouse.y);
+                }
+            }
             
-            // Atrapamos la rueda aquí para que cambie el valor y no cambie de vista
+            onPositionChanged: (mouse) => { 
+                if (pressed) {
+                    isDragging = true;
+                    updateValue(mouse.y);
+                } 
+            }
+            
+            onReleased: (mouse) => {
+                if (isThumbPress && !isDragging) {
+                    pill.iconClicked();
+                }
+            }
+            
             onWheel: (wheel) => {
-                wheel.accepted = true; // Evita que el fondo detecte este scroll
+                wheel.accepted = true; 
                 if (wheel.angleDelta.y > 0) pill.requestChange(Math.min(1, pill.value + 0.05))
                 else pill.requestChange(Math.max(0, pill.value - 0.05))
             }

@@ -14,7 +14,7 @@ Item {
 
     property real r: rounding
 
-    // Esto hace que el panel "sangre" fuera del borde para evitar huecos
+    // Evita huecos
     property real edgeBleed: 2
 
     Shape {
@@ -26,7 +26,7 @@ Item {
             right: parent.right
         }
 
-        // extendemos el shape hacia afuera
+        // hape hacia afuera
         width: parent.width + root.edgeBleed
         preferredRendererType: Shape.CurveRenderer
         antialiasing: true
