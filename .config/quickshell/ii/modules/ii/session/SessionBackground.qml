@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
 import qs
@@ -27,11 +28,8 @@ Item {
 
         // extendemos el shape hacia afuera
         width: parent.width + root.edgeBleed
-
         preferredRendererType: Shape.CurveRenderer
-
         antialiasing: true
-
         layer.enabled: true
         layer.samples: 8
 
@@ -55,11 +53,7 @@ Item {
                 control2X: bgShape.w - bgShape.r * 0.45
                 control2Y: bgShape.r
             }
-
-            // borde superior
             PathLine { x: bgShape.r; y: bgShape.r }
-
-            // esquina superior izquierda
             PathCubic {
                 x: 0
                 y: 2 * bgShape.r
@@ -68,11 +62,7 @@ Item {
                 control2X: 0
                 control2Y: bgShape.r * 1.55
             }
-
-            // lado izquierdo
             PathLine { x: 0; y: bgShape.h - 2 * bgShape.r }
-
-            // esquina inferior izquierda
             PathCubic {
                 x: bgShape.r
                 y: bgShape.h - bgShape.r
@@ -81,11 +71,7 @@ Item {
                 control2X: bgShape.r * 0.45
                 control2Y: bgShape.h - bgShape.r
             }
-
-            // borde inferior
             PathLine { x: bgShape.w - bgShape.r; y: bgShape.h - bgShape.r }
-
-            // curva cóncava inferior derecha
             PathCubic {
                 x: bgShape.w
                 y: bgShape.h
@@ -94,7 +80,6 @@ Item {
                 control2X: bgShape.w
                 control2Y: bgShape.h - bgShape.r * 0.65
             }
-
             PathLine { x: bgShape.w; y: 0 }
         }
 
@@ -114,9 +99,7 @@ Item {
                 control2X: bgShape.w - bgShape.r * 0.45
                 control2Y: bgShape.r
             }
-
             PathLine { x: bgShape.r; y: bgShape.r }
-
             PathCubic {
                 x: 0
                 y: 2 * bgShape.r
@@ -125,9 +108,7 @@ Item {
                 control2X: 0
                 control2Y: bgShape.r * 1.55
             }
-
             PathLine { x: 0; y: bgShape.h - 2 * bgShape.r }
-
             PathCubic {
                 x: bgShape.r
                 y: bgShape.h - bgShape.r
@@ -136,9 +117,7 @@ Item {
                 control2X: bgShape.r * 0.45
                 control2Y: bgShape.h - bgShape.r
             }
-
             PathLine { x: bgShape.w - bgShape.r; y: bgShape.h - bgShape.r }
-
             PathCubic {
                 x: bgShape.w
                 y: bgShape.h

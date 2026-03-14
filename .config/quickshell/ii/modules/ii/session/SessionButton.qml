@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import qs
@@ -10,17 +12,17 @@ RippleButton {
     property string iconName
     property string command
     property string tooltip: ""
-    property int iconSize: 22
+    property int iconSize: 24
 
     property bool isHovered: false
     property bool isPressed: false
 
-    implicitWidth: 74
-    implicitHeight: 74
+    implicitWidth: 64
+    implicitHeight: 64
 
     onClicked: {
         Quickshell.execDetached(["bash", "-c", command])
-        GlobalStates.sessionVisible = false
+        root.parent.parent.resetViewTimer.restart(); // Cierra el wrapper
     }
 
     Item {
@@ -28,95 +30,33 @@ RippleButton {
         
         scale: root.isPressed ? 0.92 : 1.0
         Behavior on scale {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.OutQuart
-            }
+            NumberAnimation { duration: 150; easing.type: Easing.OutQuart }
         }
 
+        // Fondo transparente seguro (Se ve bien en cualquier tema)
         Rectangle {
             anchors.fill: parent
-            radius: Appearance.rounding.normal
-            antialiasing: true
-
-            color: root.isPressed
-                   ? Qt.rgba(1, 1, 1, 0.12)
-                   : root.isHovered
-                     ? Qt.rgba(1, 1, 1, 0.08)
-                     : Qt.rgba(1, 1, 1, 0.04)
-
+            radius: Appearance.rounding.windowRounding ?? 16
+            
+            color: root.isPressed 
+                    ? Qt.rgba(1, 1, 1, 0.12) 
+                    : (root.isHovered ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.04))
+            
             border.width: root.isHovered ? 1 : 0
             border.color: Qt.rgba(1, 1, 1, 0.15)
-
+            
             Behavior on color { ColorAnimation { duration: 150 } }
-            Behavior on border.width { NumberAnimation { duration: 150 } }
-            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
 
+        // Icono siempre visible (Color claro del tema)
         MaterialSymbol {
             anchors.centerIn: parent
             text: root.iconName
             font.pixelSize: root.iconSize
-            antialiasing: true
-
-            color: root.isPressed
-                   ? Qt.rgba(1, 1, 1, 0.92)
-                   : root.isHovered
-                     ? Qt.rgba(1, 1, 1, 1.0)
-                     : Appearance.colors.colOnSurface
-
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        propagateComposedEvents: true
-        acceptedButtons: Qt.LeftButton
-
-        onEntered: root.isHovered = true
-        onExited: {
-            root.isHovered = false
-            root.isPressed = false
-        }
-
-        onPressed: (mouse) => {
-            root.isPressed = true
-            mouse.accepted = false
-        }
-
-        onReleased: (mouse) => {
-            root.isPressed = false
-            mouse.accepted = false
-        }
-    }
-
-    Rectangle {
-        id: tip
-        visible: root.isHovered && root.tooltip.length > 0
-        z: 9999
-        radius: 6
-        color: Qt.rgba(0, 0, 0, 0.85)
-        border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.15)
-
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: -height - 10
-
-        implicitWidth: tipText.implicitWidth + 14
-        implicitHeight: tipText.implicitHeight + 8
-
-        opacity: visible ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 150 } }
-
-        Text {
-            id: tipText
-            anchors.centerIn: parent
-            text: root.tooltip
-            color: "white"
-            font.pixelSize: 12
+            color: Appearance.colors.colOnSurface // Texto siempre claro/visible
+            opacity: root.isPressed ? 0.7 : 1.0
+            
+            Behavior on opacity { NumberAnimation { duration: 150 } }
         }
     }
 }

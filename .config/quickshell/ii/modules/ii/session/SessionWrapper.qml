@@ -16,7 +16,7 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Overlay // encima de las ventanas
 
-    //área para atrapar el mouse sea más gruesa
+    // área para atrapar el mouse sea más gruesa
     property int handleWidth: 10 
     property bool open: false
 
@@ -74,7 +74,16 @@ PanelWindow {
         onTriggered: {
             if (!panelHover.containsMouse) {
                 root.open = false
+                // Dispara el reseteo una vez que la animación de ocultar empieza
+                resetViewTimer.restart()
             }
         }
+    }
+
+    // Reinicia la vista a "Volumen/Brillo" silenciosamente mientras está oculto
+    Timer {
+        id: resetViewTimer
+        interval: 350
+        onTriggered: contentItem.viewState = 1
     }
 }

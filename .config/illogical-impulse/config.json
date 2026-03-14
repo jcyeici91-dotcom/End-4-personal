@@ -117,11 +117,11 @@
                     "backgroundStyle": "cookie",
                     "constantlyRotate": true,
                     "dateInClock": true,
-                    "dateStyle": "rect",
+                    "dateStyle": "bubble",
                     "dialNumberStyle": "full",
-                    "hourHandStyle": "classic",
+                    "hourHandStyle": "hollow",
                     "hourMarks": false,
-                    "minuteHandStyle": "classic",
+                    "minuteHandStyle": "medium",
                     "secondHandStyle": "classic",
                     "sides": 14,
                     "timeIndicators": true
@@ -169,14 +169,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2721.5300668569707,
-                "y": 1630.343305538862
+                "x": 2870.7962364783652,
+                "y": 1652.8989257812498
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2864.457970252404,
-                "y": 194.28366636618586
+                "x": 2771.8371206430284,
+                "y": 171.46199544270831
             }
         }
     },
@@ -193,12 +193,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 1,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 0,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rounded",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -470,7 +470,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 5099,
+            "colorTemperature": 3953,
             "from": "19:00",
             "to": "06:30"
         }
