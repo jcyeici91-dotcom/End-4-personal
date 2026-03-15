@@ -15,7 +15,8 @@ ContentPage {
         "music_player": musicPlayer,
         "system_tray": systemTray,
         "utility_buttons": utilityButtons,
-        "timer": timerAndPomodoro
+        "timer": timerAndPomodoro,
+        "system_monitor": systemMonitor
     })
 
     function scrollTo(stringId) {
@@ -457,6 +458,45 @@ ContentPage {
             }
         }
     }
+    
+    // NUEVA SECCIÓN DE SYSTEM MONITOR
+    ContentSection {
+        id: systemMonitor
+        icon: "monitor_heart"
+        title: Translation.tr("System monitor")
+
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "memory"
+                text: Translation.tr("Show RAM")
+                checked: Config.options.bar.resources.showRam
+                onCheckedChanged: { Config.options.bar.resources.showRam = checked; }
+            }
+            ConfigSwitch {
+                buttonIcon: "planner_review"
+                text: Translation.tr("Show CPU")
+                checked: Config.options.bar.resources.showCpu
+                onCheckedChanged: { Config.options.bar.resources.showCpu = checked; }
+            }
+        }
+
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "device_thermostat"
+                text: Translation.tr("Show Temperature")
+                checked: Config.options.bar.resources.showTemperature
+                onCheckedChanged: { Config.options.bar.resources.showTemperature = checked; }
+            }
+            ConfigSwitch {
+                buttonIcon: "pets"
+                text: Translation.tr("Show Cat GIF")
+                checked: Config.options.bar.resources.showCat
+                onCheckedChanged: { Config.options.bar.resources.showCat = checked; }
+            }
+        }
+    }
 
     ContentSection {
         id: systemTray
@@ -592,4 +632,3 @@ ContentPage {
         }
     }
 }
-

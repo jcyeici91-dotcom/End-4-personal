@@ -35,7 +35,8 @@ MouseArea {
     property bool enableEffects: true
     property bool enableTooltips: true
 
-    property bool showCat: true
+    // CONECTADO AL INTERRUPTOR DEL GATITO
+    property bool showCat: Config.options.bar.resources.showCat
     property bool enableCatGif: true
     property bool enableCatEffects: true
     property bool reserveCatSpace: false
@@ -57,7 +58,9 @@ MouseArea {
     property int cpuCatThresholdPercent: 10
     readonly property bool cpuCatRunRaw: (ResourceUsage.cpuUsage * 100.0) >= cpuCatThresholdPercent
     readonly property bool cpuCatRun: (root.enableEffects && root.enableCatEffects) ? root.cpuCatRunRaw : false
-    readonly property bool cpuShown: Config.options.bar.resources.alwaysShowCpu || !root.isMediaPlaying || root.alwaysShowAllResources
+    
+    // Vinculamos la visibilidad de la CPU a nuestro nuevo interruptor en la configuración
+    readonly property bool cpuShown: Config.options.bar.resources.showCpu
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: false
@@ -312,12 +315,14 @@ MouseArea {
 
             Item {
                 Layout.alignment: Qt.AlignCenter
-                Layout.preferredHeight: (root.showCatEffective && root.cpuShown && (root.enableCatGif || root.reserveCatSpace)) ? root.catHeight : 0
-                Layout.preferredWidth:  (root.showCatEffective && root.cpuShown && (root.enableCatGif || root.reserveCatSpace)) ? root.catWidth  : 0
+                // ELIMINADA LA DEPENDENCIA DE cpuShown
+                Layout.preferredHeight: (root.showCatEffective && (root.enableCatGif || root.reserveCatSpace)) ? root.catHeight : 0
+                Layout.preferredWidth:  (root.showCatEffective && (root.enableCatGif || root.reserveCatSpace)) ? root.catWidth  : 0
                 visible: Layout.preferredWidth > 0 && Layout.preferredHeight > 0
                 
                 Loader {
-                    active: root.showCatEffective && root.cpuShown && root.enableCatGif
+                    // ELIMINADA LA DEPENDENCIA DE cpuShown
+                    active: root.showCatEffective && root.enableCatGif
                     visible: active
                     anchors.fill: parent
                     anchors.topMargin: -8
@@ -336,6 +341,7 @@ MouseArea {
                 iconName: "memory"
                 percentage: root.clamp01(ResourceUsage.memoryUsedPercentage)
                 tooltipText: "RAM"
+                shown: Config.options.bar.resources.showRam
                 warningThreshold01: Config.options.bar.resources.memoryWarningThreshold / 100.0 
             }
             ResourceWithDot { 
@@ -343,6 +349,7 @@ MouseArea {
                 percentage: root.cpuTemp01
                 valueOverride: root.vertical ? "" : root.cpuTempLabel
                 tooltipText: "CPU Temp (" + root.cpuTempLabel + ")"
+                shown: Config.options.bar.resources.showTemperature
                 warningThreshold01: 0.75 
             }
             ResourceWithDot { 
@@ -350,13 +357,14 @@ MouseArea {
                 percentage: root.gpuTemp01
                 valueOverride: root.vertical ? "" : root.gpuTempLabel
                 tooltipText: "GPU Temp (" + root.gpuTempLabel + ")"
+                shown: Config.options.bar.resources.showTemperature
                 warningThreshold01: 0.75 
             }
             ResourceWithDot { 
                 iconName: "planner_review"
                 percentage: root.clamp01(ResourceUsage.cpuUsage)
                 tooltipText: "CPU Uso"
-                shown: root.cpuShown
+                shown: Config.options.bar.resources.showCpu
                 warningThreshold01: Config.options.bar.resources.cpuWarningThreshold / 100.0 
             }
         }

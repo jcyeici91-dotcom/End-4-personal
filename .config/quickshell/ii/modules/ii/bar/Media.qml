@@ -27,12 +27,14 @@ Item {
 
     property bool islandEnabled: true
     property bool expandOnHover: true
-    property int  islandCollapsedWidth: 260
+    // Aumentamos el ancho base para que el texto "No hay reproducción" entre cómodo
+    property int  islandCollapsedWidth: 210
 
     property int islandExpandedHeight: root.barHeightLimit
-    property int islandRadius: 999
+    property int islandRadius: 999 // Radio de esquina grande para forma de píldora
 
-    property int islandPaddingH: Math.max(6, Math.round(10 * root.autoScaleFactor))
+    // Padding más generoso para que no se vea apretado y los elementos respiren
+    property int islandPaddingH: Math.max(10, Math.round(14 * root.autoScaleFactor))
     property int islandPaddingV: {
         if (root.barHeightLimit <= 34) return 1
         if (root.barHeightLimit <= 38) return 2
@@ -109,9 +111,9 @@ Item {
     readonly property bool isPlaying: activePlayer != null
         && activePlayer.playbackState === MprisPlaybackState.Playing
 
-    readonly property string trackTitle: StringUtils.cleanMusicTitle(activePlayer ? activePlayer.trackTitle : "") || ""
-    readonly property string trackArtist: (activePlayer ? activePlayer.trackArtist : "") || ""
-    readonly property string fullText: trackTitle + (trackArtist ? " • " + trackArtist : "")
+    readonly property string trackTitle: activePlayer ? (StringUtils.cleanMusicTitle(activePlayer.trackTitle) || "") : ""
+    readonly property string trackArtist: activePlayer ? (activePlayer.trackArtist || "") : ""
+    readonly property string fullText: root.hasMedia ? (trackTitle + (trackArtist ? " • " + trackArtist : "")) : "No hay reproducción"
 
     function _luma(c) {
         return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
@@ -251,7 +253,8 @@ Item {
     property int minWidthNoLyrics: 180
     property int noLyricsSidePadding: 14
     property int lyricsSidePadding: 30
-    property int rowSpacing: Math.max(4, Math.round(8 * root.autoScaleFactor))
+    // Aumentamos el espaciado para que el texto "No hay reproducción" no se amontone
+    property int rowSpacing: Math.max(8, Math.round(10 * root.autoScaleFactor))
     property int rightMargin: 10
     property int leftMargin: 0
 
@@ -439,26 +442,24 @@ Item {
         (root.lyricsEnabled && root.hasSyncedLines)
     )
 
+    readonly property int collapsedWidth: Math.max(root.islandCollapsedWidth, 180)
+
     readonly property int expandedWidth: root.hasMedia
         ? (root.hasSyncedLines
             ? Math.max(1, (root.stableWidthLyrics > 0 ? root.stableWidthLyrics : root.targetWidthLyrics))
             : root.targetWidthNoLyrics)
-        : 0
-
-    readonly property int collapsedWidth: Math.max(root.islandCollapsedWidth, 240)
+        : collapsedWidth
 
     readonly property int targetIslandWidth: {
-        if (!root.hasMedia) return 0
         if (root.vertical) {
             return Math.max(24, Math.floor(root.barHeightLimit))
         }
-        if (!root.islandEnabled) return Math.min(expandedWidth, root.islandMaxWidth)
-        var w = root.islandExpanded ? expandedWidth : collapsedWidth
+        if (!root.islandEnabled) return Math.min(expandedWidth > 0 ? expandedWidth : collapsedWidth, root.islandMaxWidth)
+        var w = (root.islandExpanded && root.hasMedia) ? expandedWidth : collapsedWidth
         return Math.min(w, root.islandMaxWidth)
     }
 
     readonly property int targetIslandHeight: {
-        if (!root.hasMedia) return 0
         if (root.vertical) {
             var pad = root.islandPaddingV * 2
             var thickness = Math.max(1, root.targetIslandWidth - pad)
@@ -522,7 +523,6 @@ Item {
     }
 
     onIslandExpandedChanged: {
-        if (!root.hasMedia) return
         triggerOvershoot(root.islandExpanded)
     }
 
@@ -562,8 +562,8 @@ Item {
     implicitHeight: root.targetIslandHeight
 
     clip: true
-    visible: root.hasMedia && (root.targetIslandWidth > 10)
-    opacity: root.hasMedia ? 1 : 0
+    visible: true
+    opacity: 1
 
     Behavior on implicitWidth {
         enabled: root.animLayoutTransitions && root.animEnabled && !root.vertical
@@ -573,15 +573,11 @@ Item {
         enabled: root.animLayoutTransitions && root.animEnabled && root.vertical
         NumberAnimation { duration: root.islandExpandAnimMs; easing.type: Easing.InOutCubic }
     }
-    Behavior on opacity {
-        enabled: root.animLayoutTransitions && root.animEnabled
-        NumberAnimation { duration: root.islandFadeAnimMs; easing.type: Easing.OutCubic }
-    }
 
     Item {
         id: islandShell
         anchors.fill: parent
-        visible: root.hasMedia
+        visible: true
         clip: true
 
         transform: Scale {
@@ -599,6 +595,7 @@ Item {
         Rectangle {
             id: islandBg
             anchors.fill: parent
+            // SOLUCIÓN AL CUADRADO: Radio de esquina grande para forma de píldora
             radius: root.vertical ? (width / 2) : root.islandRadius
             color: "transparent"
             border.width: 0
@@ -621,10 +618,8 @@ Item {
                 anchors.fill: parent
                 radius: parent.radius
                 color: "transparent"
-                border.width: root.islandExpanded ? root.islandBorderWidthExpanded : root.islandBorderWidthCollapsed
-                border.color: root.isLightTheme
-                    ? Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.16 : 0.12))
-                    : Qt.rgba(0.0, 0.0, 0.0, (root.islandExpanded ? 0.48 : 0.42))
+                border.width: 0
+                border.color: "transparent"
                 antialiasing: true
             }
 
@@ -633,8 +628,8 @@ Item {
                 anchors.margins: 1
                 radius: Math.max(0, parent.radius - 1)
                 color: "transparent"
-                border.width: 1
-                border.color: Qt.rgba(1, 1, 1, root.isLightTheme ? 0.55 : 0.16)
+                border.width: 0
+                border.color: "transparent"
                 antialiasing: true
             }
 
@@ -647,10 +642,11 @@ Item {
                 anchors.leftMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
                 anchors.rightMargin: root.vertical ? 1 : (parent.radius > 0 ? parent.radius / 1.6 : 1)
                 
-                height: root.vertical ? Math.max(2, Math.round(parent.height * 0.26)) : 1
+                height: 0
                 width: root.vertical ? 1 : undefined
 
-                color: Qt.rgba(1, 1, 1, root.isLightTheme ? 0.85 : 0.35)
+                color: "transparent"
+                visible: false
                 antialiasing: true
             }
         }
@@ -804,9 +800,8 @@ Item {
 
                 readonly property int _bongoH: Math.max(14, Math.min(24, _contentThickness))
                 readonly property int _bongoW: Math.round(_bongoH * 1.35)
-                readonly property int _coverSlot: Math.max(16, Math.min(24, _contentThickness))
-                readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 24))
-                readonly property int _dotSize: Math.max(4, Math.min(8, Math.round(_contentThickness * 0.25)))
+                readonly property int _coverSlot: Math.max(16, Math.min(26, _contentThickness))
+                readonly property int _coverCircle: Math.max(16, Math.min(_coverSlot, 26))
 
                 GridLayout {
                     anchors.fill: parent
@@ -819,8 +814,8 @@ Item {
                     rowSpacing: root.rowSpacing
                     columnSpacing: root.rowSpacing
 
-                    columns: root.vertical ? 1 : 4
-                    rows: root.vertical ? 4 : 1
+                    columns: root.vertical ? 1 : 3
+                    rows: root.vertical ? 3 : 1
                     flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
 
                     BongoCat {
@@ -847,16 +842,18 @@ Item {
                         Item {
                             id: coverCircleSmall
                             anchors.centerIn: parent
-                            width: collapsedView._coverCircle
-                            height: collapsedView._coverCircle
+                            // Si no hay media, le damos un poquito más de espacio al ícono de la galleta
+                            width: collapsedView._coverCircle + (root.hasMedia ? 0 : 4)
+                            height: collapsedView._coverCircle + (root.hasMedia ? 0 : 4)
 
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 4
                                 color: Qt.rgba(1, 1, 1, 0.06)
-                                border.width: 1
-                                border.color: Qt.rgba(1, 1, 1, 0.10)
+                                border.width: 0
+                                border.color: "transparent"
                                 antialiasing: true
+                                visible: root.hasMedia // Solo muestra el marco si hay carátula
                             }
 
                             Image {
@@ -867,23 +864,41 @@ Item {
                                 smooth: true
                                 asynchronous: true
                                 cache: true
-                                visible: true
+                                visible: root.hasMedia && (status === Image.Ready)
                                 layer.enabled: false
                             }
 
+                            // SOLUCIÓN AL CUADRADO FEO: Separamos la lógica.
+                            // 1. La galleta cuando NO hay reproducción (sin padding problemático)
+                            MaterialShape {
+                                visible: !root.hasMedia
+                                anchors.fill: parent
+                                shapeString: MaterialShape.Shape.Cookie12Sided
+                                color: Appearance.colors.colPrimaryContainer
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "music_off"
+                                    fill: 1
+                                    iconSize: Math.max(12, Math.round(parent.width * 0.55))
+                                    color: Appearance.colors.colOnSecondaryContainer
+                                }
+                            }
+
+                            // 2. El ícono normal si falla la carátula
                             MaterialSymbol {
                                 anchors.centerIn: parent
                                 text: "music_note"
                                 fill: 1
-                                iconSize: Math.max(10, Math.round(coverCircleSmall.width * 0.65))
+                                iconSize: Math.max(10, Math.round(parent.width * 0.65))
                                 color: Qt.rgba(1, 1, 1, 0.80)
-                                visible: (coverImgSmall.status !== Image.Ready)
+                                visible: root.hasMedia && (coverImgSmall.status !== Image.Ready)
                             }
                         }
                     }
 
                     Item {
-                        visible: root.vertical && root.hasMedia
+                        visible: root.vertical
                         Layout.alignment: Qt.AlignCenter
                         Layout.preferredWidth: collapsedView._coverSlot
                         Layout.preferredHeight: collapsedView._coverSlot
@@ -918,11 +933,12 @@ Item {
 
                         StyledText {
                             Layout.fillWidth: true
-                            text: root.trackArtist.length ? root.trackArtist
-                                 : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")
+                            text: root.hasMedia ? (root.trackArtist.length ? root.trackArtist : (root.trackTitle.length ? root.trackTitle : "Reproduciendo")) : "No hay reproducción"
                             color: root.islandTextPrimary
-                            font.pixelSize: Math.max(9, Math.round(Appearance.font.pixelSize.smallie * root.autoScaleFactor)) 
+                            font.pixelSize: Math.max(11, Math.round((Appearance.font.pixelSize.smallie + 2) * root.autoScaleFactor)) 
                             font.bold: true
+                            // Lo centramos si no hay reproducción para que quede mejor balanceado
+                            verticalAlignment: root.hasMedia ? Text.AlignTop : Text.AlignVCenter
                             elide: Text.ElideRight
                             maximumLineCount: 1
                             opacity: 0.98
@@ -931,17 +947,18 @@ Item {
                         Item {
                             id: collapsedLyricViewport
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(9, Math.min(13, Math.round(collapsedView._contentThickness * 0.40)))
+                            Layout.preferredHeight: Math.max(12, Math.min(16, Math.round(collapsedView._contentThickness * 0.45)))
                             clip: true
-                            visible: root.hasMedia
+                            // SOLUCIÓN: Si no hay media, este bloque desaparece y no estorba
+                            visible: root.hasMedia 
 
-                            readonly property string lineText: root.hasSyncedLines
-                                ? root.currentLyricText
-                                : (root.trackTitle.length ? root.trackTitle : "")
+                            readonly property string lineText: root.hasMedia
+                                ? (root.hasSyncedLines ? root.currentLyricText : (root.trackTitle.length ? root.trackTitle : ""))
+                                : ""
 
                             TextMetrics {
                                 id: collapsedLyricMetrics
-                                font.pixelSize: Math.max(8, Math.round(Appearance.font.pixelSize.smaller * root.autoScaleFactor))
+                                font.pixelSize: Math.max(10, Math.round((Appearance.font.pixelSize.smaller + 1) * root.autoScaleFactor))
                                 text: collapsedLyricViewport.lineText
                             }
 
@@ -959,12 +976,35 @@ Item {
                             }
 
                             StyledText {
+                                id: collapsedScrollingText
                                 parent: collapsedStrip
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: collapsedLyricViewport.lineText
                                 color: root.islandTextSecondary
-                                font.pixelSize: Math.max(8, Math.round(Appearance.font.pixelSize.smaller * root.autoScaleFactor))
+                                font.pixelSize: Math.max(10, Math.round((Appearance.font.pixelSize.smaller + 1) * root.autoScaleFactor))
                                 elide: Text.ElideNone
+                            }
+
+                            Item {
+                                id: waveBandCollapsed
+                                parent: collapsedStrip
+                                anchors.left: collapsedScrollingText.left
+                                anchors.right: collapsedScrollingText.right
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 0
+                                height: Math.min(Math.round(18 * root.autoScaleFactor), Math.max(0, collapsedLyricViewport.height - 2))
+                                opacity: root.hasMedia ? 1 : 0
+                                visible: root.hasMedia && root.fxWaves && collapsedLyricViewport.visible
+                                clip: true
+
+                                WaveVisualizer {
+                                    anchors.fill: parent
+                                    live: root.isPlaying
+                                    points: root.visualizerPoints
+                                    maxVisualizerValue: 650
+                                    smoothing: 2
+                                    color: Appearance.m3colors.m3primary
+                                }
                             }
 
                             SequentialAnimation {
@@ -983,22 +1023,6 @@ Item {
                             }
                         }
                     }
-
-                    Rectangle {
-                        visible: !root.vertical && root.isPlaying
-                        Layout.alignment: Qt.AlignCenter
-                        Layout.preferredWidth: collapsedView._dotSize
-                        Layout.preferredHeight: collapsedView._dotSize
-                        Layout.minimumWidth: collapsedView._dotSize
-                        radius: width / 2
-                        color: Qt.rgba(
-                            Appearance.m3colors.m3primary.r,
-                            Appearance.m3colors.m3primary.g,
-                            Appearance.m3colors.m3primary.b,
-                            root.isPlaying ? 0.85 : 0.25
-                        )
-                        antialiasing: true
-                    }
                 }
             }
 
@@ -1006,7 +1030,7 @@ Item {
                 id: expandedView
                 anchors.fill: parent
                 opacity: 0
-                visible: opacity > 0.01 && !root.vertical
+                visible: opacity > 0.01 && !root.vertical && root.hasMedia
                 clip: true
 
                 readonly property int contentH: Math.max(1, height - (root.islandPaddingV * 2))
@@ -1070,12 +1094,12 @@ Item {
                             }
 
                             MaterialSymbol {
+                                visible: (coverImg.status !== Image.Ready)
                                 anchors.centerIn: parent
                                 text: "music_note"
                                 fill: 1
                                 iconSize: Math.max(12, Math.round(expandedView.coverCircleSize * 0.75))
                                 color: Qt.rgba(1, 1, 1, 0.70)
-                                visible: (coverImg.status !== Image.Ready)
                             }
 
                             Rectangle {

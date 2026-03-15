@@ -6,7 +6,7 @@ import qs.modules.common
 
 Item {
     id: root
-    implicitHeight: 50 // Un poquito más alto para respirar
+    implicitHeight: 60 // Altura suficiente para el número grande
     implicitWidth: layout.implicitWidth
 
     property int weekShift: 0
@@ -25,9 +25,9 @@ Item {
     RowLayout {
         id: layout
         anchors.fill: parent
-        spacing: 24 // Más separación entre el mes y los días
+        spacing: 24 
 
-        // 1. MES (Elegante y moderno)
+        // 1. MES (Elegante, moderno y MUY GRANDE)
         StyledText {
             text: {
                 let d = new Date();
@@ -35,9 +35,9 @@ Item {
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 return months[d.getMonth()];
             }
-            font.pixelSize: 28 // Más grande
-            font.weight: Font.ExtraBold // Extra grueso, muy moderno
-            font.letterSpacing: -0.5 // Letras ligeramente juntas para títulos grandes
+            font.pixelSize: 37 
+            font.weight: Font.ExtraBold 
+            font.letterSpacing: -0.5 
             color: Appearance.colors.colOnLayer0
             Layout.alignment: Qt.AlignVCenter
         }
@@ -45,7 +45,8 @@ Item {
         // 2. LOS 7 DÍAS EN HORIZONTAL
         RowLayout {
             spacing: 16
-            Layout.alignment: Qt.AlignVCenter | Qt.AlignBottom
+            // Alineamos todo abajo para que el tamaño grande no descuadre a los pequeños
+            Layout.alignment: Qt.AlignBottom 
 
             Repeater {
                 model: 7
@@ -62,7 +63,7 @@ Item {
                         return d;
                     }
 
-                    spacing: 4 // Un poquito más de espacio entre letra y número
+                    spacing: 2 
                     Layout.alignment: Qt.AlignBottom
 
                     // Nombre del día (S, M, T... o THU)
@@ -72,9 +73,10 @@ Item {
                             const daysShort = ["S", "M", "T", "W", "T", "F", "S"];
                             return isToday ? daysFull[dateObj.getDay()] : daysShort[dateObj.getDay()];
                         }
-                        font.pixelSize: isToday ? 11 : 10
-                        font.weight: isToday ? Font.ExtraBold : Font.DemiBold // DemiBold resalta mejor que Normal
-                        font.letterSpacing: 1.0 // Espaciado premium para letras mayúsculas
+                        // Contraste: Hoy es 13, los demás son 10
+                        font.pixelSize: isToday ? 13 : 10 
+                        font.weight: isToday ? Font.ExtraBold : Font.DemiBold 
+                        font.letterSpacing: 1.0 
                         color: isToday ? root.highlightColor : root.normalColor
                         opacity: isToday ? 1.0 : 0.5
                         Layout.alignment: Qt.AlignHCenter
@@ -83,7 +85,8 @@ Item {
                     // Número del día (01, 15...)
                     StyledText {
                         text: dateObj.getDate().toString().padStart(2, "0")
-                        font.pixelSize: isToday ? 20 : 15 // Aumentado para mayor legibilidad
+                        // Contraste Fuerte: Hoy es 28, los demás son 16
+                        font.pixelSize: isToday ? 28 : 16 
                         font.weight: isToday ? Font.ExtraBold : Font.DemiBold
                         color: isToday ? root.highlightColor : root.normalColor
                         opacity: isToday ? 1.0 : 0.5

@@ -32,7 +32,7 @@ Item {
 
     readonly property var safeList: (Array.isArray(list) ? list : [])
 
-    // MUSIC_PLAYER: Ocultar grupo si no hay medios
+    // MUSIC_PLAYER: Ya no usamos esto para ocultar el grupo, pero lo dejamos por si acaso
     readonly property bool isMusicPlayer: (rootItem.modelData && rootItem.modelData.id === "music_player")
 
     readonly property bool musicHasMedia: (MprisController.activePlayer !== null)
@@ -40,8 +40,8 @@ Item {
 
     property bool userVisible: (rootItem.modelData ? (rootItem.modelData.visible !== false) : true)
 
+    // CORRECCIÓN: El componente de música ya no se oculta si no hay reproducción
     readonly property bool effectiveVisible: rootItem.userVisible
-        && (!rootItem.isMusicPlayer || rootItem.musicHasMedia)
 
     visible: effectiveVisible
 
@@ -176,7 +176,7 @@ Item {
             verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
             horizontalCenter: rootItem.vertical ? undefined : rootItem.horizontalCenter
         }
-       
+        
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
 
@@ -244,4 +244,3 @@ Item {
     Component { id: dashboardPanelButtonComp; DashboardPanelButton { } }
     Component { id: dashboardPanelButtonCompVert; VerticalDashboardPanelButton { } }
 }
-

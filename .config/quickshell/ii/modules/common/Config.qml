@@ -323,6 +323,10 @@ Singleton {
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                    property bool showCpu: true
+                    property bool showRam: true
+                    property bool showTemperature: true
+                    property bool showCat: true // NUEVO: Control independiente para el GIF
                 }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 
@@ -452,7 +456,7 @@ Singleton {
                             title: "System monitor",
                             centered: false,
                             visible: true,
-                            scrollTo: ""
+                            scrollTo: "system_monitor"
                         }
                     ]
                     property list<var> right: [

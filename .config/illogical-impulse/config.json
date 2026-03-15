@@ -38,7 +38,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "smoke_blue"
+            "type": "samurai"
         },
         "panelAnimation": {
             "enableBackgroundAnimation": true,
@@ -107,7 +107,7 @@
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/41.png",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -118,12 +118,12 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "full",
-                    "hourHandStyle": "hollow",
+                    "dialNumberStyle": "none",
+                    "hourHandStyle": "fill",
                     "hourMarks": false,
                     "minuteHandStyle": "medium",
-                    "secondHandStyle": "classic",
-                    "sides": 14,
+                    "secondHandStyle": "dot",
+                    "sides": 9,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -148,8 +148,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 108.40798402443875,
-                "y": 137.3566456330126
+                "x": 194.62405473757977,
+                "y": 134.24620017027223
             },
             "media": {
                 "backgroundShape": "Circle",
@@ -169,8 +169,8 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2870.7962364783652,
-                "y": 1652.8989257812498
+                "x": 2671,
+                "y": 1568.361321864984
             },
             "weather": {
                 "enable": true,
@@ -193,12 +193,12 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 1,
+        "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 0,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -341,6 +341,10 @@
         "resources": {
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
+            "showCat": true,
+            "showCpu": false,
+            "showRam": false,
+            "showTemperature": true,
             "swapWarningThreshold": 85
         },
         "screenList": [
@@ -470,7 +474,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 4100,
+            "colorTemperature": 4820,
             "from": "19:00",
             "to": "06:30"
         }
