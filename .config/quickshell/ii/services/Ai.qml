@@ -779,6 +779,48 @@ Singleton {
         requester.makeRequest();
     }
 
+    Process {
+        id: decodeImageAndAttachProc
+        property string imageDecodePath: Directories.cliphistDecode
+        property string imageDecodeFileName: "image"
+        property string imageDecodeFilePath: `${imageDecodePath}/${imageDecodeFileName}`
+        function handleEntry(entry: string) {
+            imageDecodeFileName = parseInt(entry.match(/^(\d+)\t/)[1]);
+            decodeImageAndAttachProc.exec(["bash", "-c", `[ -f ${imageDecodeFilePath} ] || echo '${CF.StringUtils.shellSingleQuoteEscape(entry)}' | ${Cliphist.cliphistBinary} decode > '${imageDecodeFilePath}'`]);
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                Ai.attachFile(imageDecodeFilePath);
+            } else {
+                console.error("[Ai] Failed to decode image in clipboard content");
+            }
+        }
+    }
+    
+    // This is being called by RegionSelection.qml
+    function handleClipboardAndAttach() {
+        handleClipboardTimer.start()
+    }
+    // We have to delay this a little to make sure the clipboard is updated
+    Timer {
+        id: handleClipboardTimer
+        interval: 450
+        onTriggered: {
+            const currentClipboardEntry = Cliphist.entries[0];
+            const cleanCliphistEntry = CF.StringUtils.cleanCliphistEntry(currentClipboardEntry);
+            if (/^\d+\t\[\[.*binary data.*\d+x\d+.*\]\]$/.test(currentClipboardEntry)) {
+                // First entry = currently copied entry = image?
+                decodeImageAndAttachProc.handleEntry(currentClipboardEntry);
+                return;
+            } else if (cleanCliphistEntry.startsWith("file://")) {
+                // First entry = currently copied entry = image?
+                const fileName = decodeURIComponent(cleanCliphistEntry);
+                Ai.attachFile(fileName);
+                return;
+            }
+        }
+    }
+
     function attachFile(filePath: string) {
         root.pendingFilePath = CF.FileUtils.trimFileProtocol(filePath);
     }

@@ -38,7 +38,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "samurai"
+            "type": "smoke_blue"
         },
         "panelAnimation": {
             "enableBackgroundAnimation": true,
@@ -107,7 +107,7 @@
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/41.png",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/08.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -118,13 +118,13 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "none",
-                    "hourHandStyle": "fill",
+                    "dialNumberStyle": "numbers",
+                    "hourHandStyle": "classic",
                     "hourMarks": false,
-                    "minuteHandStyle": "medium",
-                    "secondHandStyle": "dot",
+                    "minuteHandStyle": "classic",
+                    "secondHandStyle": "classic",
                     "sides": 9,
-                    "timeIndicators": true
+                    "timeIndicators": false
                 },
                 "digital": {
                     "adaptiveAlignment": true,
@@ -148,11 +148,11 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 194.62405473757977,
-                "y": 134.24620017027223
+                "x": 202.42168719951877,
+                "y": 250.05649664463118
             },
             "media": {
-                "backgroundShape": "Circle",
+                "backgroundShape": "Sunny",
                 "enable": true,
                 "glow": {
                     "brightness": 10,
@@ -161,7 +161,7 @@
                 "hideAllButtons": false,
                 "placementStrategy": "free",
                 "showPreviousToggle": true,
-                "tintArtCover": false,
+                "tintArtCover": true,
                 "useAlbumColors": true,
                 "visualizer": {
                     "blur": 1,
@@ -169,14 +169,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2671,
-                "y": 1568.361321864984
+                "x": 2863.3350798778047,
+                "y": 1657.0500989082532
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2771.8371206430284,
-                "y": 171.46199544270831
+                "x": 2830.235245142228,
+                "y": 195.41829427083326
             }
         }
     },
@@ -474,7 +474,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 4820,
+            "colorTemperature": 4700,
             "from": "19:00",
             "to": "06:30"
         }
@@ -544,7 +544,7 @@
         "centerIcons": true,
         "centerTopPaddingRatio": 10,
         "columns": 3,
-        "enable": false,
+        "enable": true,
         "hyprscrollingImplementation": {
             "maxWorkspaceWidth": 1000
         },
@@ -788,7 +788,7 @@
             "download": "/home/jcgomez91/Pictures/Wallpapers",
             "nsfw": "/home/jcgomez91/Pictures/Wallpapers/NSFW"
         },
-        "service": "unsplash",
+        "service": "wallhaven",
         "showAnimeResults": false,
         "sort": "favourites"
     },
