@@ -33,6 +33,9 @@ Variants {
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
         visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
 
+        // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
+        property bool enableAnimations: Config.options.appearance.enableAnimations
+
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
         property list<var> relevantWindows: HyprlandData.windowList.filter(win => win.monitor == monitor?.id && win.workspace.id >= 0).sort((a, b) => a.workspace.id - b.workspace.id)
         property int firstWorkspaceId: relevantWindows[0]?.workspace.id || 1
@@ -64,6 +67,7 @@ Variants {
             return (GlobalStates.screenLocked && shouldBlur) ? Appearance.colors.colOnLayer0 : CF.ColorUtils.colorWithLightness(Appearance.colors.colPrimary, (dominantColorIsDark ? 0.8 : 0.12));
         }
         Behavior on colText {
+            enabled: enableAnimations
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
 
@@ -82,6 +86,7 @@ Variants {
 
         property real scaleAnimated: GlobalStates.overviewOpen && showOpeningAnimation ? zoomedRatio : defaultRatio
         Behavior on scaleAnimated {
+            enabled: enableAnimations
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
 
@@ -101,6 +106,7 @@ Variants {
             return CF.ColorUtils.mix(Appearance.colors.colLayer0, Appearance.colors.colPrimary, 0.75);
         }
         Behavior on color {
+            enabled: enableAnimations
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
 
@@ -145,7 +151,7 @@ Variants {
 
         Process {
             id: cavaProc
-            running: mediaModeVisualLoader.active && (Config.options.background.mediaMode.showVisualizer ?? true)
+            running: mediaModeVisualLoader.active && (Config.options.background.mediaMode.showVisualizer ?? true) && bgRoot.enableAnimations
             onRunningChanged: {
                 if (!cavaProc.running) {
                     bgRoot.visualizerPoints = []
@@ -169,10 +175,12 @@ Variants {
             opacity: mediaModeOpen ? 0 : 1
             
             Behavior on opacity {
+                enabled: bgRoot.enableAnimations
                 NumberAnimation { duration: 300; easing.type: Easing.InOutQuad }
             }
 
             Behavior on scale {
+                enabled: bgRoot.enableAnimations
                 animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
             }
 
@@ -211,12 +219,14 @@ Variants {
                 source: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
                 fillMode: Image.PreserveAspectCrop
                 Behavior on x {
+                    enabled: bgRoot.enableAnimations
                     NumberAnimation {
                         duration: 600
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on y {
+                    enabled: bgRoot.enableAnimations
                     NumberAnimation {
                         duration: 600
                         easing.type: Easing.OutCubic
@@ -236,6 +246,7 @@ Variants {
                 anchors.fill: wallpaper
                 scale: GlobalStates.screenLocked ? Config.options.lock.blur.extraZoom : 1
                 Behavior on scale {
+                    enabled: bgRoot.enableAnimations
                     NumberAnimation {
                         id: scaleAnim
                         duration: 400
@@ -260,6 +271,7 @@ Variants {
                 id: widgetCanvas
                 scale: 1 - (defaultRatio - 1)
                 Behavior on scale {
+                    enabled: bgRoot.enableAnimations
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
                 }
                 anchors {
@@ -281,9 +293,11 @@ Variants {
                         return yOnWallpaper - extraMove;
                     }
                     Behavior on leftMargin {
+                        enabled: bgRoot.enableAnimations
                         animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
                     }
                     Behavior on topMargin {
+                        enabled: bgRoot.enableAnimations
                         animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
                     }
                 }
@@ -310,6 +324,7 @@ Variants {
                     }
                 }
                 transitions: Transition {
+                    enabled: bgRoot.enableAnimations
                     PropertyAnimation {
                         properties: "width,height"
                         duration: Appearance.animation.elementMove.duration
@@ -400,6 +415,7 @@ Variants {
             opacity: status === Loader.Ready ? 1 : 0
 
             Behavior on opacity {
+                enabled: bgRoot.enableAnimations
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
         }
@@ -421,6 +437,7 @@ Variants {
             z: mediaModeVisualLoader.z + 1
             
             Behavior on opacity {
+                enabled: bgRoot.enableAnimations
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(bottomVisualizer)
             }
         }

@@ -13,8 +13,11 @@ MouseArea {
     readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
     property bool interactionsEnabled: true
     property bool allowPopup: true
-    property bool enableWeatherAura: true
-    property bool enableHeartbeat: true
+    
+    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
+    property bool enableWeatherAura: Config.options.appearance.enableAnimations
+    property bool enableHeartbeat: Config.options.appearance.enableAnimations
+    
     property real heartbeatStrength: 1.0
     property real crystalTintOpacity: 0.00
     property bool crystalBordersOnHoverOnly: true
@@ -157,7 +160,7 @@ MouseArea {
         PauseAnimation { duration: 900 }
     }
 
-    readonly property real beatAmt: root.beat * root.heartbeatStrength
+    readonly property real beatAmt: root.enableHeartbeat ? (root.beat * root.heartbeatStrength) : 0
 
     Rectangle {
         id: plate

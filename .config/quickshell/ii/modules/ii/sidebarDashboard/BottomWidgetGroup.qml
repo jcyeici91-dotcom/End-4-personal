@@ -10,8 +10,8 @@ import qs.modules.ii.sidebarDashboard.calendar
 import qs.modules.ii.sidebarDashboard.todo
 import qs.modules.ii.sidebarDashboard.pomodoro
 import qs.modules.ii.sidebarDashboard.calculator // Calculadora
-import qs.modules.ii.sidebarDashboard.notepad    // Notepad
-import qs.modules.ii.sidebarDashboard.sysmon     // System Monitor (NUEVO)
+
+
 
 Rectangle {
     id: root
@@ -50,19 +50,7 @@ Rectangle {
             "name": Translation.tr("Calculator"),
             "icon": "calculate",
             "widget": "calculator/CalculatorWidget.qml"
-        },
-        {
-            "type": "notepad",
-            "name": Translation.tr("Notes"),
-            "icon": "edit_note",
-            "widget": "notepad/NotepadWidget.qml"
-        },
-        {
-            // --- AQUÍ ESTÁ EL MONITOR DE SISTEMA ---
-            "type": "sysmon",
-            "name": Translation.tr("System"),
-            "icon": "memory", // Icono de chip/memoria
-            "widget": "sysmon/SystemMonitorWidget.qml"
+         
         }
     ]
 

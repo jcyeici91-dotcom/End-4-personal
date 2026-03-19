@@ -25,6 +25,7 @@
     "appearance": {
         "customColorSchemes": [
         ],
+        "enableAnimations": false,
         "extraBackgroundTint": true,
         "fakeScreenRounding": 3,
         "fonts": {
@@ -169,14 +170,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2863.3350798778047,
-                "y": 1657.0500989082532
+                "x": 2832.747076572515,
+                "y": 1704.72012094351
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2830.235245142228,
-                "y": 195.41829427083326
+                "x": 2813.747927934696,
+                "y": 160.71824293870168
             }
         }
     },
@@ -342,9 +343,9 @@
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
             "showCat": true,
-            "showCpu": false,
-            "showRam": false,
-            "showTemperature": true,
+            "showCpu": true,
+            "showRam": true,
+            "showTemperature": false,
             "swapWarningThreshold": 85
         },
         "screenList": [
@@ -457,7 +458,7 @@
         "translator": {
             "engine": "auto",
             "sourceLanguage": "auto",
-            "targetLanguage": "auto"
+            "targetLanguage": "English"
         },
         "ui": "en_US"
     },

@@ -11,6 +11,9 @@ import qs.services
 Item {
     id: root
     
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     property real r: Appearance.rounding.windowRounding ?? 24
     property int viewState: 1 // 1 = Volumen/Brillo, 2 = Sesión
     
@@ -54,8 +57,14 @@ Item {
         visible: opacity > 0
         x: root.viewState === 1 ? 0 : -20 
         
-        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-        Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
+        Behavior on opacity { 
+            enabled: root.enableAnimations
+            NumberAnimation { duration: 300; easing.type: Easing.OutQuart } 
+        }
+        Behavior on x { 
+            enabled: root.enableAnimations
+            NumberAnimation { duration: 300; easing.type: Easing.OutQuart } 
+        }
 
         ColumnLayout {
             id: slidersLayout
@@ -89,7 +98,7 @@ Item {
                         Brightness.monitors[0].setBrightness(newValue);
                     }
                     
-                    //  luz nocturna está activa, ajusta la temperatura al MISMO porcentaje
+                    // luz nocturna está activa, ajusta la temperatura al MISMO porcentaje
                     if (Hyprsunset.active) {
                         // 100% de slider (1.0) = 100% de calidez (2500K)
                         // 0% de slider (0.0) = 0% de calidez (6500K)
@@ -122,8 +131,14 @@ Item {
         visible: opacity > 0
         x: root.viewState === 2 ? 0 : 20 
         
-        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-        Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
+        Behavior on opacity { 
+            enabled: root.enableAnimations
+            NumberAnimation { duration: 300; easing.type: Easing.OutQuart } 
+        }
+        Behavior on x { 
+            enabled: root.enableAnimations
+            NumberAnimation { duration: 300; easing.type: Easing.OutQuart } 
+        }
 
         ColumnLayout {
             id: sessionLayout
@@ -140,7 +155,8 @@ Item {
                 Layout.preferredWidth: 64
                 Layout.preferredHeight: 64
                 fillMode: Image.PreserveAspectFit
-                playing: root.viewState === 2
+                playing: root.viewState === 2 && root.enableAnimations // Detiene el GIF cuando se desactivan las animaciones
+                visible: root.enableAnimations // Lo oculta para que no quede estático de forma fea
             }
 
             SessionButton { iconName: "bedtime"; command: "systemctl suspend" }

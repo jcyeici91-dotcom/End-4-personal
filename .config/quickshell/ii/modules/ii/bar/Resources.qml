@@ -32,13 +32,14 @@ MouseArea {
     property int outerPaddingV: 1
     readonly property int outerPadding: root.vertical ? outerPaddingV : outerPaddingH
 
-    property bool enableEffects: true
+    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
+    property bool enableEffects: Config.options.appearance.enableAnimations
     property bool enableTooltips: true
 
-    // CONECTADO AL INTERRUPTOR DEL GATITO
+    // CONECTADO AL INTERRUPTOR DEL GATITO Y AL MAESTRO
     property bool showCat: Config.options.bar.resources.showCat
-    property bool enableCatGif: true
-    property bool enableCatEffects: true
+    property bool enableCatGif: Config.options.appearance.enableAnimations
+    property bool enableCatEffects: Config.options.appearance.enableAnimations
     property bool reserveCatSpace: false
 
     property int dotSize: 7
@@ -293,6 +294,7 @@ MouseArea {
                 Layout.topMargin: root.vertical ? -6 : 0
                 color: root.alertColorByPercent(wrap.value01)
                 intensity: wrap.value01 < root.t20 ? 0.10 : wrap.value01 < root.t50 ? 0.35 : wrap.value01 < root.t75 ? 0.70 : 1.00
+                // Ocultar el punto si las animaciones están apagadas
                 visible: root.enableEffects
             }
         }

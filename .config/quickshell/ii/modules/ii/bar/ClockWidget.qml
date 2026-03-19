@@ -25,6 +25,9 @@ Item {
     property bool interactionsEnabled: true
     property bool expanded: false
     property string systemTime: DateTime.time
+    
+    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
+    property bool enableAnimations: Config.options.appearance.enableAnimations
 
     readonly property string hoursStr: {
         var parts = (systemTime || "").split(":")
@@ -63,7 +66,7 @@ Item {
 
     Timer {
         interval: 1000
-        running: true
+        running: root.enableAnimations // Detiene el timer de los segundos si las animaciones están apagadas
         repeat: true
         triggeredOnStart: true
         onTriggered: root.currentSeconds = Qt.formatTime(new Date(), "ss")
@@ -100,6 +103,7 @@ Item {
 
         RowLayout {
             spacing: 2
+            visible: root.enableAnimations // Oculta los segundos por completo si las animaciones están apagadas para ahorrar cálculos visuales
             StyledText { text: root.s1; font.family: "Anton"; font.pixelSize: Appearance.font.pixelSize.normal * 0.95; font.weight: Font.Black; color: root.colS1; leftPadding: 4 }
             StyledText { text: root.s2; font.family: "Anton"; font.pixelSize: Appearance.font.pixelSize.normal * 0.95; font.weight: Font.Black; color: root.colS2 }
             StyledText {

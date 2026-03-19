@@ -107,7 +107,7 @@ Item {
 
     readonly property bool hyprReady: !!(Hyprland && Hyprland.workspaces && Hyprland.workspaces.values)
     readonly property bool appAwake: (Qt.application.state !== Qt.ApplicationSuspended && Qt.application.state !== Qt.ApplicationHidden)
-    readonly property bool fxEnabled: premium && visible && hyprReady && appAwake
+    readonly property bool fxEnabled: premium && visible && hyprReady && appAwake && Config.options.appearance.enableAnimations
 
     property list<bool> workspaceOccupied: []
     property var workspaceOccupiedById: ({})

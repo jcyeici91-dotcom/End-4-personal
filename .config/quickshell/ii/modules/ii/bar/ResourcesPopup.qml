@@ -20,6 +20,9 @@ Scope {
     property Item hoverTarget: null
     property var widgetRect: Qt.rect(0, 0, 0, 0)
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     // --- Lógica extraída para detectar si debe unirse o flotar ---
     readonly property bool isFloatOrHybrid: (Config.options.bar.cornerStyle === 1) || (Config.options.bar.barBackgroundStyle === 0) || (Config.options.bar.barBackgroundStyle === 3)
     readonly property int floatingGap: 12
@@ -36,6 +39,7 @@ Scope {
 
     property real openAnim: root.open ? 1.0 : 0.0
     Behavior on openAnim {
+        enabled: root.enableAnimations // Desactiva la animación si el interruptor está apagado
         NumberAnimation {
             duration: 450
             easing.type: Easing.OutQuart
@@ -147,7 +151,7 @@ Scope {
                 to: 360
                 duration: 7000
                 loops: Animation.Infinite
-                running: root.open
+                running: root.open && root.enableAnimations // Detiene la ola de fondo si no hay animaciones
             }
         }
     }
@@ -566,6 +570,7 @@ Scope {
                                         border.color: Appearance.colors.colLayer0Border
                                         
                                         Behavior on color { 
+                                            enabled: root.enableAnimations
                                             ColorAnimation { 
                                                 duration: 250
                                                 easing.type: Easing.OutCubic 
@@ -580,6 +585,7 @@ Scope {
                                                 font.pixelSize: 16 
                                                 color: flick.currentIndex === index ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
                                                 Behavior on color { 
+                                                    enabled: root.enableAnimations
                                                     ColorAnimation { 
                                                         duration: 250 
                                                     } 
@@ -591,6 +597,7 @@ Scope {
                                                 font.pixelSize: 12 
                                                 color: flick.currentIndex === index ? Appearance.colors.colOnSurface : Appearance.colors.colOnSurfaceVariant
                                                 Behavior on color { 
+                                                    enabled: root.enableAnimations
                                                     ColorAnimation { 
                                                         duration: 250 
                                                     } 
@@ -631,6 +638,7 @@ Scope {
                                     }
                                     
                                     Behavior on contentX { 
+                                        enabled: root.enableAnimations
                                         NumberAnimation { 
                                             duration: 300
                                             easing.type: Easing.OutCubic 
@@ -1284,6 +1292,7 @@ Scope {
                                                         border.width: 1
                                                         border.color: Appearance.colors.colLayer0Border
                                                         Behavior on color { 
+                                                            enabled: root.enableAnimations
                                                             ColorAnimation { 
                                                                 duration: 200 
                                                             } 
@@ -1320,11 +1329,13 @@ Scope {
                                                         border.width: 1
                                                         border.color: mouseUpdate.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colLayer0Border
                                                         Behavior on color { 
+                                                            enabled: root.enableAnimations
                                                             ColorAnimation { 
                                                                 duration: 200 
                                                             } 
                                                         }
                                                         Behavior on border.color { 
+                                                            enabled: root.enableAnimations
                                                             ColorAnimation { 
                                                                 duration: 200 
                                                             } 

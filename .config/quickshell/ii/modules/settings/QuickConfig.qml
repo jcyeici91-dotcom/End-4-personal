@@ -928,6 +928,22 @@ ContentPage {
         }
     }
 
+// 👇 NUEVA SECCIÓN DE RENDIMIENTO 👇
+    ContentSection {
+        icon: "speed" // Ícono de velocidad/rendimiento
+        title: Translation.tr("Performance & Animations")
+        Layout.fillWidth: true
+
+        ConfigRow {
+            Layout.fillWidth: true
+            ConfigSwitch {
+                buttonIcon: "animation"
+                text: Translation.tr("Enable GIFs and heavy animations")
+                checked: Config.options.appearance.enableAnimations
+                onCheckedChanged: { Config.options.appearance.enableAnimations = checked }
+            }
+        }
+    }
     NoticeBox {
         Layout.fillWidth: true
         Layout.topMargin: -20

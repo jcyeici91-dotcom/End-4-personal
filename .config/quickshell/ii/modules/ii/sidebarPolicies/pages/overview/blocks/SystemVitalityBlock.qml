@@ -15,6 +15,9 @@ Rectangle {
     required property var theme
     required property var dashboard
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     // --- COLORES
     readonly property color surface1: Appearance.colors.colLayer1
     readonly property color border0: Appearance.colors.colLayer0Border
@@ -75,11 +78,13 @@ Rectangle {
             Layout.preferredHeight: 24
             Layout.alignment: Qt.AlignVCenter
             antialiasing: true
+            // Detiene el dibujado y cálculo si el interruptor está apagado
+            visible: root.enableAnimations
 
             property real animationProgress: 0.0
 
             SequentialAnimation on animationProgress {
-                running: true
+                running: root.enableAnimations
                 loops: Animation.Infinite
                 NumberAnimation { from: 0.0; to: 1.0; duration: 2500; easing.type: Easing.Linear }
             }
@@ -131,7 +136,7 @@ Rectangle {
             transformOrigin: Item.Center
 
             SequentialAnimation {
-                running: true
+                running: root.enableAnimations
                 loops: Animation.Infinite
 
                 ParallelAnimation {
@@ -423,4 +428,3 @@ Rectangle {
         }
     }
 }
-

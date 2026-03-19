@@ -18,6 +18,9 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     property bool vertical: false
     
     readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
@@ -115,15 +118,21 @@ Item {
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : capsuleSize
     implicitHeight: vertical ? capsuleSize : Appearance.sizes.barHeight
 
-    Behavior on implicitWidth { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
-    Behavior on implicitHeight { SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } }
+    Behavior on implicitWidth { 
+        enabled: enableAnimations
+        SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } 
+    }
+    Behavior on implicitHeight { 
+        enabled: enableAnimations
+        SpringAnimation { spring: 3.2; damping: 0.35; epsilon: 0.5 } 
+    }
 
     NumberAnimation on prismAngle {
         from: 0
         to: 360
         duration: 10000
         loops: Animation.Infinite
-        running: root.prismaticBorder && root.visible
+        running: root.prismaticBorder && root.visible && root.enableAnimations // Detiene la rotación del borde si las animaciones están apagadas
     }
 
     Rectangle {
@@ -175,8 +184,14 @@ Item {
         x: root.parallaxOffset.x
         y: root.parallaxOffset.y
 
-        Behavior on x { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
-        Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+        Behavior on x { 
+            enabled: enableAnimations
+            NumberAnimation { duration: 120; easing.type: Easing.OutQuad } 
+        }
+        Behavior on y { 
+            enabled: enableAnimations
+            NumberAnimation { duration: 120; easing.type: Easing.OutQuad } 
+        }
 
         RowLayout {
             anchors.fill: parent
@@ -197,7 +212,7 @@ Item {
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
-                    onSourceChanged: popAnim.restart()
+                    onSourceChanged: if (enableAnimations) popAnim.restart() // Ejecuta popAnim solo si las animaciones están encendidas
 
                     SequentialAnimation {
                         id: popAnim
@@ -271,7 +286,7 @@ Item {
                         }
 
                         SequentialAnimation on x {
-                            running: mainTitle.shouldScroll && root.visible && mouseArea.containsMouse
+                            running: mainTitle.shouldScroll && root.visible && mouseArea.containsMouse && root.enableAnimations // Solo haz scroll si enableAnimations está en true
                             loops: Animation.Infinite
                             PauseAnimation { duration: root.titleScrollPauseStartMs }
                             NumberAnimation {
@@ -347,13 +362,15 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         onExited: {
-            root.parallaxOffset = Qt.point(0, 0)
-            mainTitle.x = 0
+            if(enableAnimations) {
+                root.parallaxOffset = Qt.point(0, 0)
+                mainTitle.x = 0
+            }
         }
         onPositionChanged: {
-            if (!root.parallaxEnabled) return
+            if (!root.parallaxEnabled || !enableAnimations) return // Evita el parallax si animaciones apagadas
             root.parallaxOffset = Qt.point((width/2 - mouseX) * 0.05, (height/2 - mouseY) * 0.05)
         }
-        onClicked: clickSquish.restart()
+        onClicked: if(enableAnimations) clickSquish.restart() // Ejecuta el efecto squish si las animaciones están activadas
     }
 }

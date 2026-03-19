@@ -1,4 +1,7 @@
 import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import Qt5Compat.GraphicalEffects
 import qs
 import qs.services
 import qs.modules.common
@@ -6,6 +9,9 @@ import qs.modules.common.widgets
 
 RippleButton {
     id: leftSidebarButton
+
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
 
     property bool showPing: false
     property string iconsDir: `${Quickshell.env("HOME")}/.config/quickshell/ii/assets/icons`
@@ -33,7 +39,7 @@ RippleButton {
     }
 
     SequentialAnimation on scale {
-        running: leftSidebarButton.toggled
+        running: leftSidebarButton.toggled && enableAnimations // Detiene el latido si las animaciones están apagadas
         loops: Animation.Infinite
         NumberAnimation { from: 1.00; to: 1.08; duration: 110; easing.type: Easing.OutCubic }
         NumberAnimation { from: 1.08; to: 0.98; duration: 120; easing.type: Easing.InOutCubic }
@@ -51,7 +57,10 @@ RippleButton {
             ? Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, 0.55)
             : Qt.rgba(1, 1, 1, 0.0)
         opacity: leftSidebarButton.toggled ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on opacity { 
+            enabled: enableAnimations
+            NumberAnimation { duration: 160; easing.type: Easing.OutCubic } 
+        }
     }
 
     Connections {
@@ -91,6 +100,7 @@ RippleButton {
             : Appearance.colors.colOnLayer0
 
         Behavior on color {
+            enabled: enableAnimations
             ColorAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
 
@@ -110,6 +120,7 @@ RippleButton {
             height: 10
 
             Behavior on opacity {
+                enabled: enableAnimations
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
 
@@ -138,13 +149,13 @@ RippleButton {
                 opacity: 0.9
 
                 SequentialAnimation on scale {
-                    running: leftSidebarButton.showPing
+                    running: leftSidebarButton.showPing && enableAnimations
                     loops: Animation.Infinite
                     NumberAnimation { from: 1.0; to: 1.45; duration: 650; easing.type: Easing.OutCubic }
                     NumberAnimation { from: 1.45; to: 1.0; duration: 650; easing.type: Easing.InCubic }
                 }
                 SequentialAnimation on opacity {
-                    running: leftSidebarButton.showPing
+                    running: leftSidebarButton.showPing && enableAnimations
                     loops: Animation.Infinite
                     NumberAnimation { from: 0.9; to: 0.15; duration: 650; easing.type: Easing.OutCubic }
                     NumberAnimation { from: 0.15; to: 0.9; duration: 650; easing.type: Easing.InCubic }
@@ -153,4 +164,3 @@ RippleButton {
         }
     }
 }
-

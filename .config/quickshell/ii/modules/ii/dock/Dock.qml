@@ -80,7 +80,8 @@ Scope {
     property bool premiumDockGlow: true
     property bool premiumWaveform: true
 
-    property bool animEnabled: true
+    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
+    property bool animEnabled: Config.options.appearance.enableAnimations
     property bool animMarquee: true
     property bool animRevealTransitions: true
     property bool animWaveform: true
@@ -236,7 +237,7 @@ Scope {
         Timer {
             interval: Config.options?.resources?.updateInterval ?? 1000
             repeat: true
-            running: root.animEnabled && media.visible && media.isPlaying
+            running: root.animEnabled && media.visible && media.isPlaying // Detiene las actualizaciones de progreso si no hay animaciones
             onTriggered: if (media.activePlayer) media.activePlayer.positionChanged()
         }
 

@@ -59,7 +59,7 @@ Item {
     property bool fxWaves: true
     property bool fxLyricsGradientMask: true
 
-    property bool animEnabled: true
+    property bool animEnabled: Config.options.appearance.enableAnimations
     property bool animMarquee: true
     property bool animLyricScroller: true
     property bool animLayoutTransitions: true

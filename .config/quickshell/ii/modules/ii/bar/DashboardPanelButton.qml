@@ -10,6 +10,9 @@ import qs.modules.common.widgets
 RippleButton {
     id: rightSidebarButton
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
     Layout.rightMargin: Appearance.rounding.screenRounding
     Layout.fillWidth: false
@@ -26,7 +29,9 @@ RippleButton {
 
     onClicked: {
         GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
-        clickFx.restart()
+        if (enableAnimations) {
+            clickFx.restart()
+        }
     }
 
     buttonRadius: Appearance.rounding.full
@@ -45,24 +50,36 @@ RippleButton {
     // Heartbeat
     property bool hoveredFx: false
     property real pulse: 0.0
-    property bool heartbeatActive: (toggled || hoveredFx)
+    property bool heartbeatActive: (toggled || hoveredFx) && enableAnimations // Se detiene el latido si las animaciones están apagadas
     property real pulseAmp: toggled ? 0.075 : 0.040  // más fuerte si está activo
 
     // Press “squish”
     onPressed: {
-        pressAnim.stop()
-        pressAnim.to = 0.86
-        pressAnim.restart()
+        if (enableAnimations) {
+            pressAnim.stop()
+            pressAnim.to = 0.86
+            pressAnim.restart()
+        } else {
+            pressScale = 0.86
+        }
     }
     onReleased: {
-        pressAnim.stop()
-        pressAnim.to = 1.0
-        pressAnim.restart()
+        if (enableAnimations) {
+            pressAnim.stop()
+            pressAnim.to = 1.0
+            pressAnim.restart()
+        } else {
+            pressScale = 1.0
+        }
     }
     onCanceled: {
-        pressAnim.stop()
-        pressAnim.to = 1.0
-        pressAnim.restart()
+        if (enableAnimations) {
+            pressAnim.stop()
+            pressAnim.to = 1.0
+            pressAnim.restart()
+        } else {
+            pressScale = 1.0
+        }
     }
 
     NumberAnimation {
@@ -186,7 +203,7 @@ RippleButton {
             scale: rightSidebarButton.glowScale
             antialiasing: true
 
-            layer.enabled: opacity > 0.01
+            layer.enabled: opacity > 0.01 && enableAnimations // Desactiva la sombra si las animaciones están apagadas (y por tanto el glowOpcaity es 0)
             layer.effect: DropShadow {
                 horizontalOffset: 0
                 verticalOffset: 0
@@ -220,7 +237,11 @@ RippleButton {
             color: rightSidebarButton.toggled
                 ? Appearance.colors.colOnSecondaryContainer
                 : Appearance.colors.colOnLayer1
+            
+            Behavior on color {
+                enabled: enableAnimations
+                ColorAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
         }
     }
 }
-
