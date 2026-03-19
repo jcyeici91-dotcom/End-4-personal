@@ -16,6 +16,9 @@ import "." as Bar
 Item {
     id: root
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     property var screen: root.QsWindow?.window?.screen ?? null
     property int monitorIndex: -1
     property var brightnessMonitor: null
@@ -185,6 +188,7 @@ Item {
         border.color: "transparent"
 
         Behavior on color {
+            enabled: enableAnimations
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
     }
@@ -359,8 +363,14 @@ Item {
                     width: implicitWidth
                     height: implicitHeight + (root.useHybridGroups ? 6 : 0)
                     
-                    Behavior on width { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
-                    Behavior on height { NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } }
+                    Behavior on width { 
+                        enabled: enableAnimations
+                        NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
+                    }
+                    Behavior on height { 
+                        enabled: enableAnimations
+                        NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
+                    }
 
                     Repeater {
                         model: {

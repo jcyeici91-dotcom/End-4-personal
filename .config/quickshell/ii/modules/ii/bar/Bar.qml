@@ -44,6 +44,9 @@ Scope {
 
                 property int monitorIndex: barLoader.monitorIndex
                 
+                //  INTERRUPTOR MAESTRO 
+                property bool enableAnimations: Config.options.appearance.enableAnimations
+                
                 QtObject {
                     id: styleEnum
                     readonly property int visible: 1
@@ -210,9 +213,11 @@ Scope {
                             rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
                         }
                         Behavior on anchors.topMargin {
+                            enabled: barRoot.enableAnimations
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         Behavior on anchors.bottomMargin {
+                            enabled: barRoot.enableAnimations
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
 

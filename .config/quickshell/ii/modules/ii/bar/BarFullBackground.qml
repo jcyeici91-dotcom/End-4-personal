@@ -1,5 +1,6 @@
 import QtQuick
 import qs
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions as CF 
@@ -14,6 +15,9 @@ Item {
     property int styleFromConfig: 1
     property bool hasActiveWindows: false
     property bool isBottom: false
+
+    // NTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
 
     function _styleFromConfig(v) {
         switch (v) {
@@ -72,7 +76,7 @@ Item {
             anchors.fill: parent
 
             Loader {
-                active: !!(Config?.options?.bar?.floatStyleShadow)
+                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations // Apaga la sombra si las animaciones están apagadas
                 anchors.fill: barBackground
                 sourceComponent: StyledRectangularShadow {
                     anchors.fill: undefined
@@ -105,6 +109,7 @@ Item {
                 border.color: "transparent"
 
                 Behavior on color {
+                    enabled: enableAnimations
                     animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
                 }
             }
@@ -138,7 +143,7 @@ Item {
             Bar.BarBgShadowOverlay {
                 targetItem: overlayBg
                 cornerStyle: 1 
-                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow)
+                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations // Apaga la sombra si las animaciones están apagadas
             }
 
             Bar.BarBgOverlay {

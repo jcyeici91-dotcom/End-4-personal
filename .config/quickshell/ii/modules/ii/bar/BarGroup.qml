@@ -6,9 +6,12 @@ import QtQuick.Shapes
 Item {
     id: root
 
+    // INTERRUPTOR MAESTRO 
+    property bool enableAnimations: Config.options.appearance.enableAnimations
+
     property bool vertical: false
 
-property int padding: (!isContainer || forceNoContainer || unifyInside) ? 0 : 6
+    property int padding: (!isContainer || forceNoContainer || unifyInside) ? 0 : 6
     property int edgeInset: 2
 
     property int spacing: 4
@@ -154,7 +157,10 @@ property int padding: (!isContainer || forceNoContainer || unifyInside) ? 0 : 6
 
     visible: shouldBeVisible || opacity > 0.01
     opacity: shouldBeVisible ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.InOutQuad } }
+    Behavior on opacity { 
+        enabled: enableAnimations
+        NumberAnimation { duration: 160; easing.type: Easing.InOutQuad } 
+    }
 
     implicitWidth: shouldBeVisible
         ? (vertical
@@ -169,11 +175,11 @@ property int padding: (!isContainer || forceNoContainer || unifyInside) ? 0 : 6
         : 0
 
     Behavior on implicitWidth {
-        enabled: root.enableSizeAnimation
+        enabled: root.enableSizeAnimation && enableAnimations
         NumberAnimation { duration: root.sizeAnimDuration; easing.type: Easing.OutCubic }
     }
     Behavior on implicitHeight {
-        enabled: root.enableSizeAnimation
+        enabled: root.enableSizeAnimation && enableAnimations
         NumberAnimation { duration: root.sizeAnimDuration; easing.type: Easing.OutCubic }
     }
 

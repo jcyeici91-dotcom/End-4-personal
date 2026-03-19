@@ -108,7 +108,7 @@
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/08.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -119,12 +119,12 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "numbers",
-                    "hourHandStyle": "classic",
+                    "dialNumberStyle": "full",
+                    "hourHandStyle": "hollow",
                     "hourMarks": false,
-                    "minuteHandStyle": "classic",
+                    "minuteHandStyle": "medium",
                     "secondHandStyle": "classic",
-                    "sides": 9,
+                    "sides": 14,
                     "timeIndicators": false
                 },
                 "digital": {
@@ -197,7 +197,7 @@
         "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 0,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
         "groupBackgroundStyle": "hybrid",
         "indicators": {
