@@ -95,19 +95,65 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "more"
+        title: Translation.tr("Extra")
+
+        ConfigSwitch {
+            buttonIcon: "buttons_alt"
+            text: Translation.tr("Toggle Hyprland window rounding with rounding style")
+            checked: Config.options.appearance.toggleWindowRounding
+            onCheckedChanged: {
+                Config.options.appearance.toggleWindowRounding = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Changes the window rounding to match the selected rounding style\nSo window rounding does not look cursed on 'no rounding' mode")
+            }
+        }   
+    }
+
+    ContentSection {
         icon: "text_format"
         title: Translation.tr("Fonts")
+
+        ConfigSwitch {
+            buttonIcon: "custom_typography"
+            text: Translation.tr("Enable custom fonts")
+            checked: Config.options.appearance.fonts.enableCustom
+            onCheckedChanged: {
+                Config.options.appearance.fonts.enableCustom = checked;
+                if (checked) {
+                    Config.options.appearance.fonts.main = Persistent.states.settings.fonts.main;
+                    Config.options.appearance.fonts.numbers = Persistent.states.settings.fonts.numbers;
+                    Config.options.appearance.fonts.title = Persistent.states.settings.fonts.title;
+                    Config.options.appearance.fonts.monospace = Persistent.states.settings.fonts.monospace;
+                    Config.options.appearance.fonts.iconNerd = Persistent.states.settings.fonts.iconNerd;
+                    Config.options.appearance.fonts.reading = Persistent.states.settings.fonts.reading;
+                    Config.options.appearance.fonts.expressive = Persistent.states.settings.fonts.expressive;
+                } else {
+                    Config.options.appearance.fonts.main = "Google Sans Flex";
+                    Config.options.appearance.fonts.numbers = "Google Sans Flex";
+                    Config.options.appearance.fonts.title = "Google Sans Flex";
+                    Config.options.appearance.fonts.iconNerd = "JetBrains Mono NF";
+                    Config.options.appearance.fonts.monospace = "JetBrains Mono NF";
+                    Config.options.appearance.fonts.reading = "Readex Pro";
+                    Config.options.appearance.fonts.expressive = "Space Grotesk";
+                }
+            }
+        }
 
         ContentSubsection {
             title: Translation.tr("Main font")
             tooltip: Translation.tr("Used for general UI text")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Google Sans Flex)")
-                text: Config.options.appearance.fonts.main
+                text: Persistent.states.settings.fonts.main
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.main = text;
                     Config.options.appearance.fonts.main = text;
                 }
             }
@@ -118,11 +164,14 @@ ContentPage {
             tooltip: Translation.tr("Used for displaying numbers")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name")
-                text: Config.options.appearance.fonts.numbers
+                text: Persistent.states.settings.fonts.numbers
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.numbers = text;
                     Config.options.appearance.fonts.numbers = text;
                 }
             }
@@ -133,11 +182,14 @@ ContentPage {
             tooltip: Translation.tr("Used for headings and titles")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name")
-                text: Config.options.appearance.fonts.title
+                text: Persistent.states.settings.fonts.title
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.title = text;
                     Config.options.appearance.fonts.title = text;
                 }
             }
@@ -148,11 +200,14 @@ ContentPage {
             tooltip: Translation.tr("Used for code and terminal")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
-                text: Config.options.appearance.fonts.monospace
+                text: Persistent.states.settings.fonts.monospace
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.monospace = text;
                     Config.options.appearance.fonts.monospace = text;
                 }
             }
@@ -163,11 +218,14 @@ ContentPage {
             tooltip: Translation.tr("Font used for Nerd Font icons")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
-                text: Config.options.appearance.fonts.iconNerd
+                text: Persistent.states.settings.fonts.iconNerd
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.iconNerd = text;
                     Config.options.appearance.fonts.iconNerd = text;
                 }
             }
@@ -178,11 +236,14 @@ ContentPage {
             tooltip: Translation.tr("Used for reading large blocks of text")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Readex Pro)")
-                text: Config.options.appearance.fonts.reading
+                text: Persistent.states.settings.fonts.reading
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.reading = text;
                     Config.options.appearance.fonts.reading = text;
                 }
             }
@@ -193,17 +254,17 @@ ContentPage {
             tooltip: Translation.tr("Used for decorative/expressive text")
 
             MaterialTextArea {
+                enabled: Config.options.appearance.fonts.enableCustom
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Space Grotesk)")
-                text: Config.options.appearance.fonts.expressive
+                text: Persistent.states.settings.fonts.expressive
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {
+                    if (!enabled) return
+                    Persistent.states.settings.fonts.expressive = text;
                     Config.options.appearance.fonts.expressive = text;
                 }
             }
         }
     }
-
-
-
 }

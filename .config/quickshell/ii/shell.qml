@@ -76,6 +76,6 @@ ShellRoot {
 
         onPressed: root.cyclePanelFamily()
     }
-         SessionMod.SessionWrapper {}
+             SessionMod.SessionWrapper {}
 }
 

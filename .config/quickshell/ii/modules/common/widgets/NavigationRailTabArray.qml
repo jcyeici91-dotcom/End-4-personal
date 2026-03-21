@@ -8,6 +8,9 @@ Item {
     property int currentIndex: 0
     property bool expanded: false
     default property alias data: tabBarColumn.data  
+    property bool _isInitialized: false
+    Component.onCompleted: _isInitialized = true
+
     implicitHeight: tabBarColumn.implicitHeight
     implicitWidth: tabBarColumn.implicitWidth
     Layout.topMargin: 25
@@ -26,10 +29,14 @@ Item {
         implicitWidth: tabBarColumn?.children[root.currentIndex]?.visualWidth ?? 100
 
         Behavior on implicitWidth {
+            enabled: root._isInitialized
+
             animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
         }
 
         Behavior on anchors.topMargin {
+            enabled: root._isInitialized
+
             NumberAnimation {
                 duration: Appearance.animationCurves.expressiveFastSpatialDuration
                 easing.type: Appearance.animation.elementMove.type

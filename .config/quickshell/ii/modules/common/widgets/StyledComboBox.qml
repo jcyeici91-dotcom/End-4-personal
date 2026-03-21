@@ -11,7 +11,7 @@ ComboBox {
     id: root
 
     property string buttonIcon: ""
-    property real buttonRadius: height / 2
+    property real buttonRadius: Appearance.rounding.full
     property real topLeftRadius: buttonRadius
     property real topRightRadius: buttonRadius
     property real bottomLeftRadius: buttonRadius

@@ -6,7 +6,7 @@ import QtQuick.Shapes
 Item {
     id: root
 
-    // INTERRUPTOR MAESTRO 
+    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     property bool vertical: false
@@ -68,6 +68,10 @@ Item {
     readonly property bool useHybridBg: groupBackgroundStyle === "hybrid"
     readonly property bool useLineBg: groupBackgroundStyle === "line"
     readonly property bool useNotchBg: groupBackgroundStyle === "notch" && !vertical
+
+    // 👇 NUEVO: Detecta la combinación Glass + Line 👇
+    readonly property bool isGlassMode: (Config.options?.bar?.barBackgroundStyle === 0)
+    readonly property bool isGlassLineEffect: isGlassMode && useLineBg
 
     readonly property bool isBottom: (Config.options?.bar?.bottom ?? false)
 
@@ -204,9 +208,23 @@ Item {
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
 
         sourceComponent: {
+            // 👇 LLAMADA A NUESTRO NUEVO COMPONENTE 👇
+            if (root.isGlassLineEffect) return glassLineBackgroundComponent
+            
             if (root.useLineBg) return lineBackgroundComponent
             if (root.useNotchBg) return notchBackgroundComponent
             return (root.useRectBg || root.cornerIsRect) ? rectBackgroundComponent : roundedBackgroundComponent
+        }
+    }
+
+    // 👇 EL COMPONENTE QUE INYECTA EL EFECTO 👇
+    Component {
+        id: glassLineBackgroundComponent
+        GlassLineBackground {
+            isBottom: root.isBottom
+            themeIsDark: root.themeIsDark
+            effectiveShowBorder: root.effectiveShowBorder && root.isContainer && !root.isBorderless
+            borderOpacity: root.borderOpacity
         }
     }
 

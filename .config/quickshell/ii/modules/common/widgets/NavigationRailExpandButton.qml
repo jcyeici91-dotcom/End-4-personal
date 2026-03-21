@@ -13,9 +13,14 @@ RippleButton {
         parent.expanded = !parent.expanded;
     }
     buttonRadius: Appearance.rounding.full
+    property bool _isInitialized: false
+    Component.onCompleted: _isInitialized = true
+
 
     rotation: root.parent.expanded ? 0 : -180
     Behavior on rotation {
+        enabled: root._isInitialized
+
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 

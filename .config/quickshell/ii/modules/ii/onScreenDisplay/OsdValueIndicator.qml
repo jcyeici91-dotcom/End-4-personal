@@ -18,10 +18,9 @@ Item {
     property real valueIndicatorRightPadding: 15 // An icon is circle ish, a column isn't, hence the extra padding
 
     implicitWidth: Appearance.sizes.osdWidth + 2 * Appearance.sizes.elevationMargin
-    implicitHeight: valueIndicator.implicitHeight + Appearance.sizes.elevationMargin * 2
+    implicitHeight: valueIndicator.implicitHeight + 2 * Appearance.sizes.elevationMargin
 
     StyledRectangularShadow {
-        visible: !Config.options.appearance.panelAnimation.enableBackgroundAnimation
         target: valueIndicator
     }
     Rectangle {
@@ -52,10 +51,7 @@ Item {
 
                 MaterialShapeWrappedMaterialSymbol {
                     rotation: root.value * 360
-                    anchors {
-                        fill: parent
-                        margins: -5
-                    }
+                    anchors.centerIn: parent
                     iconSize: Appearance.font.pixelSize.huge
                     shape: root.shape
                     text: root.icon
@@ -84,7 +80,7 @@ Item {
                         Layout.preferredWidth: 30
                         horizontalAlignment: Text.AlignRight
                         text: Math.round(root.value * 100)
-                        animateChange: false
+                        animateChange: true
                         animationDistanceY: 2 // for faster animation than default
                         
                     }

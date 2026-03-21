@@ -38,11 +38,14 @@ Slider {
     property color dotColorHighlighted: Appearance.m3colors.m3onPrimary
     property real unsharpenRadius: Appearance.rounding.unsharpen
     property real trackWidth: configuration
-    property real trackRadius: trackWidth >= StyledSlider.Configuration.XL ? 21
+
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
+    property real trackRadius: sharpMode ? 0 : trackWidth >= StyledSlider.Configuration.XL ? 21
         : trackWidth >= StyledSlider.Configuration.L ? 12
         : trackWidth >= StyledSlider.Configuration.M ? 9
         : trackWidth >= StyledSlider.Configuration.S ? 6
         : height / 2
+        
     property real handleHeight: (configuration === StyledSlider.Configuration.Wavy) ? 24 : (configuration === StyledSlider.Configuration.X0) ? 14 : Math.max(33, trackWidth + 9)
     property real handleWidth: root.pressed ? handlePressedWidth : handleDefaultWidth
     property real handleMargins: 4

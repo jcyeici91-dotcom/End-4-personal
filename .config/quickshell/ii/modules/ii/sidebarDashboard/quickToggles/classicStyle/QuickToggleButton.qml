@@ -9,7 +9,9 @@ GroupButton {
     baseHeight: 40
     clickedWidth: baseWidth + 20
     toggled: false
-    buttonRadius: (altAction && toggled) ? Appearance?.rounding.normal : Math.min(baseHeight, baseWidth) / 2
+
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
+    buttonRadius: (altAction && toggled) ? Appearance?.rounding.normal : sharpMode ? 0 : Math.min(baseHeight, baseWidth) / 2
     buttonRadiusPressed: Appearance?.rounding?.small
 
     contentItem: MaterialSymbol {

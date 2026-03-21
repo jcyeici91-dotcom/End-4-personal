@@ -43,6 +43,8 @@ RippleButton {
     property bool loaded: false
     property bool shouldLoad: false
 
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
+
     colBackground: toggled ? Appearance.colors.colPrimaryContainer : Appearance.colors.colLayer2
     colBackgroundHover: toggled ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colLayer2Hover
     colRipple: toggled ? Appearance.colors.colPrimaryContainerActive : Appearance.colors.colLayer2Active
@@ -125,27 +127,45 @@ RippleButton {
                 var radius = width / 2;
 
                 ctx.reset();
-                ctx.beginPath();
-                ctx.fillStyle = root.primaryColor;
-                ctx.moveTo(centerX, centerY);
-                
-                ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-                ctx.closePath();
-                ctx.fill();
 
-                ctx.beginPath();
-                ctx.fillStyle = root.secondaryColor;
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, 0, Math.PI / 2, false);
-                ctx.closePath();
-                ctx.fill();
+                // there should be a better way than this...
+                if (root.sharpMode) {
+                    ctx.beginPath();
+                    ctx.fillStyle = root.primaryColor;
+                    ctx.rect(0, 0, width, centerY);
+                    ctx.fill();
 
-                ctx.beginPath();
-                ctx.fillStyle = root.tertiaryColor;
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, Math.PI / 2, Math.PI, false);
-                ctx.closePath();
-                ctx.fill();
+                    ctx.beginPath();
+                    ctx.fillStyle = root.secondaryColor;
+                    ctx.rect(centerX, centerY, centerX, centerY);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.fillStyle = root.tertiaryColor;
+                    ctx.rect(0, centerY, centerX, centerY);
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.fillStyle = root.primaryColor;
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.fillStyle = root.secondaryColor;
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI / 2, false);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.fillStyle = root.tertiaryColor;
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, Math.PI / 2, Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
         }
 

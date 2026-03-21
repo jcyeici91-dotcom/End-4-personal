@@ -14,7 +14,6 @@ import Quickshell.Hyprland
 Item {
     id: root
     property bool hyprscrollingEnabled: false //FIXME
-    property int maxWorkspaceWidth: Config.options.overview.hyprscrollingImplementation.maxWorkspaceWidth
     property int minWorkspaceWidth: (monitorData?.transform % 2 === 1) ? 
         ((monitor.height - monitorData?.reserved[0] - monitorData?.reserved[2]) * root.scale / monitor.scale) :
         ((monitor.width - monitorData?.reserved[0] - monitorData?.reserved[2]) * root.scale / monitor.scale)
@@ -57,7 +56,7 @@ Item {
     function getMaxWidth() {
         if (widthMap.length === 0) return minWorkspaceWidth;
         const max = Math.max(...widthMap);
-        return Math.min(max, maxWorkspaceWidth);
+        return max;
     }
 
     property real workspaceNumberMargin: 80

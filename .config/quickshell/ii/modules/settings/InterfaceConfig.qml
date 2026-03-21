@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -11,20 +12,6 @@ ContentPage {
     readonly property int index: 4
     property bool register: parent.register ?? false
     forceWidth: true
-
-    ContentSection {
-        icon: "model_training"
-        title: Translation.tr("AI")
-
-        ConfigSwitch {
-            buttonIcon: "buttons_alt"
-            text: Translation.tr("Show provider and model buttons")
-            checked: Config.options.sidebar.ai.showProviderAndModelButtons
-            onCheckedChanged: {
-                Config.options.sidebar.ai.showProviderAndModelButtons = checked;
-            }
-        }
-    }
 
     ContentSection {
         icon: "keyboard"
@@ -118,48 +105,6 @@ ContentPage {
             }
         }
     }
-
-    ContentSection {
-        icon: "transition_slide"
-        title: Translation.tr("Panel animation")
-
-        ConfigSwitch {
-            buttonIcon: "animation"
-            text: Translation.tr("Enable background animation")
-            checked: Config.options.appearance.panelAnimation.enableBackgroundAnimation
-            onCheckedChanged: {
-                Config.options.appearance.panelAnimation.enableBackgroundAnimation = checked;
-            }
-        }
-
-        ConfigRow {
-            ConfigSpinBox {
-                enabled: Config.options.appearance.panelAnimation.enableBackgroundAnimation
-                icon: "clock_arrow_down"
-                text: Translation.tr("Enter duration")
-                value: Config.options.appearance.panelAnimation.enterDuration
-                from: 200
-                to: 1000
-                stepSize: 50
-                onValueChanged: {
-                    Config.options.appearance.panelAnimation.enterDuration = value;
-                }
-            }
-            ConfigSpinBox {
-                enabled: Config.options.appearance.panelAnimation.enableBackgroundAnimation
-                icon: "clock_arrow_up"
-                text: Translation.tr("Exit duration")
-                value: Config.options.appearance.panelAnimation.exitDuration
-                from: 200
-                to: 1000
-                stepSize: 50
-                onValueChanged: {
-                    Config.options.appearance.panelAnimation.exitDuration = value;
-                }
-            }
-        }
-    }
-
     ContentSection {
         icon: "call_to_action"
         title: Translation.tr("Dock")
@@ -200,6 +145,20 @@ ContentPage {
                 Config.options.dock.monochromeIcons = checked;
             }
         }
+    }
+
+    ContentSection {
+        icon: "more"
+        title: Translation.tr("Extra")
+
+        ConfigSwitch {
+            buttonIcon: "buttons_alt"
+            text: Translation.tr("Show AI provider and model buttons")
+            checked: Config.options.sidebar.ai.showProviderAndModelButtons
+            onCheckedChanged: {
+                Config.options.sidebar.ai.showProviderAndModelButtons = checked;
+            }
+        }    
     }
 
     ContentSection {
@@ -609,7 +568,6 @@ ContentPage {
                 title: Translation.tr("Sidebar position")
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.sidebar.position
                     onSelected: newValue => {
                         Config.options.sidebar.position = newValue;
@@ -644,7 +602,6 @@ ContentPage {
             title: Translation.tr("Quick toggles")
             
             ConfigSelectionArray {
-                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.sidebar.quickToggles.style
                 onSelected: newValue => {
@@ -860,23 +817,10 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "check"
                 text: Translation.tr("Enable")
-                Layout.fillWidth: false
                 checked: Config.options.overview.enable
                 onCheckedChanged: {
                     Config.options.overview.enable = checked;
                 }
-            }
-        }
-
-        ConfigSpinBox {
-            icon: "border_top"
-            text: Translation.tr("Center top padding ratio")
-            value: Config.options.overview.centerTopPaddingRatio
-            from: 1
-            to: 10
-            stepSize: 1
-            onValueChanged: {
-                Config.options.overview.centerTopPaddingRatio = value;
             }
         }
         
@@ -925,31 +869,6 @@ ContentPage {
             }
         }
 
-
-        ContentSubsection {
-            title: Translation.tr("Overview style")
-
-            ConfigSelectionArray {
-                register: true
-                currentValue: Config.options.overview.style
-                onSelected: newValue => {
-                    Config.options.overview.style = newValue
-                }
-                options: [
-                    {
-                        displayName: Translation.tr("Classic"),
-                        icon: "radio",
-                        value: "classic"
-                    },
-                    {
-                        displayName: Translation.tr("Scrolling"),
-                        icon: "calendar_view_day",
-                        value: "scrolling"
-                    }
-                ]
-            }
-        }
-
         ConfigRow {
             ConfigSwitch {
                 buttonIcon: "high_density"
@@ -989,7 +908,6 @@ ContentPage {
         
         ContentSubsection {
             title: Translation.tr("Classic overview style")
-            visible: Config.options.overview.style === "classic"
             ConfigRow {
                 uniform: true
                 ConfigSpinBox {
@@ -1016,22 +934,9 @@ ContentPage {
                 }
             }
 
-            ConfigSpinBox {
-                icon: "width"
-                text: Translation.tr("Max workspace width")
-                value: Config.options.overview.hyprscrollingImplementation.maxWorkspaceWidth
-                from: 100
-                to: 1900
-                stepSize: 100
-                onValueChanged: {
-                    Config.options.overview.hyprscrollingImplementation.maxWorkspaceWidth = value;
-                }
-            }
-
             ConfigRow {
                 uniform: true
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.overview.orderRightLeft
                     onSelected: newValue => {
                         Config.options.overview.orderRightLeft = newValue
@@ -1050,7 +955,6 @@ ContentPage {
                     ]
                 }
                 ConfigSelectionArray {
-                    register: true
                     Layout.leftMargin: 50
                     currentValue: Config.options.overview.orderBottomUp
                     onSelected: newValue => {
@@ -1087,10 +991,8 @@ ContentPage {
 
 
         ContentSubsection {
-            title: Translation.tr("Background style")
-            visible: Config.options.overview.style === "scrolling"
+            title: Translation.tr("Scrolling overview style")
             ConfigSelectionArray {
-                register: true
                 currentValue: Config.options.overview.scrollingStyle.backgroundStyle
                 onSelected: newValue => {
                     Config.options.overview.scrollingStyle.backgroundStyle = newValue

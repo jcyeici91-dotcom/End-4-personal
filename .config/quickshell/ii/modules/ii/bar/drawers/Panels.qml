@@ -1,6 +1,6 @@
 import qs
 import qs.modules.ii.onScreenDisplay.drawer as Osd
-import qs.modules.ii.overview.drawer as SearchOverview
+//import qs.modules.ii.overview.drawer as SearchOverview
 import Quickshell
 import QtQuick
 
@@ -10,7 +10,7 @@ Item {
     required property ShellScreen screen
 
     readonly property alias osd: osd
-    readonly property alias searchOverview: searchOverview
+    // readonly property alias searchOverview: searchOverview
     required property var visibilities
 
     anchors.fill: parent
@@ -26,14 +26,14 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
     }
 
-    SearchOverview.Wrapper {
-        id: searchOverview
-        shown: root.visibilities.searchOverview
-        opacity: visible ? 1 : 0
+    //SearchOverview.Wrapper {
+      //  id: searchOverview
+       // shown: root.visibilities.searchOverview
+       // opacity: visible ? 1 : 0
 
-        screen: root.screen
+       // screen: root.screen
 
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
+       // anchors.top: parent.top
+   //     anchors.horizontalCenter: parent.horizontalCenter
+  //  }
 }

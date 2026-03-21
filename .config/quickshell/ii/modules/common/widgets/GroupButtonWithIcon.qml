@@ -12,7 +12,8 @@ GroupButton {
     baseWidth: content.implicitWidth + 46
     clickedWidth: baseWidth + 6
 
-    buttonRadius: baseHeight / 2
+    readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : baseHeight / 2
+    buttonRadius: fullRadius
     buttonRadiusPressed: Appearance.rounding.small
     colBackground: Appearance.colors.colLayer2
     colBackgroundHover: Appearance.colors.colLayer2Hover

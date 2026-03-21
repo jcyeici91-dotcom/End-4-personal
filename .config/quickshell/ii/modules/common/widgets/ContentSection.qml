@@ -16,14 +16,6 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: 6
 
-    Timer {
-        id: registerDelayTimer
-        interval: 250
-        onTriggered: {
-            
-        }
-    }
-
     Component.onCompleted: {
         if (page?.register == false) return
         // console.log("KEYWORDS", root.stringMap)

@@ -30,7 +30,7 @@ Singleton {
         let y = 0.5768 * (x * x) - 0.759 * (x) + 0.2896
         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
     }
-    property real autoContentTransparency: 0
+    property real autoContentTransparency: 0.9
     property real backgroundTransparency: Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
     property real contentTransparency: Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
 
@@ -199,17 +199,16 @@ Singleton {
     }
 
     rounding: QtObject {
-        property int unsharpen: 2
-        property int unsharpenmore: 6
-        property int verysmall: 8
-        property int small: 12
-        property int normal: 17
-        property int large: 23
-        property int verylarge: 30
-        property int full: 9999
+        property int unsharpen: Config.options.appearance.sharpMode ? 0 : 2
+        property int unsharpenmore: Config.options.appearance.sharpMode ? 0 : 6
+        property int verysmall: Config.options.appearance.sharpMode ? 0 : 8
+        property int small: Config.options.appearance.sharpMode ? 0 : 12
+        property int normal: Config.options.appearance.sharpMode ? 0 : 17
+        property int large: Config.options.appearance.sharpMode ? 0 : 23
+        property int verylarge: Config.options.appearance.sharpMode ? 0 : 30
+        property int full: Config.options.appearance.sharpMode ? 0 : 9999
         property int screenRounding: large
-        property int drawingPanelRounding: large
-        property int windowRounding: 18
+        property int windowRounding: Config.options.appearance.sharpMode ? 0 : 18
     }
 
     font: QtObject {
@@ -237,8 +236,8 @@ Singleton {
         }
         property QtObject pixelSize: QtObject {
             property int smallest: 10
-            property int smaller: 13
-            property int smallie: 14
+            property int smaller: 12
+            property int smallie: 13
             property int small: 15
             property int normal: 16
             property int large: 17

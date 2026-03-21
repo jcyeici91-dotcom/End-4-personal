@@ -34,7 +34,8 @@ Item {
         color: Appearance.m3colors.m3surfaceContainer
         implicitHeight: 56
         implicitWidth: toolbarLayout.implicitWidth + root.padding * 2
-        radius: height / 2
+        readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : height / 2
+        radius: fullRadius
 
         RowLayout {
             id: toolbarLayout

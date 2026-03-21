@@ -687,12 +687,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         } else if (messageInputField.text.startsWith(`${root.commandPrefix}provider`)) {
                             root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
                             
-                            const providers = ["google", "openrouter", "mistral"];
-                            const providerDescriptions = {
-                                "google": {displayName: "Google", description: "Google's LLM"},
-                                "openrouter": {displayName: "OpenRouter", description: "OpenRouter's LLM"},
-                                "mistral": {displayName: "Mistral", description: "Mistral's LLM"}
-                            };
+                            const providers = Object.keys(Ai.models)
                             
                             const providerResults = Fuzzy.go(root.suggestionQuery, providers.map(p => ({
                                 name: Fuzzy.prepare(p),
@@ -704,10 +699,10 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                             
                             root.suggestionList = providerResults.map(result => {
                                 const providerName = result.target;
-                                const providerInfo = providerDescriptions[providerName];
+                                const providerInfo = Ai.models[providerName];
                                 return {
                                     name: `${messageInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "provider ") : ""}${providerName}`,
-                                    displayName: providerInfo.displayName,
+                                    displayName: providerInfo.name.split(" -")[0], // Remove " - model name"
                                     description: providerInfo.description
                                 };
                             });

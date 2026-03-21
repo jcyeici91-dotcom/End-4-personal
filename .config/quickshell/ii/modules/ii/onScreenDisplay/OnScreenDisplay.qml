@@ -33,12 +33,6 @@ Scope {
 
     function triggerOsd() {
         GlobalStates.osdVolumeOpen = true;
-
-        if (Config.options.appearance.panelAnimation.enableBackgroundAnimation) {
-            const visibilities = Visibilities.getForActive();
-            visibilities.osd = GlobalStates.osdVolumeOpen;
-        }
-        
         osdTimeout.restart();
     }
 
@@ -48,19 +42,8 @@ Scope {
         repeat: false
         running: false
         onTriggered: {
-            if (!Config.options.appearance.panelAnimation.enableBackgroundAnimation) {
-                GlobalStates.osdVolumeOpen = false;
-                root.protectionMessage = "";
-                return;
-            }
-            
-            const visibilities = Visibilities.getAll();
-            for (var screen of visibilities) {
-                screen.osd = false;
-            }
-
-            GlobalStates.osdBrightnessOpen = false;
             GlobalStates.osdVolumeOpen = false;
+            root.protectionMessage = "";
         }
     }
 
@@ -113,7 +96,7 @@ Scope {
 
     Loader {
         id: osdLoader
-        active: !Config.options.appearance.panelAnimation.enableBackgroundAnimation && GlobalStates.osdVolumeOpen
+        active: GlobalStates.osdVolumeOpen
 
         sourceComponent: PanelWindow {
             id: osdRoot
@@ -230,46 +213,11 @@ Scope {
         }
 
         function hide() {
-            if (!Config.options.appearance.panelAnimation.enableBackgroundAnimation) {
-                GlobalStates.osdVolumeOpen = false;
-                root.protectionMessage = "";
-                return;
-            }
-
-            const visibilities = Visibilities.getAll();
-            for (var screen of visibilities) {
-                screen.osd = false;
-            }
-
-            GlobalStates.osdBrightnessOpen = false;
             GlobalStates.osdVolumeOpen = false;
-            root.protectionMessage = "";
         }
 
         function toggle() {
-            if (Config.options.appearance.panelAnimation.enableBackgroundAnimation) {
-                const visibilities = Visibilities.getForActive();
-                visibilities.osd = !visibilities.osd;
-
-                GlobalStates.osdVolumeOpen = visibilities.osd;
-
-                if (visibilities.osd) {
-                    root.protectionMessage = "";
-                    osdTimeout.restart();
-                } else {
-                    // Mirror timeout handler's cleanup for immediate hide
-                    GlobalStates.osdBrightnessOpen = false;
-                }
-            } else {
-                GlobalStates.osdVolumeOpen = !GlobalStates.osdVolumeOpen;
-
-                if (GlobalStates.osdVolumeOpen) {
-                    root.protectionMessage = "";
-                    osdTimeout.restart();
-                } else {
-                    root.protectionMessage = "";
-                }
-            }
+            GlobalStates.osdVolumeOpen = !GlobalStates.osdVolumeOpen;
         }
     }
     GlobalShortcut {

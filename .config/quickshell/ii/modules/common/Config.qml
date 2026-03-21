@@ -105,11 +105,17 @@ Singleton {
             }
 
             property JsonObject appearance: JsonObject {
-                property bool enableAnimations: false 
+                // 👇 AQUI AGREGAMOS LA VARIABLE PARA EL INTERRUPTOR DE ANIMACIONES 👇
+                property bool enableAnimations: false
+                // 👆 ----------------------------------------------------------- 👆
+                
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen | 3: Wrapped
                 property int wrappedFrameThickness: 10
+                property bool sharpMode: false
+                property bool toggleWindowRounding: true // Changes Hyprland window rounding to 0 if sharpMode is true
                 property JsonObject fonts: JsonObject {
+                    property bool enableCustom: false
                     property string main: "Google Sans Flex"
                     property string numbers: "Google Sans Flex"
                     property string title: "Google Sans Flex"
@@ -140,11 +146,6 @@ Singleton {
                     property string accentColor: ""
                 }
                 property list<string> customColorSchemes: []
-                property JsonObject panelAnimation: JsonObject {
-                    property bool enableBackgroundAnimation: true
-                    property int enterDuration: 450
-                    property int exitDuration: 500
-                }
             }
 
             property JsonObject audio: JsonObject {
@@ -170,6 +171,7 @@ Singleton {
             }
 
             property JsonObject background: JsonObject {
+                property bool enable: true // if someone wants to use an external wallpaper manager, note that its not fully tested but it should just disable background.qml from being loaded
                 property JsonObject widgets: JsonObject {
                     property JsonObject clock: JsonObject {
                         property bool enable: true
@@ -200,6 +202,8 @@ Singleton {
                             property bool showDate: true
                             property bool animateChange: true
                             property bool vertical: false
+                            property bool colorful: false
+                            property bool showColon: true
                             property JsonObject font: JsonObject {
                                 property string family: "Google Sans Flex"
                                 property real weight: 350
@@ -253,11 +257,16 @@ Singleton {
                     property real widgetsFactor: 1.2
                 }
                 property JsonObject mediaMode: JsonObject {
+                property bool enable: false
                     property bool togglePerMonitor: false
                     property string backgroundShape: "Square"
                     property bool enableBackgroundAnimation: true // It **may** cause nausea for someone
                     property bool changeShellColor: true // Changes the shell color to the album color
+                    
+                    // 👇 AQUI AGREGAMOS LA VARIABLE PARA EL EFECTO WAVE (VISUALIZER) 👇
                     property bool showVisualizer: true
+                    // 👆 ----------------------------------------------------------- 👆
+                    
                     property JsonObject backgroundAnimation: JsonObject {
                         property bool enable: true
                         property int speedScale: 10 // 1: very slow, 10: default, 20: 2x speed etc.
@@ -286,7 +295,7 @@ Singleton {
                 
                 property bool bottom: false // Instead of top
                 
-                      // prueba 
+                    // prueba 
                     // 0: Hug | 1: Float | 2: Rect | 3: Hybrid (Notch)
                 property int cornerStyle: 0
 
@@ -305,13 +314,12 @@ Singleton {
                 
                 // fin prueba 
                 
+                
                 property JsonObject mediaPlayer: JsonObject {
-                    property bool useCustomSize: false
-                    property bool useColumnLayout: true
+                    property bool useFixedSize: false
                     property int customSize: 250
-                    property int updateInterval: 1000
                     property JsonObject lyrics: JsonObject {
-                        property bool enable: true
+                        property bool enable: false
                         property int customSize: 400
                         property string style: "scroller" // Options: scroller, static
                         property bool useGradientMask: true
@@ -324,10 +332,13 @@ Singleton {
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                    
+                    // 👇 AQUI AGREGAMOS LAS VARIABLES DEL SYSTEM MONITOR (CPU, RAM, TEMP, GIF) 👇
                     property bool showCpu: true
                     property bool showRam: true
                     property bool showTemperature: true
-                    property bool showCat: true // NUEVO: Control independiente para el GIF
+                    property bool showCat: true
+                    // 👆 -------------------------------------------------------------------- 👆
                 }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 
@@ -356,6 +367,7 @@ Singleton {
                     property int maxWindowCount: 5 // Maximum windows to show in one workspace
                     property bool useNerdFont: false
                     property int activeIndicatorOpacity: 100 // 0-100
+                    property bool dynamicWorkspaces: false
                 }
                 property JsonObject weather: JsonObject {
                     property bool enable: false
@@ -370,102 +382,22 @@ Singleton {
                     }
                 }
                 property JsonObject layouts: JsonObject {
-                    // Only adding place-essential components to left-center-right
-                    // And adding the dynamic components to leftover
-                    property list<var> availableComps: [
-                        {
-                            id: "record_indicator", 
-                            icon: "screen_record", 
-                            title: "Record indicator", 
-                            centered: false, // centered or not (only in center section)
-                            visible: false, 
-                            scrollTo: "" // scroll to this component when clicked (has also to be configured in BarConfig)
-                        },
-                        {
-                            id: "screen_share_indicator",
-                            icon: "screen_share",
-                            title: "Screen share indicator",
-                            centered: false,
-                            visible: false,
-                            scrollTo: ""
-                        },
-                        {
-                            id: "date",
-                            icon: "date_range",
-                            title: "Date",
-                            centered: false,
-                            visible: true,
-                            scrollTo: ""
-                        },
-                        {
-                            id: "battery",
-                            icon: "battery_android_6",
-                            title: "Battery",
-                            centered: false,
-                            visible: true,
-                            scrollTo: ""
-                        },
-                        {
-                            id: "timer",
-                            icon: "timer",
-                            title: "Timer & Pomodoro",
-                            centered: false,
-                            visible: true,
-                            scrollTo: "timerAndPomodoro"
-                        },
-                        {
-                            id: "weather",
-                            icon: "weather_mix",
-                            title: "Weather",
-                            centered: false,
-                            visible: true,
-                            scrollTo: ""
-                        },
-                        {
-                            id: "utility_buttons",
-                            icon: "build",
-                            title: "Utility buttons",
-                            centered: false,
-                            visible: true,
-                            scrollTo: "utility_buttons"
-                        }
-                    ]
+                    // Only storing id and layout-specific flags (visible, centered)
+                    // Component display info (icon, title) comes from BarComponentRegistry
                     property list<var> left: [
-                        { id: "policies_panel_button", icon: "star", title: "Policies panel button" },
-                        { id: "active_window", icon: "label", title: "Active window" }
+                        { id: "policies_panel_button" },
+                        { id: "active_window" }
                     ]
                     property list<var> center: [
-                        {
-                            id: "music_player",
-                            icon: "music_note",
-                            title: "Music player",
-                            centered: false,
-                            visible: true,
-                            scrollTo: "music_player"
-                        },
-                        {
-                            id: "workspaces",
-                            icon: "workspaces",
-                            title: "Workspaces",
-                            centered: true,
-                            visible: true,
-                            scrollTo: "workspaces"
-                        },
-                        {
-                            id: "system_monitor",
-                            icon: "monitor_heart",
-                            title: "System monitor",
-                            centered: false,
-                            visible: true,
-                            scrollTo: "system_monitor"
-                        }
+                        { id: "music_player" },
+                        { id: "workspaces", centered: true },
+                        { id: "system_monitor" }
                     ]
                     property list<var> right: [
-                        { id: "clock", icon: "nest_clock_farsight_analog", title: "Clock" }, 
-                        { id: "system_tray", icon: "system_update_alt", title: "System tray" },
-                        { id: "dashboard_panel_button", icon: "notifications", title: "Dashboard panel button" }
+                        { id: "clock" },
+                        { id: "system_tray" },
+                        { id: "dashboard_panel_button" }
                     ]
-
                 }
                 property JsonObject tooltips: JsonObject {
                     property bool clickToShow: false
@@ -598,7 +530,7 @@ Singleton {
             }
 
             property JsonObject osd: JsonObject {
-                property int timeout: 2000
+                property int timeout: 2500
             }
 
             property JsonObject osk: JsonObject {
@@ -639,20 +571,12 @@ Singleton {
                 property list<var> workspaceMap: [0,10]
                 property bool showOpeningAnimation: true
 
-                property string style: "classic" // Options: classic, scrolling
-
-                property JsonObject hyprscrollingImplementation: JsonObject {
-                    property int maxWorkspaceWidth: 1200 //TODO: remove this too
-                }
                 property JsonObject scrollingStyle: JsonObject {
                     
                     property int dimPercentage: 50 // 0-75
                     property string backgroundStyle: "blur" // Options: transparent, blur, dim
                     property string zoomStyle: "in"         // Options: in, out
                 }
-                
-                property string position: "center" // Options: top, center, bottom
-                property int centerTopPaddingRatio: 3
             }
 
             property JsonObject regionSelector: JsonObject {
@@ -803,7 +727,6 @@ Singleton {
             property JsonObject time: JsonObject {
                 // https://doc.qt.io/qt-6/qtime.html#toString
                 property string format: "hh:mm"
-                property string formatSeconds: "hh:mm:ss"
                 property string shortDateFormat: "dd/MM"
                 property string longDateFormat: "dd/MM/yyyy"
                 property string dateWithYearFormat: "dd/MM/yyyy"
@@ -816,7 +739,7 @@ Singleton {
                     property int focus: 1500
                     property int longBreak: 900
                 }
-                property bool secondPrecision: true
+                property bool secondPrecision: false
             }
 
             property JsonObject updates: JsonObject {
@@ -828,6 +751,9 @@ Singleton {
             
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
+                property list<var> directories: [
+                    {"icon": "wallpaper", "name": "Wallpapers", "path": `${Directories.pictures}/Wallpapers`}
+                ]
             }
             
             property JsonObject windows: JsonObject {

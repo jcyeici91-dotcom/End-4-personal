@@ -390,9 +390,11 @@ Variants {
             }
         }
 
-        Component.onCompleted: {
-            Persistent.states.background.mediaMode.enabled = false 
-        }
+     //   Component.onCompleted: {
+     //       Persistent.states.background.mediaMode.enabled = false 
+     //   }
+
+        // ... (resto de tu código en Background.qml) ...
 
         GlobalShortcut {
             name: "mediaModeToggle"
@@ -401,15 +403,16 @@ Variants {
             onPressed: {
                 if (!monitor.focused && Config.options.background.mediaMode.togglePerMonitor) return
 
-                Persistent.states.background.mediaMode.enabled =
-                    !Persistent.states.background.mediaMode.enabled
+                // AHORA CAMBIAMOS EL ESTADO EN TU CONFIGURACIÓN
+                Config.options.background.mediaMode.enable = !Config.options.background.mediaMode.enable
             }
         }
         
         Loader {
             id: mediaModeVisualLoader
             anchors.fill: parent
-            active: Persistent.states.background.mediaMode.enabled
+            // AHORA EL LOADER LEE DESDE TU CONFIGURACIÓN
+            active: Config.options.background.mediaMode.enable
             asynchronous: true
             sourceComponent: MediaMode {}
             opacity: status === Loader.Ready ? 1 : 0
@@ -419,6 +422,7 @@ Variants {
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
         }
+        // ... (resto de tu código) ...
 
         WaveVisualizer {
             id: bottomVisualizer

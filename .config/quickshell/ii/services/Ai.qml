@@ -267,18 +267,18 @@ Singleton {
     // - extraParams: Extra parameters to be passed to the model. This is a JSON object.
     property var models: Config.options.policies.ai === 2 ? {} : {
         "openrouter": aiModelComponent.createObject(this, {
-            name: `OpenRouter - ${currentModel}`,
-            icon: "openrouter-symbolic",
-            description: Translation.tr("Online via %1 | %2's model")
+            "name": `OpenRouter - ${currentModel}`,
+            "icon": "openrouter-symbolic",
+            "description": Translation.tr("Online via %1 | %2's model")
                 .arg("OpenRouter")
                 .arg("Google"),
-            homepage: `https://openrouter.ai/google/${currentModel}`, 
-            endpoint: "https://openrouter.ai/api/v1/chat/completions",
-            model: `${getModelProvider(Persistent.states.ai.provider,currentModel)}/${currentModel}`,
-            requires_key: true,
-            key_id: "openrouter",
-            key_get_link: "https://openrouter.ai/settings/keys",
-            key_get_description: Translation.tr(
+            "homepage": `https://openrouter.ai/google/${currentModel}`, 
+            "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+            "model": `${getModelProvider(Persistent.states.ai.provider,currentModel)}/${currentModel}`,
+            "requires_key": true,
+            "key_id": "openrouter",
+            "key_get_link": "https://openrouter.ai/settings/keys",
+            "key_get_description": Translation.tr(
                 "**Pricing**: Pay-as-you-go (token based).\n\n" +
                 "**Instructions**: Log into your OpenRouter account, " +
                 "go to Keys in the top-right menu, and create an API key."
@@ -309,7 +309,7 @@ Singleton {
             "key_get_link": "https://console.mistral.ai/api-keys",
             "key_get_description": Translation.tr("**Instructions**: Log into Mistral account, go to Keys on the sidebar, click Create new key"),
             "api_format": "mistral",
-        }),
+        })
     }
     property var modelList: Object.keys(root.models)
     property var currentModelId: Persistent.states?.ai?.provider || modelList[0]

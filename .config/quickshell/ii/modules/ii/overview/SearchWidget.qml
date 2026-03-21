@@ -19,15 +19,11 @@ Item { // Wrapper
     readonly property int typingDebounceInterval: 200
     readonly property int typingResultLimit: 15 // Should be enough to cover the whole view
 
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
     property string searchingText: LauncherSearch.query
     property bool showResults: searchingText != ""
-    property string overviewPosition: Config.options.overview.position
     implicitWidth: searchWidgetContent.implicitWidth + Appearance.sizes.elevationMargin * 2
     implicitHeight: searchWidgetContent.implicitHeight + searchBar.verticalPadding * 2 + Appearance.sizes.elevationMargin * 2
-
-    function clearResults() {
-        resultModel.values = [];
-    }
 
     function focusFirstItem() {
         appResults.currentIndex = 0;
@@ -105,15 +101,14 @@ Item { // Wrapper
     StyledRectangularShadow {
         target: searchWidgetContent
     }
+
     Rectangle { // Background
         id: searchWidgetContent
         clip: true
         implicitWidth: gridLayout.implicitWidth
         implicitHeight: gridLayout.implicitHeight
-        radius: searchBar.height / 2 + searchBar.verticalPadding
+        radius: Config.options.appearance.sharpMode ? 0 : searchBar.height / 2 + searchBar.verticalPadding
         color: Appearance.colors.colBackgroundSurfaceContainer
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
 
         Behavior on implicitHeight {
             id: searchHeightBehavior
@@ -144,7 +139,6 @@ Item { // Wrapper
                 Layout.rightMargin: 4
                 Layout.topMargin: verticalPadding
                 Layout.bottomMargin: verticalPadding
-                Layout.row: root.overviewPosition == "bottom" ? 2 : 0
                 Synchronizer on searchingText {
                     property alias source: root.searchingText
                 }
@@ -152,7 +146,7 @@ Item { // Wrapper
 
             Rectangle {
                 // Separator
-                visible: root.showResults && appResults.count > 0
+                visible: root.showResults
                 Layout.fillWidth: true
                 height: 1
                 color: Appearance.colors.colOutlineVariant
@@ -161,16 +155,15 @@ Item { // Wrapper
 
             ListView { // App results
                 id: appResults
-                visible: root.showResults && count > 0
+                visible: root.showResults
                 Layout.fillWidth: true
-                implicitHeight: Math.min(360, appResults.contentHeight + topMargin + bottomMargin)
+                implicitHeight: Math.min(600, appResults.contentHeight + topMargin + bottomMargin)
                 clip: true
                 topMargin: 10
                 bottomMargin: 10
                 spacing: 2
                 KeyNavigation.up: searchBar
                 highlightMoveDuration: 100
-                Layout.row: root.overviewPosition == "bottom" ? 0 : 2
 
                 onFocusChanged: {
                     if (focus)

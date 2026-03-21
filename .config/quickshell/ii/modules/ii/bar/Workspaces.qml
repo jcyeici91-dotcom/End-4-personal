@@ -65,7 +65,9 @@ Item {
 
     property bool superNumbersEnabled: true
     property bool superShowNumbers: false
-    property int superNumbersDelayMs: 100
+    
+    // 👇 ADAPTACIÓN: Delay extraído de la config original 👇
+    property int superNumbersDelayMs: Config.options.bar.workspaces.showNumberDelay ?? 100
 
     property real workspaceIconSizeFactor: 0.69
     property real workspaceIconSizeShrinkFactor: 0.55
@@ -102,7 +104,12 @@ Item {
     readonly property int monitorIndex: barLoader.monitorIndex
     property int workspaceOffset: useWorkspaceMap ? (workspaceMap[monitorIndex] ?? 0) : 0
 
-    readonly property int workspacesShown: Config.options.bar.workspaces.shown
+    // 👇 ADAPTACIÓN: Lógica de Dynamic Workspaces 👇
+    readonly property bool dynamicWorkspaces: Config.options.bar.workspaces.dynamicWorkspaces
+    readonly property int workspacesShown: dynamicWorkspaces
+        ? ((workspaceMap[monitorIndex + 1] ?? workspaceMap[monitorIndex] + Config.options.bar.workspaces.shown) - workspaceMap[monitorIndex])
+        : Config.options.bar.workspaces.shown
+
     readonly property int workspaceGroup: Math.floor((monitor?.activeWorkspace?.id - root.workspaceOffset - 1) / root.workspacesShown)
 
     readonly property bool hyprReady: !!(Hyprland && Hyprland.workspaces && Hyprland.workspaces.values)
@@ -152,28 +159,43 @@ Item {
         property real pulsePhase: 0.0
     }
 
-    function rebuildVisibleWorkspaces(occupiedSet) {
+    // 👇 ADAPTACIÓN: Lógica de Dynamic Workspaces (Ocultar vacíos si dynamic está activo) 👇
+    function isWorkspaceVisible(wsIndex) {
+        const wsId = workspaceGroup * workspacesShown + wsIndex + 1 + workspaceOffset
+        const isActive = wsId === (monitor?.activeWorkspace?.id ?? 1)
+        const isOccupied = workspaceOccupiedById && workspaceOccupiedById[wsId]
+        return !dynamicWorkspaces || isActive || isOccupied
+    }
+
+    function rebuildVisibleWorkspaces(occSet) {
         const shown = Math.max(0, root.workspacesShown)
         const activeId = monitor?.activeWorkspace?.id ?? -1
         const base = workspaceOffset + workspaceGroup * shown
 
         let slots = []
-        for (let i = 0; i < shown; i++) slots.push(base + i + 1)
-
-        const inGroup = new Set(slots)
-
-        let outsideOccupied = Array.from(occupiedSet).filter(id => id > 0 && !inGroup.has(id)).sort((a, b) => a - b)
-
-        let replaceIdx = []
         for (let i = 0; i < shown; i++) {
-            const wsId = slots[i]
-            const isActive = (wsId === activeId)
-            const isOccInGroup = (root.workspaceOccupied && root.workspaceOccupied[i] === true)
-            if (!isActive && !isOccInGroup) replaceIdx.push(i)
+            // Si dynamicWorkspaces está activo, solo agregamos los ocupados o el activo.
+            if (!dynamicWorkspaces || isWorkspaceVisible(i)) {
+                slots.push(base + i + 1)
+            }
         }
 
-        for (let k = 0; k < replaceIdx.length && k < outsideOccupied.length; k++) {
-            slots[replaceIdx[k]] = outsideOccupied[k]
+        // Si NO es dynamic, mantenemos la lógica original de llenado de espacios vacíos con los de fuera del grupo
+        if (!dynamicWorkspaces) {
+            const inGroup = new Set(slots)
+            let outsideOccupied = Array.from(occSet).filter(id => id > 0 && !inGroup.has(id)).sort((a, b) => a - b)
+            let replaceIdx = []
+            
+            for (let i = 0; i < shown; i++) {
+                const wsId = slots[i]
+                const isActive = (wsId === activeId)
+                const isOccInGroup = occSet.has(wsId)
+                if (!isActive && !isOccInGroup) replaceIdx.push(i)
+            }
+
+            for (let k = 0; k < replaceIdx.length && k < outsideOccupied.length; k++) {
+                slots[replaceIdx[k]] = outsideOccupied[k]
+            }
         }
 
         slots.sort((a, b) => a - b)
@@ -257,6 +279,7 @@ Item {
     onWorkspaceGroupChanged: updateWorkspaceOccupied()
     onWorkspacesShownChanged: updateWorkspaceOccupied()
 
+    // 👇 ADAPTACIÓN: Lógica original del Timer para mostrar números al presionar Super 👇
     Timer {
         id: superNumbersTimer
         interval: root.superNumbersDelayMs
@@ -270,6 +293,7 @@ Item {
     Connections {
         target: GlobalStates
         function onSuperDownChanged() {
+            if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable) return;
             if (!root.superNumbersEnabled) {
                 superNumbersTimer.stop()
                 root.superShowNumbers = false
@@ -282,6 +306,10 @@ Item {
                 superNumbersTimer.stop()
                 root.superShowNumbers = false
             }
+        }
+        function onSuperReleaseMightTriggerChanged() { 
+            superNumbersTimer.stop()
+            root.superShowNumbers = false
         }
     }
 
@@ -482,14 +510,13 @@ Item {
         visible: fxOccupiedBackground
 
         Repeater {
-            model: root.workspacesShown
+            // 👇 ADAPTACIÓN: El Repeater itera sobre los espacios visibles 👇
+            model: root.visibleWorkspaces.length
 
             delegate: Rectangle {
                 Layout.alignment: Qt.AlignCenter
 
-                readonly property int wsId: (root.visibleWorkspaces && root.visibleWorkspaces.length > index)
-                    ? root.visibleWorkspaces[index]
-                    : (workspaceOffset + workspaceGroup * root.workspacesShown + index + 1)
+                readonly property int wsId: root.visibleWorkspaces[index]
 
                 implicitWidth: root.vertical ? root.iconBoxWrapperSize : (contentLayout.children[index]?.width ?? root.iconBoxWrapperSize)
                 implicitHeight: root.vertical ? (contentLayout.children[index]?.height ?? root.iconBoxWrapperSize) : root.iconBoxWrapperSize
@@ -524,7 +551,8 @@ Item {
         rows: root.vertical ? 99 : 1
 
         Repeater {
-            model: root.workspacesShown
+            // 👇 ADAPTACIÓN: El Repeater itera sobre los espacios visibles 👇
+            model: root.visibleWorkspaces.length
 
             delegate: MouseArea {
                 id: background
@@ -535,9 +563,7 @@ Item {
 
                 hoverEnabled: true
 
-                readonly property int workspaceValue: (root.visibleWorkspaces && root.visibleWorkspaces.length > index)
-                    ? root.visibleWorkspaces[index]
-                    : (workspaceOffset + workspaceGroup * workspacesShown + index + 1)
+                readonly property int workspaceValue: root.visibleWorkspaces[index]
 
                 readonly property bool isActive: (monitor?.activeWorkspace?.id === workspaceValue)
 
@@ -779,6 +805,26 @@ Item {
                                     Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 }
+
+                                // 👇 ADAPTACIÓN: Monochrome Icons (Filtro desaturado para los iconos) 👇
+                                Loader {
+                                    active: Config.options.bar.workspaces.monochromeIcons
+                                    anchors.fill: mainAppIcon
+                                    sourceComponent: Item {
+                                        Desaturate {
+                                            id: desaturatedIcon
+                                            visible: false
+                                            anchors.fill: parent
+                                            source: mainAppIcon
+                                            desaturation: 0.8
+                                        }
+                                        ColorOverlay {
+                                            anchors.fill: desaturatedIcon
+                                            source: desaturatedIcon
+                                            color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                        }
+                                    }
+                                }
                             }
 
                             Rectangle {
@@ -801,25 +847,6 @@ Item {
                                     shadowColor: Appearance.colors.colPrimary
                                     shadowHorizontalOffset: 0
                                     shadowVerticalOffset: 0
-                                }
-                            }
-
-                            Loader {
-                                active: Config.options.bar.workspaces.monochromeIcons
-                                anchors.fill: mainAppIcon
-                                sourceComponent: Item {
-                                    Desaturate {
-                                        id: desaturatedIcon
-                                        visible: false
-                                        anchors.fill: parent
-                                        source: mainAppIcon
-                                        desaturation: 0.8
-                                    }
-                                    ColorOverlay {
-                                        anchors.fill: desaturatedIcon
-                                        source: desaturatedIcon
-                                        color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
-                                    }
                                 }
                             }
                         }
@@ -883,86 +910,86 @@ Item {
         }
     }
 
-component WorkspaceBackgroundIndicator: Item {
-    property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers
-    property int workspaceValue
-    property bool activeWorkspace
-    property bool suppressed: false
-    property int iconsImplicitHeight: 0
-    property int iconsImplicitWidth: 0
-    property int wrapperSize: 28
-    property int paddingGuard: 8
+    component WorkspaceBackgroundIndicator: Item {
+        property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers
+        property int workspaceValue
+        property bool activeWorkspace
+        property bool suppressed: false
+        property int iconsImplicitHeight: 0
+        property int iconsImplicitWidth: 0
+        property int wrapperSize: 28
+        property int paddingGuard: 8
 
-    readonly property bool hasWindows: (root.workspaceOccupiedById && root.workspaceOccupiedById[workspaceValue] === true)
-    readonly property int windowCount: (activeWorkspace && hasWindows) ? getWindowCount(workspaceValue) : 0
-    readonly property int iconsFootprint: Math.max(iconsImplicitWidth, iconsImplicitHeight)
+        readonly property bool hasWindows: (root.workspaceOccupiedById && root.workspaceOccupiedById[workspaceValue] === true)
+        readonly property int windowCount: (activeWorkspace && hasWindows) ? getWindowCount(workspaceValue) : 0
+        readonly property int iconsFootprint: Math.max(iconsImplicitWidth, iconsImplicitHeight)
 
-    readonly property bool baseVisible: !suppressed && (showNumbers ? true : (iconsFootprint + paddingGuard < wrapperSize))
-    readonly property bool showPill: baseVisible && !showNumbers && activeWorkspace && hasWindows
-    readonly property bool showNumber: baseVisible && showNumbers
+        readonly property bool baseVisible: !suppressed && (showNumbers ? true : (iconsFootprint + paddingGuard < wrapperSize))
+        readonly property bool showPill: baseVisible && !showNumbers && activeWorkspace && hasWindows
+        readonly property bool showNumber: baseVisible && showNumbers
 
-    anchors.centerIn: parent
-    width: wrapperSize
-    height: wrapperSize
-    visible: baseVisible
-
-    readonly property color indColor: Appearance.colors.colPrimary
-
-    StyledText {
-        z: 50
-        visible: showNumber
-        opacity: showNumber ? 1 : 0
         anchors.centerIn: parent
-        text: Config.options?.bar.workspaces.numberMap[workspaceValue - 1] || workspaceValue
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
-        color: activeWorkspace ? Qt.rgba(1, 1, 1, 1) : (hasWindows ? Qt.rgba(1, 1, 1, 0.75) : Qt.rgba(1, 1, 1, 0.45))
-        Behavior on opacity { animation: Appearance.animation.elementMove.numberAnimation.createObject(this) }
-    }
+        width: wrapperSize
+        height: wrapperSize
+        visible: baseVisible
 
-    Item {
-        id: pillLayer
-        visible: showPill
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 3
+        readonly property color indColor: Appearance.colors.colPrimary
 
-        readonly property int pillW: root.wsIndicatorPillWidth
-        readonly property int pillH: root.wsIndicatorPillHeight
-        readonly property int gap: root.wsIndicatorPillGap
-        readonly property int pills: (windowCount >= 2) ? 2 : 1
-
-        width: (pills === 2) ? (pillW * 2 + gap) : pillW
-        height: pillH
-
-        Row {
+        StyledText {
+            z: 50
+            visible: showNumber
+            opacity: showNumber ? 1 : 0
             anchors.centerIn: parent
-            spacing: pillLayer.gap
+            text: Config.options?.bar.workspaces.numberMap[workspaceValue - 1] || workspaceValue
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            color: activeWorkspace ? Qt.rgba(1, 1, 1, 1) : (hasWindows ? Qt.rgba(1, 1, 1, 0.75) : Qt.rgba(1, 1, 1, 0.45))
+            Behavior on opacity { animation: Appearance.animation.elementMove.numberAnimation.createObject(this) }
+        }
 
-            Repeater {
-                model: pillLayer.pills
-                delegate: Rectangle {
-                    width: pillLayer.pillW
-                    height: pillLayer.pillH
-                    radius: root.wsIndicatorPillRadius
-                    color: indColor
-                    border.width: 1
-                    border.color: Qt.rgba(0, 0, 0, 0.25)
-                    layer.enabled: fxEnabled && root.bottomActiveDotGlow
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowBlur: root.bottomActiveDotGlowBlur
-                        shadowOpacity: root.bottomActiveDotGlowOpacity * 0.75
-                        shadowColor: indColor
-                        shadowHorizontalOffset: 0
-                        shadowVerticalOffset: 0
+        Item {
+            id: pillLayer
+            visible: showPill
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 3
+
+            readonly property int pillW: root.wsIndicatorPillWidth
+            readonly property int pillH: root.wsIndicatorPillHeight
+            readonly property int gap: root.wsIndicatorPillGap
+            readonly property int pills: (windowCount >= 2) ? 2 : 1
+
+            width: (pills === 2) ? (pillW * 2 + gap) : pillW
+            height: pillH
+
+            Row {
+                anchors.centerIn: parent
+                spacing: pillLayer.gap
+
+                Repeater {
+                    model: pillLayer.pills
+                    delegate: Rectangle {
+                        width: pillLayer.pillW
+                        height: pillLayer.pillH
+                        radius: root.wsIndicatorPillRadius
+                        color: indColor
+                        border.width: 1
+                        border.color: Qt.rgba(0, 0, 0, 0.25)
+                        layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                        layer.effect: MultiEffect {
+                            shadowEnabled: true
+                            shadowBlur: root.bottomActiveDotGlowBlur
+                            shadowOpacity: root.bottomActiveDotGlowOpacity * 0.75
+                            shadowColor: indColor
+                            shadowHorizontalOffset: 0
+                            shadowVerticalOffset: 0
+                        }
                     }
                 }
             }
         }
     }
-}
 
     function triggerOccupiedBurst(index, strength) {
         if (!premium) return

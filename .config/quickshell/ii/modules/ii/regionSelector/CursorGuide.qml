@@ -8,12 +8,15 @@ Item {
     property var action
     property var selectionMode
 
+    property int duration: 1000
+
     property string description: switch (root.action) {
     case RegionSelection.SnipAction.Copy:
     case RegionSelection.SnipAction.Edit:
         return Translation.tr("Copy region (LMB) or annotate (RMB)");
     case RegionSelection.SnipAction.Search:
-        return Translation.tr("Search with Google Lens");
+        root.duration = 1500;
+        return Translation.tr("Use Google Lens (LMB) or ask AI (RMB)");
     case RegionSelection.SnipAction.CharRecognition:
         return Translation.tr("Recognize text");
     case RegionSelection.SnipAction.Record:
@@ -41,7 +44,7 @@ Item {
     }
     Timer {
         id: descTimeout
-        interval: 1000
+        interval: root.duration
         running: true
         onTriggered: {
             root.hideDescription()

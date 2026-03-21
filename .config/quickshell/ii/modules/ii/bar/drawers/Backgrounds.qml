@@ -1,7 +1,7 @@
 import qs
 import qs.modules.common
 import qs.modules.ii.onScreenDisplay.drawer as Osd
-import qs.modules.ii.overview.drawer as SearchOverview
+//import qs.modules.ii.overview.drawer as SearchOverview
 import QtQuick
 import QtQuick.Shapes
 
@@ -20,10 +20,10 @@ Shape {
         startY: DrawerVisibilityConfig.osdBackgroundStickToBar ? 1 : 0
     }
 
-    SearchOverview.Background {
-        wrapper: root.panels.searchOverview
+   // SearchOverview.Background {
+     //   wrapper: root.panels.searchOverview
 
-        startX: (root.width - root.panels.searchOverview.width) / 2 - Appearance.rounding.drawingPanelRounding
-        startY: DrawerVisibilityConfig.searchOverviewBackgroundStickToBar ? 1 : 0
-    }
+    //    startX: (root.width - root.panels.searchOverview.width) / 2 - Appearance.rounding.drawingPanelRounding
+//        startY: DrawerVisibilityConfig.searchOverviewBackgroundStickToBar ? 1 : 0
+  //  }
 }

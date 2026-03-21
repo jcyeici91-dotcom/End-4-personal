@@ -28,7 +28,8 @@ Singleton {
     property bool showAnimeResults: Config.options.wallpapers.showAnimeResults ?? false
 
     property string similarImageId: ""
-
+    property var currentSearchTags: []
+    
     property var providers: {  
         "system": { "name": Translation.tr("System") },  
         "unsplash": {  
@@ -234,7 +235,7 @@ Singleton {
             root.addSystemMessage(Translation.tr("'More like this picture' feature only works with wallhaven service"))
             return;
         }
-        // root.addSystemMessage(Translation.tr("Searching for more images like: %1").arg(imageId))
+        root.currentSearchTags = [Translation.tr("Similar to ") + imageId]
         makeRequest([], 20, page, imageId)       
     }
 
@@ -292,6 +293,9 @@ Singleton {
     }
   
     function makeRequest(tags, limit=20, page=1, imageId="") { // image id is used for "more like this" feature
+        if (imageId === "") {
+            root.currentSearchTags = tags;
+        }
         var url = constructRequestUrl(tags, limit, page, imageId)  
         console.log("[Wallpapers] Making request to " + url)  
   

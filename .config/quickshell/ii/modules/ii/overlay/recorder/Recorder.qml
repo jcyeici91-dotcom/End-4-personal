@@ -66,7 +66,8 @@ StyledOverlayWidget {
             RippleButton {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.fillWidth: false
-                buttonRadius: height / 2
+                readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : height / 2
+                buttonRadius: fullRadius
                 colBackground: Appearance.colors.colLayer3
                 colBackgroundHover: Appearance.colors.colLayer3Hover
                 colRipple: Appearance.colors.colLayer3Active
@@ -97,7 +98,8 @@ StyledOverlayWidget {
         required property string name
         implicitHeight: 66
         implicitWidth: 66
-        buttonRadius: height / 2
+        readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : height / 2
+        buttonRadius: fullRadius
 
         colBackground: Appearance.colors.colLayer3
         colBackgroundHover: Appearance.colors.colLayer3Hover

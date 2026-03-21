@@ -26,7 +26,6 @@ ContentPage {
             }
         }
 
-
         ConfigRow {
             uniform: true
             ConfigSwitch {
@@ -64,15 +63,20 @@ ContentPage {
         title: Translation.tr("Media mode")
         tooltip: Translation.tr("Toggle the mode with a keybind that executes 'quickshell:mediaModeToggle'\nExample: bindd = Super, Z, Toggle media mode, global, quickshell:mediaModeToggle")
 
-ConfigSwitch {
-    buttonIcon: "play_circle"
-    text: Translation.tr("Enable media mode")
-    checked: Persistent.states.background.mediaMode.enabled
+        // 👇 NUEVO: Interruptor para encender/apagar Media mode 👇
+        ConfigSwitch {
+            buttonIcon: "play_circle"
+            text: Translation.tr("Enable media mode")
+            
+            // Leemos el valor desde Config
+            checked: Config.options.background.mediaMode.enable 
 
-    onCheckedChanged: {
-        Persistent.states.background.mediaMode.enabled = checked;
-    }
-} 
+            onCheckedChanged: {
+                // Guardamos el valor en Config
+                Config.options.background.mediaMode.enable = checked; 
+            }
+        }
+        // 👆 -------------------------------------------------- 👆
 
         ConfigRow {
 
@@ -179,16 +183,17 @@ ConfigSwitch {
             }
         }
 
-// --- CÓDIGO NUEVO PARA EL VISUALIZADOR WAVE ---
+        // 👇 NUEVO: Interruptor para el efecto wave (Visualizer) 👇
         ConfigSwitch {
-            buttonIcon: "waves" // Puedes usar "bar_chart" si prefieres otro ícono
+            buttonIcon: "waves"
             text: Translation.tr("Show wave visualizer")
             checked: Config.options.background.mediaMode.showVisualizer ?? true
             onCheckedChanged: {
                 Config.options.background.mediaMode.showVisualizer = checked;
             }
         }
-        
+        // 👆 --------------------------------------------------- 👆
+
         ContentSubsection {
             title: Translation.tr("Text highlight style")
             ConfigSelectionArray {
@@ -247,7 +252,6 @@ ConfigSwitch {
                 Layout.fillWidth: true
             }
             ConfigSelectionArray {
-                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.clock.placementStrategy
                 onSelected: newValue => {
@@ -288,7 +292,6 @@ ConfigSwitch {
                 title: Translation.tr("Clock style")
                 Layout.fillWidth: true
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.background.widgets.clock.style
                     onSelected: newValue => {
                         Config.options.background.widgets.clock.style = newValue;
@@ -312,7 +315,6 @@ ConfigSwitch {
                 title: Translation.tr("Clock style (locked)")
                 Layout.fillWidth: false
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.background.widgets.clock.styleLocked
                     onSelected: newValue => {
                         Config.options.background.widgets.clock.styleLocked = newValue;
@@ -381,6 +383,29 @@ ConfigSwitch {
                     }
                 }
             }
+
+            ConfigRow {
+                uniform: true
+
+                ConfigSwitch {
+                    buttonIcon: "colors"
+                    text: Translation.tr("Colorful digits")
+                    checked: Config.options.background.widgets.clock.digital.colorful
+                    onCheckedChanged: {
+                        Config.options.background.widgets.clock.digital.colorful = checked;
+                    }
+                }
+                ConfigSwitch {
+                    enabled: !Config.options.background.widgets.clock.digital.vertical
+                    buttonIcon: "go_to_line"
+                    text: Translation.tr("Show colon")
+                    checked: Config.options.background.widgets.clock.digital.showColon
+                    onCheckedChanged: {
+                        Config.options.background.widgets.clock.digital.showColon = checked;
+                    }
+                }
+            }
+            
 
             MaterialTextArea {
                 Layout.fillWidth: true
@@ -670,7 +695,7 @@ ConfigSwitch {
             ConfigSelectionArray {
                 currentValue: Config.options.background.widgets.clock.cookie.secondHandStyle
                 onSelected: newValue => {
-                    Config.options.background.widgets.clock.cookie.secondHandStyle = newValue;
+                    Config.options.background.widgets.clock.clock.secondHandStyle = newValue;
                 }
                 options: [
                     {
@@ -863,7 +888,6 @@ ConfigSwitch {
                 Layout.fillWidth: true
             }
             ConfigSelectionArray {
-                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.weather.placementStrategy
                 onSelected: newValue => {
@@ -926,7 +950,6 @@ ConfigSwitch {
             }
 
             ConfigSelectionArray {
-                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.background.widgets.media.placementStrategy
                 onSelected: newValue => {

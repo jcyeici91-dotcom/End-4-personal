@@ -12,14 +12,14 @@ MouseArea {
     required property var fileModelData
     property bool isDirectory: fileModelData.fileIsDir
 
+    property bool shouldLoad: true
+
     property bool isVideo: {
         const path = fileModelData.fileName.toLowerCase();
-        return path.endsWith('.mp4') || path.endsWith('.webm') || 
-                path.endsWith('.mkv') || path.endsWith('.avi') || 
-                path.endsWith('.mov') || path.endsWith('.m4v') ||
-                path.endsWith('.ogv');
+        return path.endsWith('.mp4') || path.endsWith('.webm') || path.endsWith('.mkv') || path.endsWith('.avi') || path.endsWith('.mov') || path.endsWith('.m4v') || path.endsWith('.ogv');
     }
-    property bool useThumbnail: Images.isValidImageByName(fileModelData.fileName) || root.isVideo
+    property bool isApi: fileModelData.isApi || false
+    property bool useThumbnail: (Images.isValidImageByName(fileModelData.fileName) || root.isVideo) && !root.isApi
     property bool showLoadingIndicator: false
 
     property alias colBackground: background.color
@@ -30,19 +30,29 @@ MouseArea {
     margins: Appearance.sizes.wallpaperSelectorItemMargins
     padding: Appearance.sizes.wallpaperSelectorItemPadding
 
-    signal activated()
+    signal activated
+    signal searchSimilarRequested(string filePath, string wallhavenId)
+    signal moreOptionsRequested(var modelData)
 
     hoverEnabled: true
-    onClicked: root.activated()
-
-    function getWallhavenId(url) {
-        const urlStr = url.toString()
-        const fileName = urlStr.split('/').pop() 
-        const fileNameWithoutExt = fileName.split('.')[0] 
-        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i)
-        return match ? match[1] : null
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onClicked: (event) => {
+        if (event.button === Qt.LeftButton) {
+            root.activated()
+        } else if (event.button === Qt.RightButton) {
+            root.moreOptionsRequested(fileModelData)
+        }
     }
     
+
+    function getWallhavenId(url) {
+        const urlStr = url.toString();
+        const fileName = urlStr.split('/').pop();
+        const fileNameWithoutExt = fileName.split('.')[0];
+        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i);
+        return match ? match[1] : null;
+    }
+
     Rectangle {
         id: background
         anchors.fill: parent
@@ -63,7 +73,7 @@ MouseArea {
 
                 Loader {
                     id: thumbnailShadowLoader
-                    active: thumbnailImageLoader.active && thumbnailImageLoader.item.status === Image.Ready
+                    active: thumbnailImageLoader.active && thumbnailImageLoader.item.status === Image.Ready && root.shouldLoad
                     anchors.fill: thumbnailImageLoader
                     sourceComponent: StyledRectangularShadow {
                         target: thumbnailImageLoader
@@ -75,7 +85,7 @@ MouseArea {
                 Loader {
                     id: thumbnailImageLoader
                     anchors.fill: parent
-                    active: root.useThumbnail
+                    active: root.useThumbnail && root.shouldLoad
                     sourceComponent: ThumbnailImage {
                         id: thumbnailImage
                         generateThumbnail: false
@@ -116,7 +126,7 @@ MouseArea {
 
                 Loader {
                     id: videoIconLoader
-                    active: root.isVideo && root.useThumbnail
+                    active: root.isVideo && root.useThumbnail && root.shouldLoad
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.margins: 8
@@ -129,8 +139,9 @@ MouseArea {
                 }
 
                 Loader {
-                    id: similarImageButtonLoader
-                    active: root.getWallhavenId(fileModelData.fileName) && root.useThumbnail
+                    z: 1
+                    id: moreOptionsButtonLoader
+                    active: root.containsMouse && !root.isDirectory && root.shouldLoad
                     
                     anchors.top: parent.top
                     anchors.right: parent.right
@@ -139,71 +150,45 @@ MouseArea {
                     asynchronous: true
                     sourceComponent: WallpaperActionButton {
                         id: button
-                        buttonIcon: "image_search"
+                        buttonIcon: "more_vert"
                         buttonFill: 1
-                        tooltipText: Translation.tr("Search for similar images")
-
-                        colBackground: root.containsMouse ? Appearance.colors.colSecondaryContainerHover : "transparent"
-
-                        property int wallpaperTabIndex: {
-                            let index = 0;
-                            if (Config.options.policies.ai !== 0) index++;
-                            if (Config.options.policies.translator !== 0) index++;
-                            return Config.options.policies.wallpapers !== 0 ? index : -1;
-                        }
 
                         onClicked: {
-                            if (button.wallpaperTabIndex === -1) {
-                                console.log("Wallpaper policies tab is disabled, cannot search for similar images. TODO: add an indicator to user");
-                                return;
-                            }
-                            WallpaperBrowser.addSimilarImageMessage(Translation.tr("Searching for a similar image:"), fileModelData.filePath)
-                            WallpaperBrowser.moreLikeThisPicture(root.getWallhavenId(fileModelData.fileName), 1);
-                            Persistent.states.sidebar.policies.tab = button.wallpaperTabIndex;
-                            
-                            GlobalStates.policiesPanelOpen = true;
-                            GlobalStates.wallpaperSelectorOpen = false;
-                        }
-                    }
-                }
-
-                FadeLoader {
-                    id: favouriteButtonLoader
-                    shown: !root.isDirectory && (root.containsMouse || isFavourite)
-
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    anchors.margins: 8
-
-                    property bool isFavourite: Persistent.states.wallpaper.favourites.includes(fileModelData.filePath)
-
-                    sourceComponent: WallpaperActionButton {
-                        buttonIcon: favouriteButtonLoader.isFavourite ? "favorite" : "favorite_border"
-                        buttonFill: favouriteButtonLoader.isFavourite ? 1 : 0
-                        tooltipText: Translation.tr("Toggle favourite")
-
-                        onClicked: {
-                            const favs = Array.from(Persistent.states.wallpaper.favourites);
-                            const path = fileModelData.filePath;
-                            const index = favs.indexOf(path);
-                            if (index === -1) {
-                                favs.push(path);
-                            } else {
-                                favs.splice(index, 1);
-                            }
-                            Persistent.states.wallpaper.favourites = favs;
+                            root.moreOptionsRequested(fileModelData);
                         }
                     }
                 }
 
                 Loader {
                     id: iconLoader
-                    active: !root.useThumbnail
+                    active: !root.useThumbnail && !root.isApi && root.shouldLoad
                     anchors.fill: parent
                     sourceComponent: DirectoryIcon {
                         fileModelData: root.fileModelData
                         sourceSize.width: wallpaperItemColumnLayout.width
                         sourceSize.height: wallpaperItemColumnLayout.height - wallpaperItemColumnLayout.spacing - wallpaperItemName.height
+                    }
+                }
+
+                Loader {
+                    id: apiImageLoader
+                    active: root.isApi && root.shouldLoad
+                    anchors.fill: parent
+                    sourceComponent: StyledImage {
+                        source: fileModelData.filePath
+                        fillMode: Image.PreserveAspectCrop
+                        clip: true
+                        sourceSize.width: wallpaperItemColumnLayout.width
+                        sourceSize.height: wallpaperItemColumnLayout.height - wallpaperItemColumnLayout.spacing - wallpaperItemName.height
+
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: Rectangle {
+                                width: apiImageLoader.width
+                                height: apiImageLoader.height
+                                radius: Appearance.rounding.small
+                            }
+                        }
                     }
                 }
             }
@@ -225,18 +210,16 @@ MouseArea {
         }
     }
 
-
     component WallpaperActionButton: RippleButton {
         id: button
 
         property alias buttonIcon: materialSymbol.text
         property alias buttonFill: materialSymbol.fill
-        property alias tooltipText: tooltip.text
 
         implicitWidth: 30
         implicitHeight: 30
 
-        colBackground: Appearance.colors.colSecondaryContainer
+        colBackground: root.containsMouse ? Appearance.colors.colSecondaryContainerHover : "transparent"
         colBackgroundHover: Appearance.colors.colSecondaryContainerHover
         colRipple: Appearance.colors.colSecondaryContainerActive
 
@@ -251,9 +234,5 @@ MouseArea {
             font.pixelSize: Appearance.font.pixelSize.large
         }
 
-        StyledToolTip {
-            id: tooltip
-            text: button.tooltipText
-        }
     }
 }

@@ -31,10 +31,8 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+    property bool isScrollingLayout: false
 
- // VARIABLE PARA EL MENÚ DESLIZABLE
-    property bool sessionVisible: false 
-    
     property bool dashboardPanelOpen: false // formerly sidebarRightOpen
     property bool policiesPanelOpen: false  // formerly sidebarLeftOpen
 
@@ -88,8 +86,7 @@ Singleton {
         }
     }
 
-
- // NOTE: FileView may be a better approach but it has it's own disadvantages
+    // NOTE: FileView may be a better approach but it has it's own disadvantages
     Process {
         running: true
         command: [ "bash", "-c", `hyprctl getoption general:layout | grep "str:" | awk '{print $2}'`]

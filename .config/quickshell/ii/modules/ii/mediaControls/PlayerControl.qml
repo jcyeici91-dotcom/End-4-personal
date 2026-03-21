@@ -27,7 +27,9 @@ Item {
     
     property bool downloaded: false
     property list<real> visualizerPoints: []
-    property real maxVisualizerValue: 1000 
+    // 👇 CORRECCIÓN WAVE 1: Aumentamos este valor para comprimir la onda verticalmente 👇
+    // Antes: 1000. Al subirlo, los puntos de datos parecen más pequeños en proporción.
+    property real maxVisualizerValue: 1800 
     property int visualizerSmoothing: 2 
     property real radius
 
@@ -130,22 +132,28 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom 
-            height: 85
+            // 👇 CORRECCIÓN WAVE 2: Reducimos la altura física del contenedor 👇
+            // Antes: 85. Ahora es mucho más baja y sutil.
+            height: 40
             
             // Efecto mágico de recorte circular
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Rectangle {
                     width: waveContainer.width
-                    height: waveContainer.height + root.radius // Más alto para que arriba no recorte
-                    y: -root.radius // Desfasado hacia arriba
-                    radius: root.radius // Clona la curva perfecta de tu ventana
+                    // 👇 CORRECCIÓN WAVE 3: Ajustamos la máscara para la nueva altura 👇
+                    // Subimos la máscara radius píxeles para que la curva inferior coincida
+                    // perfectamente con el borde de la ventana principal.
+                    height: waveContainer.height
+                    y: -root.radius 
+                    radius: root.radius 
                 }
             }
             
             WaveVisualizer {
                 anchors.fill: parent
-                live: root.player?.isPlaying
+                // Solo funciona si el modo media está activo Y el interruptor visualizer está encendido
+                live: (root.player?.isPlaying ?? false) && Config.options.background.mediaMode.enable && Config.options.background.mediaMode.showVisualizer
                 points: root.visualizerPoints
                 maxVisualizerValue: root.maxVisualizerValue
                 smoothing: root.visualizerSmoothing
@@ -168,13 +176,27 @@ Item {
                 fill: root.pinned
                 downAction: () => root.togglePinned()
             }
+            
+            // Botón Media Mode 
             TrackChangeButton { 
-                iconName: Persistent.states.background.mediaMode.enabled ? "music_note" : "music_off"
+                iconName: Config.options.background.mediaMode.enable ? "music_note" : "music_off"
                 buttonSize: 18
-                fill: Persistent.states.background.mediaMode.enabled
+                fill: Config.options.background.mediaMode.enable
                 downAction: () => {
-                    Persistent.states.background.mediaMode.enabled = !Persistent.states.background.mediaMode.enabled
+                    Config.options.background.mediaMode.enable = !Config.options.background.mediaMode.enable
                 }
+                StyledToolTip { text: Translation.tr("Toggle Media Mode") }
+            }
+
+            // Botón para alternar el visualizador Wave
+            TrackChangeButton {
+                iconName: "waves"
+                buttonSize: 18
+                fill: Config.options.background.mediaMode.showVisualizer
+                downAction: () => {
+                    Config.options.background.mediaMode.showVisualizer = !Config.options.background.mediaMode.showVisualizer
+                }
+                StyledToolTip { text: Translation.tr("Toggle Wave Visualizer") }
             }
         }
 
@@ -188,10 +210,8 @@ Item {
             anchors.right: parent.right
             anchors.topMargin: 15 
             anchors.rightMargin: 20  
-            // 🔥 CORRECCIÓN 2: Restauramos 'downAction' para que el botón "escuche" el clic 🔥
             downAction: () => {
                 GlobalStates.mediaControlsOpen = false;
-                // Ruta absoluta directa a prueba de fallos
                 Quickshell.execDetached(["qs", "-p", "/home/" + Quickshell.env("USER") + "/.config/quickshell/ii/settings.qml"]);
             }
         }
@@ -201,6 +221,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter 
+            // Como la onda es más baja, podemos bajar un pelín el texto si queremos,
+            // pero el offset actual de 5 está bien para que no quede pegado arriba.
             anchors.verticalCenterOffset: 5 
             anchors.leftMargin: 20
             anchors.rightMargin: 20
