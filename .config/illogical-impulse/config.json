@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "golden_haze"
+            "type": "honey_cream"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -93,7 +93,7 @@
             "changeShellColor": false,
             "enable": false,
             "enableBackgroundAnimation": true,
-            "showVisualizer": false,
+            "showVisualizer": true,
             "syllable": {
                 "textHighlightStyle": 0
             },
@@ -178,8 +178,8 @@
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2926.6473169571323,
-                "y": 147.36484625400604
+                "x": 2938.8582607171475,
+                "y": 113.93636067708297
             }
         }
     },
@@ -272,7 +272,7 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 45,
+            "height": 40,
             "width": 45
         },
         "timers": {
@@ -397,7 +397,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 4083,
+            "colorTemperature": 3500,
             "from": "19:00",
             "to": "06:30"
         }
