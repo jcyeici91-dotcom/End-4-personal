@@ -44,7 +44,6 @@ Scope {
 
                 property int monitorIndex: barLoader.monitorIndex
                 
-                //  INTERRUPTOR MAESTRO 
                 property bool enableAnimations: Config.options.appearance.enableAnimations
                 
                 QtObject {
@@ -150,7 +149,6 @@ Scope {
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 exclusionMode: ExclusionMode.Ignore
                 
-                // --- AJUSTE DE ALTURA EXCLUSIVA PARA VENTANAS ---
                 exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 :
                     ((Config.options.bar.groupBackgroundStyle === "hybrid") ? Appearance.sizes.baseBarHeight + 6 : Appearance.sizes.baseBarHeight) + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
 
@@ -244,7 +242,6 @@ Scope {
                     Loader {
                         id: roundDecorators
                         
-                        // --- 1. DETECTAMOS LAS COMBINACIONES EXACTAS ---
                         readonly property bool isGlass: Config?.options?.bar?.barBackgroundStyle === 0
                         readonly property bool isHug: Config?.options?.bar?.cornerStyle === 0
                         readonly property bool isHybrid: Config?.options?.bar?.groupBackgroundStyle === "hybrid"
@@ -258,12 +255,8 @@ Scope {
                         readonly property bool isAdaptiveMode: Config?.options?.bar?.barBackgroundStyle === 2
                         readonly property bool isAdaptiveEmpty: isAdaptiveMode && !barRoot.hasActiveWindows && (isHug || isFloat)
                         
-                        // --- EL NUEVO AJUSTE ---
-                        // Combinación: Float (1) + Adaptive (2) + CON ventanas
                         readonly property bool isAdaptiveFloatWithWindows: isAdaptiveMode && isFloat && barRoot.hasActiveWindows
 
-                        // --- 2. ACTIVAMOS LA MAGIA (Subir esquinas) ---
-                        // Añadimos isAdaptiveFloatWithWindows a la lista de condiciones
                         readonly property bool pinCornersToScreenEdge: isHybrid || isHugTranspRect || isVisibleFloat || isAdaptiveEmpty || isAdaptiveFloatWithWindows
 
                         anchors {
@@ -274,10 +267,8 @@ Scope {
                         }
                         height: Appearance.rounding.screenRounding
                         
-                        // --- 3. ASEGURAMOS QUE EL LOADER ESTÉ ACTIVO ---
                         active: (showBarBackground && isHug) || pinCornersToScreenEdge
 
-                        // --- 4. COLOR SÓLIDO PARA EL "MARCO" ---
                         readonly property color dynamicCornerColor: (!showBarBackground && pinCornersToScreenEdge) || isVisibleFloat || isAdaptiveEmpty || isAdaptiveFloatWithWindows ? barRoot._solidBase : barRoot.barBackgroundColorForCorners
 
                         states: State {

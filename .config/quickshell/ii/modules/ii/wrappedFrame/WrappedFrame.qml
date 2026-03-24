@@ -103,8 +103,7 @@ Item {
                 property int index: wrappedFrameVariant.variantModel.indexOf(monitorScope.modelData)
                 property bool hasActiveWindows: false
                 
-                // --- LÓGICA DEL MARCO ACTUALIZADA ---
-                property bool showBarBackground: {
+                   property bool showBarBackground: {
                     let style = Config.options.bar.barBackgroundStyle;
                     let groupStyle = Config.options.bar.groupBackgroundStyle;
                     let cornerStyle = Config.options.bar.cornerStyle;
@@ -112,16 +111,9 @@ Item {
                     let isHybrid = groupStyle === "hybrid";
                     let isHugTranspRect = (cornerStyle === 0 && style === 0 && (groupStyle === "rect" || groupStyle === "pills" || groupStyle === "rounded" || groupStyle === ""));
                     
-                    // Nueva condición para Adaptive (2) cuando NO hay ventanas y estamos en modo Hug (0) o Float (1)
-                    let isAdaptiveEmpty = (style === 2 && !monitorScope.hasActiveWindows && (cornerStyle === 0 || cornerStyle === 1));
+                   let isAdaptiveEmpty = (style === 2 && !monitorScope.hasActiveWindows && (cornerStyle === 0 || cornerStyle === 1));
 
-                    // El marco se enciende en:
-                    // 1. Visible (1)
-                    // 2. Adaptive (2) con ventanas activas
-                    // 3. Hybrid
-                    // 4. Hug + Transparente + Rect
-                    // 5. Adaptive SIN ventanas (para mantener el marco cuando se vuelve transparente)
-                    return style === 1 || 
+                         return style === 1 || 
                            (style === 2 && monitorScope.hasActiveWindows) || 
                            (isHybrid && (style === 0 || style === 2)) ||
                            isHugTranspRect ||

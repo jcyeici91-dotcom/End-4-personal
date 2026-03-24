@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "./overview/blocks" as Blocks
 import "../models" as Models
 import "../ui" as UI
 
@@ -10,7 +9,6 @@ Item {
     id: page
     required property var theme
 
-    Models.DashboardModel { id: dashboard }
     Models.MusicModel { id: music }
 
     readonly property int pad: 16
@@ -31,14 +29,7 @@ Item {
             width: parent.width - page.pad * 2
             spacing: page.rowGap
 
-            Blocks.HeaderBlock {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 160   
-                theme: page.theme
-                dashboard: dashboard
-            }
-
-            GridLayout {
+              GridLayout {
                 Layout.fillWidth: true
                 columns: 2
                 columnSpacing: page.colGap
@@ -49,13 +40,6 @@ Item {
                     Layout.fillWidth: true
                     theme: page.theme
                     musicModel: music
-                }
-
-                Blocks.SystemVitalityBlock {
-                    Layout.columnSpan: 2
-                    Layout.fillWidth: true
-                    theme: page.theme
-                    dashboard: dashboard
                 }
 
                 UI.CryptoCard {

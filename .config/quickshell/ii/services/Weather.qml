@@ -10,18 +10,14 @@ import qs.modules.common
 
 Singleton {
     id: root
-    // 10 minute
-    readonly property int fetchInterval: Config.options.bar.weather.fetchInterval * 60 * 1000
-    readonly property string city: Config.options.bar.weather.city
-    readonly property bool useUSCS: Config.options.bar.weather.useUSCS
-    property bool gpsActive: Config.options.bar.weather.enableGPS
 
-    onUseUSCSChanged: {
-        root.getData();
-    }
-    onCityChanged: {
-        root.getData();
-    }
+    readonly property int fetchInterval: (Config.options.bar.weather.fetchInterval || 10) * 60 * 1000
+    readonly property string city: Config.options.bar.weather.city || "San Salvador"
+    readonly property bool useUSCS: Config.options.bar.weather.useUSCS || false
+    property bool gpsActive: Config.options.bar.weather.enableGPS || false
+
+    onUseUSCSChanged: root.getData()
+    onCityChanged: if (!root.gpsActive) root.getData()
 
     property var location: ({
         valid: false,
@@ -31,97 +27,166 @@ Singleton {
 
     property var data: ({
         uv: 0,
-        humidity: 0,
-        sunrise: 0,
-        sunset: 0,
-        windDir: 0,
-        wCode: 0,
-        city: 0,
-        wind: 0,
-        precip: 0,
-        visib: 0,
-        press: 0,
-        temp: 0,
-        tempFeelsLike: 0,
-        lastRefresh: 0,
+        humidity: "0%",
+        sunrise: "--",
+        sunset: "--",
+        windDir: "N",
+        wCode: "113",
+        condition: "Checking...",
+        city: "Buscando...",
+        wind: "-- km/h",
+        precip: "-- mm",
+        visib: "-- km",
+        press: "-- hPa",
+        temp: "--",
+        tempFeelsLike: "--",
+        lastRefresh: "--:--",
+        forecast: []
     })
 
-    function refineData(data) {
-        let temp = {};
-        temp.uv = data?.current?.uvIndex || 0;
-        temp.humidity = (data?.current?.humidity || 0) + "%";
-        temp.sunrise = data?.astronomy?.sunrise || "0.0";
-        temp.sunset = data?.astronomy?.sunset || "0.0";
-        temp.windDir = data?.current?.winddir16Point || "N";
-        temp.wCode = data?.current?.weatherCode || "113";
-        temp.city = data?.location?.areaName[0]?.value || "City";
-        temp.temp = "";
-        temp.tempFeelsLike = "";
-        if (root.useUSCS) {
-            temp.wind = (data?.current?.windspeedMiles || 0) + " mph";
-            temp.precip = (data?.current?.precipInches || 0) + " in";
-            temp.visib = (data?.current?.visibilityMiles || 0) + " m";
-            temp.press = (data?.current?.pressureInches || 0) + " psi";
-            temp.temp += (data?.current?.temp_F || 0);
-            temp.tempFeelsLike += (data?.current?.FeelsLikeF || 0);
-            temp.temp += "°F";
-            temp.tempFeelsLike += "°F";
-        } else {
-            temp.wind = (data?.current?.windspeedKmph || 0) + " km/h";
-            temp.precip = (data?.current?.precipMM || 0) + " mm";
-            temp.visib = (data?.current?.visibility || 0) + " km";
-            temp.press = (data?.current?.pressure || 0) + " hPa";
-            temp.temp += (data?.current?.temp_C || 0);
-            temp.tempFeelsLike += (data?.current?.FeelsLikeC || 0);
-            temp.temp += "°C";
-            temp.tempFeelsLike += "°C";
+    function formatCityName(cityName) {
+        if (!cityName || cityName.trim() === "")
+            return "San+Salvador";
+        return cityName.trim().split(/\s+/).join("+");
+    }
+
+    function getSafeHourly(hourlyList, preferredIndex) {
+        if (!hourlyList || hourlyList.length === 0)
+            return null;
+
+        if (hourlyList.length > preferredIndex)
+            return hourlyList[preferredIndex];
+
+        return hourlyList[Math.floor(hourlyList.length / 2)];
+    }
+
+    function refineData(apiData) {
+        if (!apiData || !apiData.current_condition || apiData.current_condition.length === 0) {
+            console.warn("[WeatherService] Datos inválidos recibidos");
+            return;
         }
-        temp.lastRefresh = DateTime.time + " • " + DateTime.date;
+
+        let cur = apiData.current_condition[0];
+        let ast = (apiData.weather && apiData.weather.length > 0 && apiData.weather[0].astronomy && apiData.weather[0].astronomy.length > 0)
+                ? apiData.weather[0].astronomy[0]
+                : null;
+        let loc = (apiData.nearest_area && apiData.nearest_area.length > 0)
+                ? apiData.nearest_area[0]
+                : null;
+
+        let temp = {};
+
+        temp.uv = cur.uvIndex || 0;
+        temp.humidity = (cur.humidity || 0) + "%";
+        temp.sunrise = ast ? (ast.sunrise || "--") : "--";
+        temp.sunset = ast ? (ast.sunset || "--") : "--";
+        temp.windDir = cur.winddir16Point || "N";
+        temp.wCode = cur.weatherCode || "113";
+        temp.condition = (cur.weatherDesc && cur.weatherDesc[0] && cur.weatherDesc[0].value)
+                ? cur.weatherDesc[0].value
+                : "Despejado";
+
+        temp.city = (loc && loc.areaName && loc.areaName[0] && loc.areaName[0].value)
+                ? loc.areaName[0].value
+                : root.city;
+
+        temp.temp = root.useUSCS ? (cur.temp_F || "--") : (cur.temp_C || "--");
+        temp.tempFeelsLike = root.useUSCS ? (cur.FeelsLikeF || "--") : (cur.FeelsLikeC || "--");
+        temp.wind = root.useUSCS
+                ? ((cur.windspeedMiles || 0) + " mph")
+                : ((cur.windspeedKmph || 0) + " km/h");
+        temp.precip = root.useUSCS
+                ? ((cur.precipInches || 0) + " in")
+                : ((cur.precipMM || 0) + " mm");
+        temp.visib = root.useUSCS
+                ? ((cur.visibilityMiles || 0) + " mi")
+                : ((cur.visibility || 0) + " km");
+        temp.press = root.useUSCS
+                ? ((cur.pressure || 0) + " mb")
+                : ((cur.pressure || 0) + " hPa");
+
+        temp.forecast = [];
+
+        if (apiData.weather && apiData.weather.length > 0) {
+            for (let i = 0; i < apiData.weather.length; i++) {
+                let w = apiData.weather[i];
+                let hourly = getSafeHourly(w.hourly, 4); // intenta mediodía / tarde
+                let weatherDesc = "Clear";
+                let weatherCode = "113";
+
+                if (hourly) {
+                    weatherCode = hourly.weatherCode || "113";
+                    if (hourly.weatherDesc && hourly.weatherDesc.length > 0 && hourly.weatherDesc[0].value) {
+                        weatherDesc = hourly.weatherDesc[0].value;
+                    }
+                }
+
+                temp.forecast.push({
+                    date: w.date || "",
+                    max: root.useUSCS ? (w.maxtempF || "--") : (w.maxtempC || "--"),
+                    min: root.useUSCS ? (w.mintempF || "--") : (w.mintempC || "--"),
+                    avg: root.useUSCS ? (w.avgtempF || "--") : (w.avgtempC || "--"),
+                    sunHours: w.sunHour || "0",
+                    code: weatherCode,
+                    desc: weatherDesc
+                });
+            }
+        }
+
+        temp.lastRefresh = (DateTime.time || Qt.formatTime(new Date(), "hh:mm AP")) + " • " +
+                           (DateTime.date || Qt.formatDate(new Date(), "dd/MM/yyyy"));
+
         root.data = temp;
     }
 
     function getData() {
-        let command = "curl -s wttr.in";
+        let command = "curl -sfL -m 12 'https://wttr.in";
 
         if (root.gpsActive && root.location.valid) {
-            command += `/${root.location.lat},${root.location.long}`;
+            // CORREGIDO: lon, no long
+            command += "/" + root.location.lat + "," + root.location.lon;
         } else {
-            command += `/${formatCityName(root.city)}`;
+            command += "/" + formatCityName(root.city);
         }
 
-        // format as json
-        command += "?format=j1";
-        command += " | ";
-        // only take the current weather, location, asytronmy data
-        command += "jq '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0]}'";
-        fetcher.command[2] = command;
+        command += "?format=j1'";
+
+        fetcher.command = ["bash", "-c", command];
         fetcher.running = true;
     }
 
-    function formatCityName(cityName) {
-        return cityName.trim().split(/\s+/).join('+');
-    }
-
     Component.onCompleted: {
-        if (!root.gpsActive) return;
-        console.info("[WeatherService] Starting the GPS service.");
-        positionSource.start();
+        if (root.gpsActive) {
+            positionSource.start();
+        } else {
+            root.getData();
+        }
     }
 
     Process {
         id: fetcher
         command: ["bash", "-c", ""]
+
         stdout: StdioCollector {
             onStreamFinished: {
-                if (text.length === 0)
+                if (!text || text.trim().length === 0) {
+                    console.warn("[WeatherService] Respuesta vacía de wttr.in");
                     return;
+                }
+
                 try {
                     const parsedData = JSON.parse(text);
                     root.refineData(parsedData);
-                    // console.info(`[ data: ${JSON.stringify(parsedData)}`);
                 } catch (e) {
-                    console.error(`[WeatherService] ${e.message}`);
+                    console.error("[WeatherService JSON Parse Error] " + e.message);
+                    console.error("[WeatherService Raw Output] " + text);
                 }
+            }
+        }
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode !== 0) {
+                console.warn("[WeatherService] curl terminó con código:", exitCode);
             }
         }
     }
@@ -129,39 +194,39 @@ Singleton {
     PositionSource {
         id: positionSource
         updateInterval: root.fetchInterval
+        active: root.gpsActive
 
         onPositionChanged: {
-            // update the location if the given location is valid
-            // if it fails getting the location, use the last valid location
-            if (position.latitudeValid && position.longitudeValid) {
+            if (position.coordinate.isValid) {
                 root.location.lat = position.coordinate.latitude;
-                root.location.long = position.coordinate.longitude;
+                root.location.lon = position.coordinate.longitude; // CORREGIDO
                 root.location.valid = true;
-                // console.info(`📍 Location: ${position.coordinate.latitude}, ${position.coordinate.longitude}`);
                 root.getData();
-                // if can't get initialized with valid location deactivate the GPS
             } else {
-                root.gpsActive = root.location.valid ? true : false;
-                console.error("[WeatherService] Failed to get the GPS location.");
+                root.location.valid = false;
             }
         }
 
-        onValidityChanged: {
-            if (!positionSource.valid) {
-                positionSource.stop();
+        onSourceErrorChanged: {
+            if (sourceError !== PositionSource.NoError) {
+                console.warn("[WeatherService GPS] Error de GPS:", sourceError);
                 root.location.valid = false;
-                root.gpsActive = false;
-                Quickshell.execDetached(["notify-send", Translation.tr("Weather Service"), Translation.tr("Cannot find a GPS service. Using the fallback method instead."), "-a", "Shell"]);
-                console.error("[WeatherService] Could not aquire a valid backend plugin.");
             }
         }
     }
 
     Timer {
-        running: !root.gpsActive
+        running: true
         repeat: true
         interval: root.fetchInterval
-        triggeredOnStart: !root.gpsActive
-        onTriggered: root.getData()
+        onTriggered: {
+            if (!root.gpsActive) {
+                root.getData();
+            } else if (root.location.valid) {
+                root.getData();
+            } else {
+                positionSource.start();
+            }
+        }
     }
 }

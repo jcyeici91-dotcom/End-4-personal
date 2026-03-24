@@ -33,8 +33,7 @@ Variants {
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
         visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
 
-        // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
-        property bool enableAnimations: Config.options.appearance.enableAnimations
+         property bool enableAnimations: Config.options.appearance.enableAnimations
 
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
         property list<var> relevantWindows: HyprlandData.windowList.filter(win => win.monitor == monitor?.id && win.workspace.id >= 0).sort((a, b) => a.workspace.id - b.workspace.id)
@@ -390,28 +389,20 @@ Variants {
             }
         }
 
-     //   Component.onCompleted: {
-     //       Persistent.states.background.mediaMode.enabled = false 
-     //   }
-
-        // ... (resto de tu código en Background.qml) ...
-
-        GlobalShortcut {
+                 GlobalShortcut {
             name: "mediaModeToggle"
             description: "Toggles media mode on press"
 
             onPressed: {
                 if (!monitor.focused && Config.options.background.mediaMode.togglePerMonitor) return
 
-                // AHORA CAMBIAMOS EL ESTADO EN TU CONFIGURACIÓN
-                Config.options.background.mediaMode.enable = !Config.options.background.mediaMode.enable
+               Config.options.background.mediaMode.enable = !Config.options.background.mediaMode.enable
             }
         }
         
         Loader {
             id: mediaModeVisualLoader
             anchors.fill: parent
-            // AHORA EL LOADER LEE DESDE TU CONFIGURACIÓN
             active: Config.options.background.mediaMode.enable
             asynchronous: true
             sourceComponent: MediaMode {}
@@ -422,7 +413,6 @@ Variants {
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
         }
-        // ... (resto de tu código) ...
 
         WaveVisualizer {
             id: bottomVisualizer

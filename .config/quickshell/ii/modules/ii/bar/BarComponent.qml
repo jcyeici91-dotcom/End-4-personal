@@ -11,7 +11,6 @@ import Quickshell.Services.Mpris
 Item {
     id: rootItem
 
-    // 0: left, 1: center, 2: right
     property int barSection: 0
     property var list: []
     required property var modelData
@@ -19,7 +18,6 @@ Item {
     property int originalIndex: index
     property bool vertical: false
 
-// ---> pruebas <---
     property alias isContainer: wrapper.isContainer
     property alias forceNoContainer: wrapper.forceNoContainer
     
@@ -32,7 +30,6 @@ Item {
 
     readonly property var safeList: (Array.isArray(list) ? list : [])
 
-    // MUSIC_PLAYER: Ya no usamos esto para ocultar el grupo, pero lo dejamos por si acaso
     readonly property bool isMusicPlayer: (rootItem.modelData && rootItem.modelData.id === "music_player")
 
     readonly property bool musicHasMedia: (MprisController.activePlayer !== null)
@@ -40,17 +37,14 @@ Item {
 
     property bool userVisible: (rootItem.modelData ? (rootItem.modelData.visible !== false) : true)
 
-    // CORRECCIÓN: El componente de música ya no se oculta si no hay reproducción
     readonly property bool effectiveVisible: rootItem.userVisible
 
     visible: effectiveVisible
 
-    // Helpers de Color
     function _lin(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
     function _isDark(c) { return _lin(c) < 0.55 }
     function _on(bg, a) { return _isDark(bg) ? Qt.rgba(1, 1, 1, a) : Qt.rgba(0, 0, 0, a) }
 
-    // Tokens
     readonly property color groupBg: wrapper.colBackground
 
     readonly property color onStrong: _on(groupBg, 0.95)
@@ -66,7 +60,6 @@ Item {
         ? Qt.rgba(1, 1, 1, 0.16)
         : Qt.rgba(0, 0, 0, 0.14)
 
-    // Toggle de Visibilidad
     function toggleVisible(visibility) {
         rootItem.userVisible = visibility
 
@@ -85,11 +78,9 @@ Item {
         arr[rootItem.originalIndex].visible = visibility
     }
 
-    // Mapa de Componentes
     property var compMap: ({
         "workspaces": [workspaceComp, workspaceComp],
 
-        // Media adaptativo en ambas orientaciones
         "music_player": [musicPlayerComp, musicPlayerCompVert],
 
         "system_monitor": [hybridResUtilComp, systemMonitorCompVert],
@@ -97,7 +88,6 @@ Item {
 
         "battery": [batteryComp, batteryCompVert],
 
-        // Evita duplicado si aún existe en layout
         "utility_buttons": [unknownComp, unknownComp],
 
         "system_tray": [systemTrayComp, systemTrayComp],
@@ -106,7 +96,6 @@ Item {
         "record_indicator": [recordIndicatorComp, recordIndicatorComp],
         "screen_share_indicator": [screenshareIndicatorComp, screenshareIndicatorComp],
 
-        // CAMBIO: TimerWidget ya soporta vertical; no usar VerticalTimerWidget
         "timer": [timerComp, timerComp],
 
         "weather": [weatherComp, weatherComp],
@@ -149,7 +138,6 @@ Item {
         }
     }
 
-    // Inyección de Tokens
     function applyTokens(item) {
         if (!item) return
         if (item.onStrong !== undefined) item.onStrong = rootItem.onStrong
@@ -164,13 +152,12 @@ Item {
         if (item.backgroundColor !== undefined) item.backgroundColor = rootItem.groupBg
     }
 
-// Wrapper (Grupo)
     BarGroup {
         id: wrapper
         vertical: rootItem.vertical
         visible: rootItem.effectiveVisible
 
-        forcePillStyle: !rootItem.isCenter //  para que no siga el estilo del centro 
+        forcePillStyle: !rootItem.isCenter 
 
         anchors {
             verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
@@ -198,7 +185,6 @@ Item {
         }
     }
 
-    // Componentes
     Component {
         id: unknownComp
         Item { implicitWidth: 1; implicitHeight: 1 }
@@ -206,7 +192,6 @@ Item {
 
     Component { id: weatherComp; WeatherBar { vertical: rootItem.vertical } }
 
-    // Timer: único componente 
     Component { id: timerComp; TimerWidget { } }
 
     Component { id: screenshareIndicatorComp; ScreenShareIndicator { } }

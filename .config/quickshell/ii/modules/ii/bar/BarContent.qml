@@ -16,7 +16,6 @@ import "." as Bar
 Item {
     id: root
 
-    // INTERRUPTOR MAESTRO 
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     property var screen: root.QsWindow?.window?.screen ?? null
@@ -207,7 +206,7 @@ Item {
         id: leftSectionLoader
         anchors {
             top: parent.top
-            topMargin: root.useHybridGroups ? 6 : (root.cornerStyle === 1 ? 6 : 0)
+            topMargin: root.cornerStyle === 1 ? 6 : 0
             left: leftStopper.right
         }
         active: true
@@ -258,6 +257,20 @@ Item {
             id: middleClassicComponent
             Item {
                 anchors.fill: parent
+
+                MouseArea {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: centerCenter.horizontalCenter
+                    width: centerCenter.width + 120
+                    z: -1
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+                        if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll()
+                    }
+                }
+
                 RowLayout {
                     anchors {
                         top: parent.top
@@ -342,6 +355,16 @@ Item {
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft
                 }
 
+                MouseArea {
+                    anchors.fill: centerNotch
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: {
+                        GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+                        if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll()
+                    }
+                }
+
                 Bar.BarGroup {
                     id: centerNotch
                     anchors.top: !root.isBottom ? parent.top : undefined
@@ -355,13 +378,13 @@ Item {
                     isContainer: true
                     autoHide: true
                     
-                    isNotch: true           
+                    isNotch: true            
                     showBorder: false       
                     showHighlight: false    
                     unifyChildChips: true   
                     
                     width: implicitWidth
-                    height: implicitHeight + (root.useHybridGroups ? 6 : 0)
+                    height: implicitHeight
                     
                     Behavior on width { 
                         enabled: enableAnimations
@@ -405,7 +428,7 @@ Item {
         id: rightSectionLoader
         anchors {
             top: parent.top
-            topMargin: root.useHybridGroups ? 6 : (root.cornerStyle === 1 ? 6 : 0)
+            topMargin: root.cornerStyle === 1 ? 6 : 0
             right: rightStopper.left
             rightMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
         }
@@ -441,7 +464,7 @@ Item {
 
     FocusedScrollMouseArea {
         id: barRightSideMouseArea
-        z: -1
+        z: -2 
         anchors {
             top: parent.top
             bottom: parent.bottom

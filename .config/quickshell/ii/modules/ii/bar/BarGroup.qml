@@ -6,7 +6,6 @@ import QtQuick.Shapes
 Item {
     id: root
 
-    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     property bool vertical: false
@@ -19,7 +18,6 @@ Item {
     property bool unifyInside: false
     property bool unifyChildChips: false
     
-    // --- NUEVO: Modo especial para el Notch Central ---
     property bool isNotch: false
 
     property real startRadius: Appearance.rounding.normal
@@ -69,11 +67,22 @@ Item {
     readonly property bool useLineBg: groupBackgroundStyle === "line"
     readonly property bool useNotchBg: groupBackgroundStyle === "notch" && !vertical
 
-    // 👇 NUEVO: Detecta la combinación Glass + Line 👇
     readonly property bool isGlassMode: (Config.options?.bar?.barBackgroundStyle === 0)
     readonly property bool isGlassLineEffect: isGlassMode && useLineBg
 
     readonly property bool isBottom: (Config.options?.bar?.bottom ?? false)
+
+    // Condiciones de estilo
+    readonly property bool isHugCorner: (Config.options?.bar?.cornerStyle === 0 || Config.options?.bar?.cornerStyle === "hug")
+    readonly property bool isVisibleBg: (Config.options?.bar?.barBackgroundStyle === 1 || Config.options?.bar?.barBackgroundStyle === "visible")
+    readonly property bool isTransparentBg: (Config.options?.bar?.barBackgroundStyle === 0 || Config.options?.bar?.barBackgroundStyle === "transparent" || Config.options?.bar?.barBackgroundStyle === "glass")
+    readonly property bool isHybridBg: (groupBackgroundStyle === "hybrid")
+    
+    // Condicion para aplicar margen (Visible o Transparent en modo Hug + Hybrid)
+    readonly property bool applyHybridMargin: isHugCorner && isHybridBg && (isVisibleBg || isTransparentBg)
+
+    // Margen exclusivo para reducir el tamano de las pills izquierda/derecha sin alterar el notch central
+    readonly property int hybridPillMargin: (applyHybridMargin && isContainer && !isNotch) ? 4 : 0
 
     readonly property bool hasContent: gridLayout.visibleChildren.length > 0
     readonly property bool shouldBeVisible: autoHide ? hasContent : true
@@ -101,12 +110,11 @@ Item {
 
     property bool forcePillStyle: false
 
-    readonly property bool allowFlatten: useHybridBg && !cornerIsFloat && !forcePillStyle
+    readonly property bool allowFlatten: false
     readonly property bool flattenTop: allowFlatten && !vertical && !isBottom
     readonly property bool flattenBottom: allowFlatten && !vertical && isBottom
     readonly property bool allowAttach: allowFlatten && !cornerIsFloat
 
-    // Esquinas calculadas: Si es Notch, fuerza base plana arriba
     readonly property real finalRTL: {
         if (isNotch && !isBottom) return 0
         if (useLineBg) return 0
@@ -151,8 +159,6 @@ Item {
 
     readonly property color effectiveBorderColor: Appearance.colors.colLayer0Border
 
-    // --- CORRECCIÓN DE LAS LÍNEAS FINAS ---
-    // Si isContainer es falso, devuelve grosor 0 estricto.
     readonly property real effectiveStrokeWidth: {
         if (!root.effectiveShowBorder) return 0
         if (!root.isContainer || root.isBorderless) return 0
@@ -196,19 +202,21 @@ Item {
 
         anchors.margins: root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0)
 
+        //  margen dinamico para que las pills se encojan y no rocen los bordes
         anchors.topMargin: root.bridgeMode ? 0
-            : (root.cornerIsFloat ? root.effectiveEdgeInset
-                : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
+            : (hybridPillMargin > 0 ? hybridPillMargin 
+                : (root.cornerIsFloat ? root.effectiveEdgeInset
+                    : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))))
 
         anchors.bottomMargin: root.bridgeMode ? 0
-            : (root.cornerIsFloat ? root.effectiveEdgeInset
-                : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset)))
+            : (hybridPillMargin > 0 ? hybridPillMargin 
+                : (root.cornerIsFloat ? root.effectiveEdgeInset
+                    : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))))
 
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
 
         sourceComponent: {
-            // 👇 LLAMADA A NUESTRO NUEVO COMPONENTE 👇
             if (root.isGlassLineEffect) return glassLineBackgroundComponent
             
             if (root.useLineBg) return lineBackgroundComponent
@@ -217,7 +225,6 @@ Item {
         }
     }
 
-    // 👇 EL COMPONENTE QUE INYECTA EL EFECTO 👇
     Component {
         id: glassLineBackgroundComponent
         GlassLineBackground {
@@ -230,7 +237,7 @@ Item {
 
     Component {
         id: notchBackgroundComponent
-        Item { /* ... Mantenido igual ... */ }
+        Item {  }
     }
 
     Component {
@@ -241,13 +248,11 @@ Item {
             radius: root.rectRadius
             color: root.effectiveFill
             
-            // --- USAMOS EL STROKE CALCULADO ---
             border.width: root.effectiveStrokeWidth
             border.color: border.width > 0 ? root.effectiveBorderColor : "transparent"
 
             Rectangle {
                 anchors.fill: parent
-                // Desactiva el brillo si no hay contenedor
                 visible: root.effectiveShowHighlight && root.isContainer && !root.isBorderless
                 color: "transparent"
                 radius: parent.radius
@@ -266,7 +271,6 @@ Item {
             antialiasing: true
             color: root.effectiveFill
 
-            // --- USAMOS EL STROKE CALCULADO ---
             border.width: root.effectiveStrokeWidth
             border.color: border.width > 0 ? root.effectiveBorderColor : "transparent"
 
@@ -277,7 +281,6 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                // Desactiva el brillo si no hay contenedor
                 visible: root.effectiveShowHighlight && root.isContainer && !root.isBorderless
                 color: "transparent"
                 topLeftRadius: parent.topLeftRadius
@@ -312,8 +315,6 @@ Item {
 
     Item {
         anchors.fill: backgroundLoader
-        // --- PREVENCIÓN DE APLASTAMIENTO (Rect Mode) ---
-        // Empuja los widgets 4px hacia abajo cuando el notch está pegado arriba
         anchors.topMargin: root.padding + (root.isNotch && !root.cornerIsFloat && !root.isBottom ? 4 : 0)
         anchors.bottomMargin: root.padding + (root.isNotch && !root.cornerIsFloat && root.isBottom ? 4 : 0)
         anchors.leftMargin: root.padding

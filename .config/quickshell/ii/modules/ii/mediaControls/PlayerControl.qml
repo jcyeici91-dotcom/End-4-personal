@@ -1,487 +1,763 @@
 pragma ComponentBehavior: Bound
+
 import qs.modules.common
 import qs.modules.common.models
 import qs.modules.common.widgets
 import qs.services
 import qs.modules.common.functions
-import Qt5Compat.GraphicalEffects
+import qs.modules.common.utils
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
 
-Item { 
+Item {
     id: root
+
+    property color color: "transparent"
+
     required property MprisPlayer player
+    required property string settingsQmlPath
+
     property var artUrl: player?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
-    property string artFileName: Qt.md5(artUrl)
+    property string artFileName: Qt.md5(String(artUrl || ""))
     property string artFilePath: `${artDownloadLocation}/${artFileName}`
-    
-    // 🔥 CORRECCIÓN 1: Exigimos la ruta desde MediaControls para no perderla 🔥
-    required property string settingsQmlPath     
-    
-    property color artDominantColor: ColorUtils.mix((colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary), Appearance.colors.colPrimaryContainer, 0.8) || Appearance.m3colors.m3secondaryContainer
-    
     property bool downloaded: false
-    property list<real> visualizerPoints: []
-    // 👇 CORRECCIÓN WAVE 1: Aumentamos este valor para comprimir la onda verticalmente 👇
-    // Antes: 1000. Al subirlo, los puntos de datos parecen más pequeños en proporción.
-    property real maxVisualizerValue: 1800 
-    property int visualizerSmoothing: 2 
-    property real radius
+    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
 
+    property color fallbackAccent: Appearance.colors.colPrimary || "#e11d48"
+    property color artDominantColor: colorQuantizer?.colors?.length > 0
+                                    ? colorQuantizer.colors[0]
+                                    : fallbackAccent
+
+    property list<real> visualizerPoints: []
+    property real maxVisualizerValue: 1400
+    property int visualizerSmoothing: 3
+
+    property real radius: Appearance.rounding.large || 24
     property bool pinned: false
     signal togglePinned()
 
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    readonly property string cleanTitle: StringUtils.cleanMusicTitle(root.player?.trackTitle) || "Sin reproducción"
+    readonly property string cleanArtist: root.player?.trackArtist || "Artista desconocido"
+    readonly property bool hasTrack: !!(root.player?.trackTitle && root.player.trackTitle.length > 0)
+    readonly property bool canSeekTrack: root.player?.canSeek ?? false
+    readonly property real progressValue: (root.player && root.player.length > 0)
+                                        ? (root.player.position / root.player.length)
+                                        : 0
 
-    property date today: new Date()
-
-    function getDayName(offset) {
-        let d = new Date(today)
-        d.setDate(today.getDate() + offset)
-        const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"]
-        const daysShort = ["S","M","T","W","T","F","S"]
-        return offset === 0 ? days[d.getDay()] : daysShort[d.getDay()]
-    }
-
-    function getDayNum(offset) {
-        let d = new Date(today)
-        d.setDate(today.getDate() + offset)
-        return d.getDate().toString().padStart(2,'0')
-    }
-
-    function getCurrentMonth() {
-        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-        return months[today.getMonth()]
-    }
-
-    component TrackChangeButton: RippleButton {
-        id: button
-        property int buttonSize: 24
-        property bool fill: true
-        implicitWidth: buttonSize
-        implicitHeight: buttonSize
-        property var iconName
-        
-        colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 1)
-        colBackgroundHover: blendedColors.colSecondaryContainerHover
-        colRipple: blendedColors.colSecondaryContainerActive
-
-        contentItem: MaterialSymbol {
-            iconSize: buttonSize
-            fill: button.fill ? 1 : 0
-            horizontalAlignment: Text.AlignHCenter
-            color: blendedColors.colOnSecondaryContainer
-            text: iconName
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-            }
-        }
+    LrclibLyrics {
+        id: lyricsManager
+        enabled: !!root.player && !!(root.player?.trackTitle || "").length
+        title: root.player?.trackTitle || ""
+        artist: root.player?.trackArtist || ""
+        duration: root.player?.length || 0
+        position: root.player?.position || 0
+        smoothPosition: true
     }
 
     Timer {
-        running: root.player?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.resources.updateInterval
+        id: lyricTick
+        running: root.player?.playbackState === MprisPlaybackState.Playing
+        interval: Math.max(80, Config.options.resources.updateInterval || 120)
         repeat: true
-        onTriggered: { root.player.positionChanged() }
+        onTriggered: {
+            if (root.player)
+                root.player.positionChanged()
+        }
     }
 
     onArtFilePathChanged: {
-        if (!root.artUrl || root.artUrl.length == 0) {
-            root.artDominantColor = Appearance.m3colors.m3secondaryContainer;
-            return;
+        if (!root.artUrl || String(root.artUrl).length === 0) {
+            root.downloaded = false
+            return
         }
-        coverArtDownloader.targetFile = root.artUrl;
-        coverArtDownloader.artFilePath = root.artFilePath;
-        root.downloaded = false;
-        coverArtDownloader.running = true;
+
+        coverArtDownloader.targetFile = root.artUrl
+        coverArtDownloader.artFilePath = root.artFilePath
+        root.downloaded = false
+        coverArtDownloader.running = true
     }
 
     Process {
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: [ "bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'` ]
-        onExited: (exitCode, exitStatus) => { root.downloaded = true }
+
+        command: [
+            "bash", "-c",
+            `[ -f "${artFilePath}" ] || curl -sSL '${targetFile}' -o '${artFilePath}'`
+        ]
+
+        onExited: (exitCode, exitStatus) => {
+            root.downloaded = true
+        }
     }
 
     ColorQuantizer {
         id: colorQuantizer
         source: root.displayedArtFilePath
-        depth: 0 
-        rescaleSize: 1 
+        depth: 0
+        rescaleSize: 1
     }
 
-    property QtObject blendedColors: AdaptedMaterialScheme {
-        color: artDominantColor
+    function fmtTime(ms) {
+        const total = Math.max(0, Math.floor((ms || 0) / 1000))
+        const m = Math.floor(total / 60)
+        const s = total % 60
+        return `${m}:${s < 10 ? "0" : ""}${s}`
     }
 
     Rectangle {
-        id: background
+        id: scene
         anchors.fill: parent
-        color: "transparent" 
+        radius: root.radius
+        color: "#090a0f"
         clip: true
+        border.width: 1
+        border.color: "#181b23"
 
-        // --- 1. WAVES CLAVADAS AL FONDO CON MÁSCARA CURVA ---
-        Item {
-            id: waveContainer
+        Image {
+            id: bgArt
+            anchors.fill: parent
+            source: root.displayedArtFilePath
+            fillMode: Image.PreserveAspectCrop
+            visible: root.displayedArtFilePath !== ""
+            opacity: root.displayedArtFilePath !== "" ? 0.42 : 0.0
+            smooth: true
+            asynchronous: true
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#03040a"
+            opacity: 0.72
+        }
+
+        // Tinte dinámico global
+        Rectangle {
+            anchors.fill: parent
+            color: root.artDominantColor
+            opacity: 0.08
+        }
+
+        Rectangle {
             anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom 
-            // 👇 CORRECCIÓN WAVE 2: Reducimos la altura física del contenedor 👇
-            // Antes: 85. Ahora es mucho más baja y sutil.
-            height: 40
-            
-            // Efecto mágico de recorte circular
-            layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: Rectangle {
-                    width: waveContainer.width
-                    // 👇 CORRECCIÓN WAVE 3: Ajustamos la máscara para la nueva altura 👇
-                    // Subimos la máscara radius píxeles para que la curva inferior coincida
-                    // perfectamente con el borde de la ventana principal.
-                    height: waveContainer.height
-                    y: -root.radius 
-                    radius: root.radius 
-                }
-            }
-            
-            WaveVisualizer {
-                anchors.fill: parent
-                // Solo funciona si el modo media está activo Y el interruptor visualizer está encendido
-                live: (root.player?.isPlaying ?? false) && Config.options.background.mediaMode.enable && Config.options.background.mediaMode.showVisualizer
-                points: root.visualizerPoints
-                maxVisualizerValue: root.maxVisualizerValue
-                smoothing: root.visualizerSmoothing
-                color: ColorUtils.transparentize(blendedColors.colPrimary, 0.15)
+            anchors.top: parent.top
+            width: parent.width * 0.58
+            height: parent.height * 0.55
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.18) }
+                GradientStop { position: 1.0; color: "transparent" }
             }
         }
 
-        // --- 2. ÍCONOS SUPERIORES ---
-        RowLayout {
-            z: 10
+        Rectangle {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: parent.width * 0.34
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#cc05060c" }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+        }
+
+        Rectangle {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: parent.width * 0.42
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: "#d905060c" }
+            }
+        }
+
+          Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
-            anchors.topMargin: 15 
-            anchors.leftMargin: 20  
-            spacing: 12
-
-            TrackChangeButton {
-                iconName: "push_pin"
-                buttonSize: 18
-                fill: root.pinned
-                downAction: () => root.togglePinned()
-            }
-            
-            // Botón Media Mode 
-            TrackChangeButton { 
-                iconName: Config.options.background.mediaMode.enable ? "music_note" : "music_off"
-                buttonSize: 18
-                fill: Config.options.background.mediaMode.enable
-                downAction: () => {
-                    Config.options.background.mediaMode.enable = !Config.options.background.mediaMode.enable
-                }
-                StyledToolTip { text: Translation.tr("Toggle Media Mode") }
-            }
-
-            // Botón para alternar el visualizador Wave
-            TrackChangeButton {
-                iconName: "waves"
-                buttonSize: 18
-                fill: Config.options.background.mediaMode.showVisualizer
-                downAction: () => {
-                    Config.options.background.mediaMode.showVisualizer = !Config.options.background.mediaMode.showVisualizer
-                }
-                StyledToolTip { text: Translation.tr("Toggle Wave Visualizer") }
-            }
-        }
-
-        TrackChangeButton {
-            id: settingsBtn
-            iconName: "settings"
-            buttonSize: 22
-            fill: false
-            z: 10 
-            anchors.top: parent.top
             anchors.right: parent.right
-            anchors.topMargin: 15 
-            anchors.rightMargin: 20  
-            downAction: () => {
-                GlobalStates.mediaControlsOpen = false;
-                Quickshell.execDetached(["qs", "-p", "/home/" + Quickshell.env("USER") + "/.config/quickshell/ii/settings.qml"]);
+            height: parent.height * 0.22
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#aa04050a" }
+                GradientStop { position: 1.0; color: "transparent" }
             }
         }
 
-        // --- 3. CONTENIDO CENTRAL ---
-        RowLayout {
+           Rectangle {
+            anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter 
-            // Como la onda es más baja, podemos bajar un pelín el texto si queremos,
-            // pero el offset actual de 5 está bien para que no quede pegado arriba.
-            anchors.verticalCenterOffset: 5 
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
-            spacing: 15
-
-            // MÚSICA
-            RowLayout {
-                spacing: 12
-                Layout.alignment: Qt.AlignVCenter
-
-                Item {
-                    Layout.preferredWidth: 76
-                    Layout.preferredHeight: 76
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 16
-                        color: Appearance.colors.colLayer1
-                        layer.enabled: true
-                        layer.effect: OpacityMask { maskSource: Rectangle { width: 76; height: 76; radius: 16 } }
-                        
-                        Image {
-                            anchors.fill: parent
-                            source: root.displayedArtFilePath
-                            fillMode: Image.PreserveAspectCrop
-                            cache: false
-                            antialiasing: true
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.right: parent.right
-                        anchors.margins: -4
-                        width: 20
-                        height: 20
-                        radius: 8
-                        color: "#fa233b"
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 12
-                            height: 12
-                            source: root.player ? "image://icon/" + root.player.desktopEntry : ""
-                            fillMode: Image.PreserveAspectFit
-                            visible: root.player
-                        }
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 2
-
-                    StyledText {
-                        text: StringUtils.cleanMusicTitle(root.player?.trackTitle) || "No Media"
-                        font.pixelSize: 15
-                        font.bold: true
-                        color: blendedColors.colOnLayer0
-                        Layout.maximumWidth: 140
-                        elide: Text.ElideRight
-                    }
-
-                    StyledText {
-                        text: root.player?.trackArtist || "Unknown Artist"
-                        font.pixelSize: 11
-                        color: blendedColors.colSubtext
-                        Layout.maximumWidth: 140
-                        elide: Text.ElideRight
-                    }
-
-                    RowLayout {
-                        Layout.topMargin: 4
-                        spacing: 10
-
-                        TrackChangeButton {
-                            iconName: "skip_previous"
-                            buttonSize: 22
-                            fill: false
-                            downAction: () => root.player?.previous()
-                        }
-                        
-                        RippleButton {
-                            id: playPauseButton
-                            implicitWidth: 32
-                            implicitHeight: 32
-                            buttonRadius: root.player?.isPlaying ? Appearance?.rounding.normal : 16
-                            colBackground: root.player?.isPlaying ? blendedColors.colPrimary : blendedColors.colSecondaryContainer
-                            colBackgroundHover: root.player?.isPlaying ? blendedColors.colPrimaryHover : blendedColors.colSecondaryContainerHover
-                            colRipple: root.player?.isPlaying ? blendedColors.colPrimaryActive : blendedColors.colSecondaryContainerActive
-                            downAction: () => root.player.togglePlaying()
-
-                            contentItem: MaterialSymbol {
-                                iconSize: 20
-                                fill: 1
-                                horizontalAlignment: Text.AlignHCenter
-                                color: root.player?.isPlaying ? blendedColors.colOnPrimary : blendedColors.colOnSecondaryContainer
-                                text: root.player?.isPlaying ? "pause" : "play_arrow"
-                                Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
-                            }
-                        }
-                        
-                        TrackChangeButton {
-                            iconName: "skip_next"
-                            buttonSize: 22
-                            fill: false
-                            downAction: () => root.player?.next()
-                        }
-                    }
-                }
-            }
-
-            Item { Layout.fillWidth: true } 
-
-            // CALENDARIO
-            ColumnLayout {
-                Layout.alignment: Qt.AlignVCenter
-                spacing: 8 
-
-                HorizontalMiniCalendar {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.fillWidth: false
-                    highlightColor: blendedColors.colPrimary 
-                    normalColor: Appearance.colors.colSubtext
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 4
-                    spacing: 8
-
-                    MaterialSymbol {
-                        text: "event_upcoming"
-                        iconSize: 18 
-                        color: Appearance.colors.colSubtext
-                        opacity: 0.75 
-                    }
-                    StyledText {
-                        text: Translation.tr("Nothing for today")
-                        font.pixelSize: 14 
-                        font.weight: Font.Medium 
-                        color: Appearance.colors.colSubtext
-                        opacity: 0.75
-                    }
-                }
-            }
-
-            Item { Layout.fillWidth: true } 
-
-            // USUARIO 
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 90 
-                Layout.preferredHeight: 90 
-                radius: 40
-                color: Appearance.colors.colLayer1 
-                
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 2
-                    
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 50  
-                        height: 50 
-                        radius: 25
-                        color: "transparent"
-                        layer.enabled: true
-                        layer.effect: OpacityMask { maskSource: Rectangle { width: 50; height: 50; radius: 25 } }
-                        
-                        Image {
-                            id: userAvatar
-                            anchors.fill: parent
-                            source: "file:///home/" + (Quickshell.env("USER") || "") + "/.face"
-                            fillMode: Image.PreserveAspectCrop
-                            visible: status === Image.Ready
-                            cache: false
-                        }
-                        MaterialSymbol {
-                            anchors.centerIn: parent
-                            text: "person"
-                            iconSize: 32
-                            color: Appearance.colors.colSubtext
-                            visible: !userAvatar.visible
-                        }
-                    }
-                    
-                    StyledText {
-                        text: SystemInfo.username || "User"
-                        font.pixelSize: 12 
-                        font.bold: true
-                        color: Appearance.colors.colSubtext
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.maximumWidth: 65
-                        elide: Text.ElideRight
-                    }
-                }
-                
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    hoverEnabled: true
-                    onEntered: parent.color = Appearance.colors.colLayer2
-                    onExited:  parent.color = Appearance.colors.colLayer1
-                }
+            height: parent.height * 0.34
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: "#e8040509" }
             }
         }
 
-        // --- 4. BARRA DE PROGRESO ---
-        Item {
-            id: progressBarContainer
-            z: 15
-            height: 12
+           WaveVisualizer {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
-            anchors.bottomMargin: 8 
-            
-            Loader {
-                id: sliderLoader
-                anchors.fill: parent
-                active: root.player?.canSeek ?? false
+            height: 160
+            live: (root.player?.isPlaying ?? false)
+                  && Config.options.background.mediaMode.enable
+                  && Config.options.background.mediaMode.showVisualizer
+            points: root.visualizerPoints
+            maxVisualizerValue: root.maxVisualizerValue
+            smoothing: root.visualizerSmoothing
+            color: root.artDominantColor
+            opacity: 0.24
+        }
 
-                sourceComponent: StyledSlider {
-                    configuration: StyledSlider.Configuration.Wavy
-                    highlightColor: blendedColors.colPrimary
-                    trackColor: blendedColors.colSecondaryContainer
-                    handleColor: blendedColors.colPrimary
+       RowLayout {
+            z: 40
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 22
+            spacing: 10
 
-                    value: (root.player && root.player.length > 0)
-                           ? (root.player.position / root.player.length)
-                           : 0
+            Rectangle {
+                implicitWidth: 118
+                implicitHeight: 36
+                radius: 18
+                color: "#10131a"
+                border.width: 1
+                border.color: "#20242d"
 
-                    onMoved: {
-                        if (!root.player) return
-                        root.player.position = value * root.player.length
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    spacing: 8
+
+                    Rectangle {
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: root.player?.isPlaying ? root.artDominantColor : "#5d6472"
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: root.player?.isPlaying ? "Now Playing" : "Paused"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: "white"
+                        opacity: 0.92
                     }
                 }
             }
 
-            Loader {
-                id: progressBarLoader
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
-                    right: parent.right
+            RippleButton {
+                implicitWidth: 42
+                implicitHeight: 42
+                buttonRadius: 21
+                colBackground: root.pinned
+                               ? Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.18)
+                               : "#10131a"
+
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    text: "push_pin"
+                    iconSize: 20
+                    color: root.pinned ? root.artDominantColor : "white"
+                    opacity: root.pinned ? 1.0 : 0.7
                 }
-                active: !(root.player?.canSeek ?? false)
 
-                sourceComponent: StyledProgressBar {
-                    wavy: root.player?.isPlaying
-                    highlightColor: blendedColors.colPrimary
-                    trackColor: blendedColors.colSecondaryContainer
+                onClicked: root.togglePinned()
+            }
 
-                    value: (root.player && root.player.length > 0)
-                           ? (root.player.position / root.player.length)
-                           : 0
+            RippleButton {
+                implicitWidth: 42
+                implicitHeight: 42
+                buttonRadius: 21
+                colBackground: "#10131a"
+
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    text: "settings"
+                    iconSize: 20
+                    color: "white"
+                    opacity: 0.7
+                }
+
+                onClicked: {
+                    GlobalStates.mediaControlsOpen = false
+                    Quickshell.execDetached([
+                        "qs", "-p",
+                        "/home/" + Quickshell.env("USER") + "/.config/quickshell/ii/settings.qml"
+                    ])
+                }
+            }
+        }
+
+        ColumnLayout {
+            z: 20
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 28
+            anchors.topMargin: 34
+            anchors.bottomMargin: 78
+            width: Math.min(parent.width * 0.38, 390)
+            spacing: 18
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: root.cleanTitle
+                    font.pixelSize: 26
+                    font.weight: Font.Black
+                    color: "white"
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
+                    lineHeight: 1.08
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: root.cleanArtist
+                    font.pixelSize: 16
+                    font.weight: Font.DemiBold
+                    color: root.artDominantColor
+                    elide: Text.ElideRight
+                }
+
+                RowLayout {
+                    spacing: 8
+
+                    Rectangle {
+                        implicitWidth: 104
+                        implicitHeight: 28
+                        radius: 14
+                        color: "#10131a"
+                        border.width: 1
+                        border.color: "#20242d"
+
+                        StyledText {
+                            anchors.centerIn: parent
+                            text: root.player?.identity || "MPRIS"
+                            font.pixelSize: 11
+                            font.weight: Font.Bold
+                            color: "white"
+                            opacity: 0.9
+                        }
+                    }
+
+                    Rectangle {
+                        implicitWidth: 74
+                        implicitHeight: 28
+                        radius: 14
+                        color: Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.14)
+                        border.width: 1
+                        border.color: Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.18)
+
+                        StyledText {
+                            anchors.centerIn: parent
+                            text: root.canSeekTrack ? "Seek" : "Static"
+                            font.pixelSize: 11
+                            font.weight: Font.Bold
+                            color: "white"
+                            opacity: 0.9
+                        }
+                    }
+                }
+            }
+
+            Item { Layout.preferredHeight: 4 }
+
+                Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 96
+                radius: 26
+                color: "#0c1017"
+                opacity: 0.92
+                border.width: 1
+                border.color: "#1c212c"
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
+                    spacing: 16
+
+                    Rectangle {
+                        width: 52
+                        height: 52
+                        radius: 26
+                        color: prevMouse.containsPress ? "#171c26" : (prevMouse.containsMouse ? "#131823" : "transparent")
+                        border.width: 1
+                        border.color: "#222838"
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "skip_previous"
+                            iconSize: 26
+                            color: "white"
+                            opacity: 0.92
+                        }
+
+                        MouseArea {
+                            id: prevMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.player?.previous()
+                        }
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    Rectangle {
+                        width: 72
+                        height: 72
+                        radius: 36
+                        color: root.artDominantColor
+                        opacity: playMouse.containsPress ? 0.80 : (playMouse.containsMouse ? 0.92 : 1.0)
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 58
+                            height: 58
+                            radius: 29
+                            color: Qt.rgba(0, 0, 0, 0.08)
+                        }
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: root.player?.isPlaying ? "pause" : "play_arrow"
+                            iconSize: 38
+                            color: "#090b10"
+                        }
+
+                        MouseArea {
+                            id: playMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.player?.togglePlaying()
+                        }
+
+                        Behavior on opacity { NumberAnimation { duration: 120 } }
+                    }
+
+                    Rectangle {
+                        width: 52
+                        height: 52
+                        radius: 26
+                        color: nextMouse.containsPress ? "#171c26" : (nextMouse.containsMouse ? "#131823" : "transparent")
+                        border.width: 1
+                        border.color: "#222838"
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "skip_next"
+                            iconSize: 26
+                            color: "white"
+                            opacity: 0.92
+                        }
+
+                        MouseArea {
+                            id: nextMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.player?.next()
+                        }
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    ColumnLayout {
+                        spacing: 4
+
+                        StyledText {
+                            text: root.fmtTime(root.player?.position || 0)
+                            font.pixelSize: 18
+                            font.weight: Font.Black
+                            color: "white"
+                            horizontalAlignment: Text.AlignRight
+                        }
+
+                        StyledText {
+                            text: root.fmtTime(root.player?.length || 0)
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: "white"
+                            opacity: 0.45
+                            horizontalAlignment: Text.AlignRight
+                        }
+                    }
+                }
+            }
+
+                   RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Rectangle {
+                    width: 10
+                    height: 10
+                    radius: 5
+                    color: root.player?.isPlaying ? root.artDominantColor : "#5d6472"
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: {
+                        if (!root.hasTrack) return "Esperando pista..."
+                        if (lyricsManager.loading) return "Buscando letras sincronizadas..."
+                        if (lyricsManager.instrumental) return "Pista instrumental"
+                        if (lyricsManager.error !== "") return "Letras no disponibles"
+                        return root.player?.isPlaying ? "Letras sincronizadas activas" : "Pausado"
+                    }
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.68
+                    elide: Text.ElideRight
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+        }
+
+        Item {
+            id: lyricsStage
+            z: 18
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: Math.min(parent.width * 0.42, 420)
+            anchors.rightMargin: 34
+            anchors.topMargin: 56
+            anchors.bottomMargin: 86
+
+            // Fallback
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: Math.min(parent.width * 0.8, 460)
+                spacing: 14
+
+                visible: lyricsManager.loading
+                         || lyricsManager.error !== ""
+                         || lyricsManager.instrumental
+                         || !root.hasTrack
+                         || (!lyricsManager.currentLineText && !lyricsManager.prevLineText && !lyricsManager.nextLineText)
+
+                MaterialSymbol {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: {
+                        if (!root.hasTrack) return "hourglass_empty"
+                        if (lyricsManager.loading) return "sync"
+                        if (lyricsManager.instrumental) return "music_note"
+                        if (lyricsManager.error !== "") return "lyrics"
+                        return "music_note"
+                    }
+                    iconSize: 62
+                    color: "white"
+                    opacity: 0.12
+                }
+
+                StyledText {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: {
+                        if (!root.hasTrack) return "Esperando pista..."
+                        if (lyricsManager.loading) return "Buscando letras..."
+                        if (lyricsManager.instrumental) return "♪ Pista instrumental ♪"
+                        if (lyricsManager.error !== "") return "Letras no disponibles"
+                        return "Reproduciendo..."
+                    }
+                    font.pixelSize: 24
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.5
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                StyledText {
+                    Layout.alignment: Qt.AlignHCenter
+                    visible: root.hasTrack
+                    text: root.cleanTitle + " — " + root.cleanArtist
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                    color: root.artDominantColor
+                    opacity: 0.8
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 10
+
+                visible: !(lyricsManager.loading
+                           || lyricsManager.error !== ""
+                           || lyricsManager.instrumental
+                           || !root.hasTrack
+                           || (!lyricsManager.currentLineText && !lyricsManager.prevLineText && !lyricsManager.nextLineText))
+
+                Item { Layout.fillHeight: true }
+
+                   StyledText {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
+                    text: lyricsManager.prevLineText || ""
+                    font.pixelSize: 20
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.18
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
+
+                     Item {
+                    Layout.fillWidth: true
+                    implicitHeight: currentHeroText.implicitHeight + 22
+
+                    Rectangle {
+                        anchors.centerIn: currentHeroText
+                        width: Math.min(currentHeroText.paintedWidth + 44, parent.width * 0.96)
+                        height: currentHeroText.paintedHeight + 22
+                        radius: 24
+                        color: Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.10)
+                        border.width: 1
+                        border.color: Qt.rgba(root.artDominantColor.r, root.artDominantColor.g, root.artDominantColor.b, 0.12)
+                    }
+
+                    StyledText {
+                        id: currentHeroText
+                        anchors.centerIn: parent
+                        width: Math.min(parent.width * 0.94, 560)
+                        text: lyricsManager.currentLineText || "♪"
+                        font.pixelSize: 34
+                        font.weight: Font.Black
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        lineHeight: 1.08
+                    }
+                }
+
+                    StyledText {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
+                    text: lyricsManager.nextLineText || ""
+                    font.pixelSize: 20
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.18
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
+
+                Item { Layout.fillHeight: true }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 8
+
+                    Rectangle {
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: root.player?.isPlaying ? root.artDominantColor : "#5d6472"
+                    }
+
+                    StyledText {
+                        text: root.player?.isPlaying ? "Sync activo" : "Pausado"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: "white"
+                        opacity: 0.38
+                    }
+                }
+            }
+        }
+
+        ColumnLayout {
+            z: 35
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 28
+            anchors.rightMargin: 28
+            anchors.bottomMargin: 14
+            spacing: 6
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                StyledText {
+                    text: root.fmtTime(root.player?.position || 0)
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.40
+                }
+
+                Item { Layout.fillWidth: true }
+
+                StyledText {
+                    text: root.fmtTime(root.player?.length || 0)
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                    color: "white"
+                    opacity: 0.40
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 14
+
+                Loader {
+                    anchors.fill: parent
+                    active: root.canSeekTrack
+
+                    sourceComponent: StyledSlider {
+                        configuration: StyledSlider.Configuration.Wavy
+                        highlightColor: root.artDominantColor
+                        trackColor: "#2a2f3b"
+                        handleColor: root.artDominantColor
+                        value: root.progressValue
+
+                        onMoved: {
+                            if (root.player && root.player.length > 0)
+                                root.player.position = value * root.player.length
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.fill: parent
+                    active: !root.canSeekTrack
+
+                    sourceComponent: StyledProgressBar {
+                        wavy: root.player?.isPlaying
+                        highlightColor: root.artDominantColor
+                        trackColor: "#2a2f3b"
+                        value: root.progressValue
+                    }
                 }
             }
         }

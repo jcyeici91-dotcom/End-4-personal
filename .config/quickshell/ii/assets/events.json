@@ -1,0 +1,12 @@
+[
+  {
+    "title": "Juzgado - Revisión",
+    "date": "2026-03-25",
+    "recurring": "none"
+  },
+  {
+    "title": "Estudio Teshuvá",
+    "recurring": "weekly",
+    "dayOfWeek": 6
+  }
+]

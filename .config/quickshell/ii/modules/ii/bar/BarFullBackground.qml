@@ -16,7 +16,6 @@ Item {
     property bool hasActiveWindows: false
     property bool isBottom: false
 
-    // NTERRUPTOR MAESTRO 
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     function _styleFromConfig(v) {
@@ -76,7 +75,7 @@ Item {
             anchors.fill: parent
 
             Loader {
-                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations // Apaga la sombra si las animaciones están apagadas
+                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations 
                 anchors.fill: barBackground
                 sourceComponent: StyledRectangularShadow {
                     anchors.fill: undefined
@@ -92,19 +91,12 @@ Item {
                 z: -10
                 anchors.fill: parent
                 
-                // - MÁRGENES PARA EL MARCO ---
-                anchors.topMargin: 6    // Despega el techo para ver el borde
-                anchors.leftMargin: 8   // Despega la izquierda
-                anchors.rightMargin: 8  // Despega la derecha
-                // end 
-                
-                anchors.margins: Appearance.sizes.hyprlandGapsOut - 1 
-                radius: Appearance.rounding.full 
+                anchors.margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut - 1) : 0
+                radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.full : 0
                 antialiasing: true
 
                 color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
 
-                // Borde eliminado (estaba forzado en 1)
                 border.width: 0 
                 border.color: "transparent"
 
@@ -114,8 +106,6 @@ Item {
                 }
             }
 
-            // --- Corregido ---
-            // Forzamos un borde superior delgado y nítido a lo largo de toda la barra
             Rectangle {
                 id: barTopBorder
                 height: 1
@@ -143,7 +133,7 @@ Item {
             Bar.BarBgShadowOverlay {
                 targetItem: overlayBg
                 cornerStyle: 1 
-                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations // Apaga la sombra si las animaciones están apagadas
+                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations 
             }
 
             Bar.BarBgOverlay {

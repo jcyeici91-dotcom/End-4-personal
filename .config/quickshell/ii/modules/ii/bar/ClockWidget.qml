@@ -7,7 +7,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 
-Item {
+MouseArea {
     id: root
     property bool vertical: false
     property bool forceNoContainer: true
@@ -26,7 +26,6 @@ Item {
     property bool expanded: false
     property string systemTime: DateTime.time
     
-    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     readonly property string hoursStr: {
@@ -66,7 +65,7 @@ Item {
 
     Timer {
         interval: 1000
-        running: root.enableAnimations // Detiene el timer de los segundos si las animaciones están apagadas
+        running: root.enableAnimations 
         repeat: true
         triggeredOnStart: true
         onTriggered: root.currentSeconds = Qt.formatTime(new Date(), "ss")
@@ -78,6 +77,23 @@ Item {
     implicitHeight: root.vertical
         ? (contentRow.implicitHeight + 12)
         : Appearance.sizes.barHeight
+
+    hoverEnabled: true
+    preventStealing: true 
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    cursorShape: Qt.PointingHandCursor
+
+    onClicked: (mouse) => {
+        if (!root.interactionsEnabled) return;
+
+        if (mouse.button === Qt.LeftButton) {
+            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
+            if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll();
+        }
+        else if (mouse.button === Qt.RightButton) {
+            root.expanded = !root.expanded;
+        }
+    }
 
     RowLayout {
         id: contentRow
@@ -103,7 +119,7 @@ Item {
 
         RowLayout {
             spacing: 2
-            visible: root.enableAnimations // Oculta los segundos por completo si las animaciones están apagadas para ahorrar cálculos visuales
+            visible: root.enableAnimations 
             StyledText { text: root.s1; font.family: "Anton"; font.pixelSize: Appearance.font.pixelSize.normal * 0.95; font.weight: Font.Black; color: root.colS1; leftPadding: 4 }
             StyledText { text: root.s2; font.family: "Anton"; font.pixelSize: Appearance.font.pixelSize.normal * 0.95; font.weight: Font.Black; color: root.colS2 }
             StyledText {
@@ -138,27 +154,5 @@ Item {
                 color: root.colDateN
             }
         }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-        onClicked: (mouse) => {
-            if (!root.interactionsEnabled) return
-
-            if (mouse.button === Qt.LeftButton) {
-                clockPopup.open = !clockPopup.open
-            }
-            else if (mouse.button === Qt.RightButton) {
-                root.expanded = !root.expanded
-            }
-        }
-    }
-
-    ClockWidgetPopup {
-        id: clockPopup
-        triggerItem: root
     }
 }

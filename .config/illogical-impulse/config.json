@@ -93,7 +93,7 @@
             "changeShellColor": false,
             "enable": false,
             "enableBackgroundAnimation": true,
-            "showVisualizer": true,
+            "showVisualizer": false,
             "syllable": {
                 "textHighlightStyle": 0
             },
@@ -101,14 +101,14 @@
         },
         "parallax": {
             "autoVertical": false,
-            "enableSidebar": true,
-            "enableWorkspace": true,
-            "vertical": true,
+            "enableSidebar": false,
+            "enableWorkspace": false,
+            "vertical": false,
             "widgetsFactor": 1.2,
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/Luffy_from_One_Piece_5160x2160.jpeg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -151,8 +151,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 240.09915865384573,
-                "y": 183.34428836137795
+                "x": 238.78846779847714,
+                "y": 135.8190291967145
             },
             "media": {
                 "backgroundShape": "Cookie6Sided",
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2864.258432241587,
-                "y": 1662.3319874298877
+                "x": 2804.514404296875,
+                "y": 1639.5572666266028
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2938.8582607171475,
-                "y": 113.93636067708297
+                "x": 2765.1169308393432,
+                "y": 137.7361591045668
             }
         }
     },
@@ -227,7 +227,7 @@
                     "visible": true
                 },
                 {
-                    "centered": true,
+                    "centered": false,
                     "id": "workspaces",
                     "visible": true
                 },
@@ -266,13 +266,13 @@
             "showCat": true,
             "showCpu": true,
             "showRam": true,
-            "showTemperature": true,
+            "showTemperature": false,
             "swapWarningThreshold": 85
         },
         "screenList": [
         ],
         "sizes": {
-            "height": 40,
+            "height": 45,
             "width": 45
         },
         "timers": {
@@ -397,7 +397,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 3500,
+            "colorTemperature": 4796,
             "from": "19:00",
             "to": "06:30"
         }

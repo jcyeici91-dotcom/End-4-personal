@@ -24,7 +24,8 @@ AbstractBackgroundWidget {
         anchors.fill: parent
         shape: MaterialShape.Shape.Pill
         color: Appearance.colors.colPrimaryContainer
-        implicitSize: 200
+        
+         implicitSize: 240 
 
         StyledText {
             font {
@@ -33,12 +34,14 @@ AbstractBackgroundWidget {
                 weight: Font.Medium
             }
             color: Appearance.colors.colPrimary
-            text: Weather.data?.temp.substring(0,Weather.data?.temp.length - 1) ?? "--°"
+            
+              text: Weather.data?.temp ? Weather.data.temp.replace(/[a-zA-Z]/g, "") : "--°"
+            
             anchors {
                 right: parent.right
                 top: parent.top
-                rightMargin: 16
-                topMargin: 20
+               rightMargin: 40
+                topMargin: 40
             }
         }
 
@@ -46,12 +49,12 @@ AbstractBackgroundWidget {
             iconSize: 80
             color: Appearance.colors.colOnPrimaryContainer
             text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+            
             anchors {
                 left: parent.left
                 bottom: parent.bottom
-
-                leftMargin: 16
-                bottomMargin: 20
+               leftMargin: 40
+                bottomMargin: 40
             }
         }
     }

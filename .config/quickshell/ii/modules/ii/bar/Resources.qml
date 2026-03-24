@@ -32,11 +32,8 @@ MouseArea {
     property int outerPaddingV: 1
     readonly property int outerPadding: root.vertical ? outerPaddingV : outerPaddingH
 
-    // 👇 CONECTADO AL INTERRUPTOR MAESTRO 👇
     property bool enableEffects: Config.options.appearance.enableAnimations
-    property bool enableTooltips: true
 
-    // CONECTADO AL INTERRUPTOR DEL GATITO Y AL MAESTRO
     property bool showCat: Config.options.bar.resources.showCat
     property bool enableCatGif: Config.options.appearance.enableAnimations
     property bool enableCatEffects: Config.options.appearance.enableAnimations
@@ -48,7 +45,6 @@ MouseArea {
     property int catHeightH: 35
     property int catHeightV: 28
 
-    readonly property bool tooltipsEnabledEffective: root.enableTooltips && !root.vertical
     readonly property bool showCatEffective: root.showCat
     readonly property int catHeight: root.vertical ? catHeightV : catHeightH
     readonly property int catWidth: Math.round(root.catHeight * 1.30)
@@ -59,28 +55,15 @@ MouseArea {
     property int cpuCatThresholdPercent: 10
     readonly property bool cpuCatRunRaw: (ResourceUsage.cpuUsage * 100.0) >= cpuCatThresholdPercent
     readonly property bool cpuCatRun: (root.enableEffects && root.enableCatEffects) ? root.cpuCatRunRaw : false
-    
-    // Vinculamos la visibilidad de la CPU a nuestro nuevo interruptor en la configuración
+
     readonly property bool cpuShown: Config.options.bar.resources.showCpu
 
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: false
     preventStealing: true
     propagateComposedEvents: false
 
     implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : paddedContent.implicitWidth
     implicitHeight: root.vertical ? paddedContent.implicitHeight : Appearance.sizes.barHeight
-
-    Process { id: btopProc; command: ["kitty", "-e", "btop"] }
-    function openBtop() { btopProc.running = false; btopProc.running = true }
-
-    onPressed: (mouse) => {
-        mouse.accepted = true
-        if (mouse.button === Qt.LeftButton) { resourcesPopup.open = !resourcesPopup.open; return }
-        if (mouse.button === Qt.RightButton) { openBtop(); return }
-    }
-    
-    onClicked: (mouse) => { mouse.accepted = true }
 
     function clamp01(x) { return Math.max(0, Math.min(1, x)); }
     function mixColor(c1, c2, t) {
@@ -136,42 +119,12 @@ MouseArea {
             gpuTempC = Number(obj.gpu_c) || 0;
         } catch (e) { cpuTempC = 0; gpuTempC = 0; }
     }
-    
+
     FileView { id: fileTemps; path: root.tempsJsonPath }
-    
+
     Timer {
         interval: 2000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: { fileTemps.reload(); root.parseTempsJson(fileTemps.text()) }
-    }
-
-    Item {
-        id: tooltipLayer
-        anchors.fill: parent; z: 50; visible: root.tooltipsEnabledEffective && shown; enabled: false
-        property string text: ""; property bool shown: false; property real px: 0; property real py: 0
-        function showAt(item, localX, localY, t) {
-            if (!root.tooltipsEnabledEffective) return
-            text = t || ""; if (!text.length) { shown = false; return }
-            let p = item.mapToItem(root, localX, localY); px = p.x; py = p.y; shown = true
-        }
-        function hide() { shown = false }
-        Rectangle {
-            visible: tooltipLayer.shown && tooltipLayer.text.length > 0
-            opacity: visible ? 1 : 0; radius: 10
-            color: ColorUtils.transparentize(Appearance.colors.colLayer3, root.themeIsDark ? 0.20 : 0.14)
-            border.width: 1
-            border.color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, root.themeIsDark ? 0.86 : 0.82)
-            x: Math.max(6, Math.min(root.width - width - 6, tooltipLayer.px - width / 2))
-            y: Math.max(6, Math.min(root.height - height - 6, tooltipLayer.py - height - 10))
-            Behavior on opacity { NumberAnimation { duration: 120 } }
-            Text {
-                text: tooltipLayer.text
-                color: Appearance.colors.colOnLayer1
-                font.pixelSize: 11
-                wrapMode: Text.NoWrap; leftPadding: 10; rightPadding: 10; topPadding: 6; bottomPadding: 6
-                renderType: Text.NativeRendering
-            }
-            implicitWidth: childrenRect.width; implicitHeight: childrenRect.height
-        }
     }
 
     component PulsingDot: Item {
@@ -242,10 +195,9 @@ MouseArea {
         property string iconName
         property real percentage: 0
         property string valueOverride: ""
-        property string tooltipText: ""
         property bool shown: true
         property real warningThreshold01: 0.75
-        
+
         visible: shown
         Layout.alignment: Qt.AlignCenter
 
@@ -254,20 +206,10 @@ MouseArea {
 
         readonly property real value01: root.clamp01(wrap.percentage)
 
-        MouseArea {
-            anchors.fill: parent
-            enabled: root.tooltipsEnabledEffective
-            hoverEnabled: root.tooltipsEnabledEffective
-            acceptedButtons: Qt.NoButton
-            onEntered: tooltipLayer.showAt(wrap, mouseX, mouseY, wrap.tooltipText)
-            onPositionChanged: tooltipLayer.showAt(wrap, mouseX, mouseY, wrap.tooltipText)
-            onExited: tooltipLayer.hide()
-        }
-
         GridLayout {
             id: resLayout
             anchors.centerIn: parent
-            
+
             columns: root.vertical ? 1 : 2
             rows: root.vertical ? 2 : 1
             rowSpacing: root.vertical ? 4 : 0
@@ -279,7 +221,7 @@ MouseArea {
                 iconName: wrap.iconName
                 percentage: wrap.percentage
                 warningThreshold: Math.round(wrap.warningThreshold01 * 100)
-                
+
                 valueOverride: root.vertical ? "" : wrap.valueOverride
 
                 layer.enabled: true
@@ -294,7 +236,6 @@ MouseArea {
                 Layout.topMargin: root.vertical ? -6 : 0
                 color: root.alertColorByPercent(wrap.value01)
                 intensity: wrap.value01 < root.t20 ? 0.10 : wrap.value01 < root.t50 ? 0.35 : wrap.value01 < root.t75 ? 0.70 : 1.00
-                // Ocultar el punto si las animaciones están apagadas
                 visible: root.enableEffects
             }
         }
@@ -305,11 +246,11 @@ MouseArea {
         anchors.centerIn: parent
         implicitWidth: mainGrid.implicitWidth + (root.outerPadding * 2)
         implicitHeight: mainGrid.implicitHeight + (root.outerPadding * 2)
-        
+
         GridLayout {
             id: mainGrid
             anchors.centerIn: parent
-            
+
             columns: root.vertical ? 1 : -1
             rows: root.vertical ? -1 : 1
             rowSpacing: root.vertical ? root.resourcesSpacingV : root.resourcesSpacingH
@@ -317,13 +258,11 @@ MouseArea {
 
             Item {
                 Layout.alignment: Qt.AlignCenter
-                // ELIMINADA LA DEPENDENCIA DE cpuShown
                 Layout.preferredHeight: (root.showCatEffective && (root.enableCatGif || root.reserveCatSpace)) ? root.catHeight : 0
                 Layout.preferredWidth:  (root.showCatEffective && (root.enableCatGif || root.reserveCatSpace)) ? root.catWidth  : 0
                 visible: Layout.preferredWidth > 0 && Layout.preferredHeight > 0
-                
+
                 Loader {
-                    // ELIMINADA LA DEPENDENCIA DE cpuShown
                     active: root.showCatEffective && root.enableCatGif
                     visible: active
                     anchors.fill: parent
@@ -338,11 +277,10 @@ MouseArea {
                     }
                 }
             }
-            
+
             ResourceWithDot { 
                 iconName: "memory"
                 percentage: root.clamp01(ResourceUsage.memoryUsedPercentage)
-                tooltipText: "RAM"
                 shown: Config.options.bar.resources.showRam
                 warningThreshold01: Config.options.bar.resources.memoryWarningThreshold / 100.0 
             }
@@ -350,7 +288,6 @@ MouseArea {
                 iconName: "device_thermostat"
                 percentage: root.cpuTemp01
                 valueOverride: root.vertical ? "" : root.cpuTempLabel
-                tooltipText: "CPU Temp (" + root.cpuTempLabel + ")"
                 shown: Config.options.bar.resources.showTemperature
                 warningThreshold01: 0.75 
             }
@@ -358,19 +295,15 @@ MouseArea {
                 iconName: "thermostat"
                 percentage: root.gpuTemp01
                 valueOverride: root.vertical ? "" : root.gpuTempLabel
-                tooltipText: "GPU Temp (" + root.gpuTempLabel + ")"
                 shown: Config.options.bar.resources.showTemperature
                 warningThreshold01: 0.75 
             }
             ResourceWithDot { 
                 iconName: "planner_review"
                 percentage: root.clamp01(ResourceUsage.cpuUsage)
-                tooltipText: "CPU Uso"
                 shown: Config.options.bar.resources.showCpu
                 warningThreshold01: Config.options.bar.resources.cpuWarningThreshold / 100.0 
             }
         }
     }
-
-    ResourcesPopup { id: resourcesPopup; hoverTarget: root }
 }

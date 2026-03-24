@@ -5,7 +5,6 @@ import qs.modules.common.widgets
 import qs.services
 import QtQuick
 import QtQuick.Layouts
-import qs.modules.ii.bar as Bar
 
 Item {
     id: root
@@ -35,18 +34,5 @@ Item {
                 text: modelData.padStart(2, "0")
             }
         }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: !Config.options.bar.tooltips.clickToShow
-
-        onClicked: {
-            clockPopup.open = !clockPopup.open
-        }
-    }
-
-    Bar.ClockWidgetPopup {
-        id: clockPopup
     }
 }
