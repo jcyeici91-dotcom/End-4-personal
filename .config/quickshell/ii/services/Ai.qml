@@ -297,19 +297,18 @@ Singleton {
             "key_get_description": Translation.tr("**Pricing**: free. Data used for training.\n\n**Instructions**: Log into Google account, allow AI Studio to create Google Cloud project or whatever it asks, go back and click Get API key"),
             "api_format": "gemini",
         }),
-        "mistral": aiModelComponent.createObject(this, {
-            "name": `Mistral - ${currentModel}`,
-            "icon": "mistral-symbolic",
-            "description": Translation.tr("Online | %1's model | Delivers fast, responsive and well-formatted answers. Disadvantages: not very eager to do stuff; might make up unknown function calls").arg("Mistral"),
-            "homepage": "https://mistral.ai/news/mistral-medium-3",
-            "endpoint": "https://api.mistral.ai/v1/chat/completions",
-            "model": "mistral-medium-2505",
-            "requires_key": true,
-            "key_id": "mistral",
-            "key_get_link": "https://console.mistral.ai/api-keys",
-            "key_get_description": Translation.tr("**Instructions**: Log into Mistral account, go to Keys on the sidebar, click Create new key"),
-            "api_format": "mistral",
-        })
+        "others": (root.otherModels && Persistent.states?.ai?.model && root.otherModels[Persistent.states.ai.model]) ? root.otherModels[Persistent.states.ai.model] : (Object.keys(root.otherModels).length > 0 ? root.otherModels[Object.keys(root.otherModels)[0]] : null)
+    }
+        
+    property var otherModels: {
+        let result = {};
+        const configModels = Config.options.ai.otherModels;
+        for (let i = 0; i < configModels.length; i++) {
+            const modelData = configModels[i];
+            const modelId = modelData.id || modelData.model || modelData.name;
+            result[modelId] = aiModelComponent.createObject(this, modelData);
+        }
+        return result;
     }
     property var modelList: Object.keys(root.models)
     property var currentModelId: Persistent.states?.ai?.provider || modelList[0]
@@ -323,12 +322,23 @@ Singleton {
             { title: "Gemini 2.5 Flash", value: "gemini-2.5-flash" },
             { title: "Gemini 3 Flash Preview", value: "gemini-3-flash-preview" }
         ],
-        "mistral": [
-            { title: "Mistral Medium 3", value: "mistral-medium-3" }
-        ],
+        "others": []
     }
 
-    property var modelsOfProviders: baseModels
+    property var modelsOfProviders: {
+        let providers = {}
+        for (let key in baseModels) {
+            providers[key] = baseModels[key].slice()
+        }
+        providers["others"] = Object.keys(root.otherModels).map(key => {
+            return { title: root.otherModels[key].name, value: key }
+        });
+        if (Config.options.ai.models.length > 0) {
+            return mergeModelsFromList(providers, Config.options.ai.models)
+        } else {
+            return providers;
+        }
+    }
 
     function mergeModelsFromList(base, extraList) {
 
@@ -381,9 +391,7 @@ Singleton {
 
     Component.onCompleted: {
         setModel(currentModelId, false, false); // Do necessary setup for model
-        if (Config.options.ai.extraModels.length > 0) {
-            modelsOfProviders = mergeModelsFromList(baseModels, Config.options.ai.extraModels)
-        }
+        root.addUserModels() // Config onReadyChanged above might not fire if config is loaded before this service
     }
 
     function guessModelLogo(model) {
@@ -408,7 +416,9 @@ Singleton {
     }
 
     function addModel(modelName, data) {
-        root.models[modelName] = aiModelComponent.createObject(this, data);
+        root.models = Object.assign({}, root.models, {
+            [modelName]: aiModelComponent.createObject(this, data)
+        });
     }
 
     Process {

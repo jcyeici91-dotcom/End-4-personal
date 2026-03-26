@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "papaya_sherbet"
+            "type": "golden_haze"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -108,7 +108,7 @@
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/shape-abstract.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -119,12 +119,12 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "none",
-                    "hourHandStyle": "fill",
+                    "dialNumberStyle": "full",
+                    "hourHandStyle": "hollow",
                     "hourMarks": true,
-                    "minuteHandStyle": "medium",
-                    "secondHandStyle": "dot",
-                    "sides": 9,
+                    "minuteHandStyle": "thin",
+                    "secondHandStyle": "classic",
+                    "sides": 23,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -151,8 +151,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 193.71243990384573,
-                "y": 199.6085924979966
+                "x": 115.41528946314043,
+                "y": 156.97005834334914
             },
             "media": {
                 "backgroundShape": "Cookie6Sided",
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2893.3821051181894,
-                "y": 1693.301958133013
+                "x": 2843.1161796374204,
+                "y": 1676.4717923677888
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2830.163361378205,
-                "y": 185.84046975160203
+                "x": 2799.3601700220347,
+                "y": 159.50536483373367
             }
         }
     },
@@ -253,7 +253,7 @@
         "resources": {
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
-            "showCat": false,
+            "showCat": true,
             "showCpu": true,
             "showRam": true,
             "showTemperature": true,

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Services.SystemTray
@@ -27,7 +28,11 @@ MouseArea {
             item.activate();
             break;
         case Qt.RightButton:
-            if (item.hasMenu) menu.open();
+            if (item.hasMenu)
+                if (menu.active && menu.item && typeof menu.item.close === "function")
+                    menu.item.close();
+                else 
+                    menu.open();
             break;
         }
         event.accepted = true;
@@ -44,6 +49,7 @@ MouseArea {
         sourceComponent: SysTrayMenu {
             Component.onCompleted: this.open();
             trayItemMenuHandle: root.item.menu
+            trayItemId: root.item.id
             
             anchor {
                 window: root.QsWindow.window
