@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "cocoa_rose"
+            "type": "papaya_sherbet"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -108,7 +108,7 @@
             "workspaceZoom": 1.07
         },
         "thumbnailPath": "",
-        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
+        "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/shape-abstract.jpg",
         "widgets": {
             "clock": {
                 "cookie": {
@@ -122,9 +122,9 @@
                     "dialNumberStyle": "none",
                     "hourHandStyle": "fill",
                     "hourMarks": true,
-                    "minuteHandStyle": "bold",
+                    "minuteHandStyle": "medium",
                     "secondHandStyle": "dot",
-                    "sides": 7,
+                    "sides": 9,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -151,8 +151,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 238.78846779847714,
-                "y": 135.8190291967145
+                "x": 193.71243990384573,
+                "y": 199.6085924979966
             },
             "media": {
                 "backgroundShape": "Cookie6Sided",
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2716.443803836138,
-                "y": 1609.9513033353367
+                "x": 2893.3821051181894,
+                "y": 1693.301958133013
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2645.8597130408652,
-                "y": 162.68232296674626
+                "x": 2830.163361378205,
+                "y": 185.84046975160203
             }
         }
     },
@@ -201,7 +201,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "hybrid",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -294,7 +294,7 @@
         "workspaces": {
             "activeIndicatorOpacity": 100,
             "alwaysShowNumbers": true,
-            "dynamicWorkspaces": false,
+            "dynamicWorkspaces": true,
             "maxWindowCount": 2,
             "monochromeIcons": false,
             "numberMap": [

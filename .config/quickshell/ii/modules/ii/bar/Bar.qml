@@ -287,6 +287,7 @@ Scope {
 
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
+                            clip: true
                             
                             RoundCorner {
                                 id: leftCorner
@@ -294,6 +295,7 @@ Scope {
                                     top: parent.top
                                     bottom: parent.bottom
                                     left: parent.left
+                                    leftMargin: -1
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
                                 color: roundDecorators.dynamicCornerColor 
@@ -312,6 +314,7 @@ Scope {
                                 id: rightCorner
                                 anchors {
                                     right: parent.right
+                                    rightMargin: -1
                                     top: !Config.options.bar.bottom ? parent.top : undefined
                                     bottom: Config.options.bar.bottom ? parent.bottom : undefined
                                 }

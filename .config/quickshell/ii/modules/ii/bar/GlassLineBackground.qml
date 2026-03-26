@@ -11,57 +11,73 @@ Item {
     property bool effectiveShowBorder: true
     property real borderOpacity: 0.1
 
-    // Usamos OpacityMask para que el blur respete las esquinas redondeadas
-    layer.enabled: true
-    layer.effect: OpacityMask {
-        maskSource: Rectangle {
-            width: root.width
-            height: root.height
-            radius: 12 // Curvatura estilo iOS
-        }
-    }
+    readonly property real radiusValue: 12
 
-    // 1. Imagen del wallpaper capturada y difuminada
-    Image {
-        id: wallpaperBg
-        // Llama a la ruta de tu fondo de pantalla actual
-        source: Config.options.background.wallpaperPath ? ("file://" + Config.options.background.wallpaperPath) : ""
-        
-        // Forzamos que la imagen cubra toda tu pantalla
-        width: Quickshell.screens[0].width 
-        height: Quickshell.screens[0].height 
-        
-        // Alineamos la imagen restándole la posición global del widget
-        // Así los píxeles coinciden exactamente con lo que hay detrás
-        x: -root.mapToItem(null, 0, 0).x
-        y: -root.mapToItem(null, 0, 0).y
-        
-        fillMode: Image.PreserveAspectCrop
-        
-        layer.enabled: true
-        layer.effect: GaussianBlur {
-            radius: 35 // Fuerza del blur
-            samples: 71
-            transparentBorder: false
-        }
-    }
+    layer.enabled: false
 
-    // 2. Tinte translúcido estilo iOS (esmerilado)
     Rectangle {
         anchors.fill: parent
-        color: root.themeIsDark ? Qt.rgba(0.08, 0.08, 0.08, 0.45) : Qt.rgba(0.95, 0.95, 0.95, 0.35)
-        radius: 12
+        radius: root.radiusValue
+        antialiasing: true
+        color: root.themeIsDark
+            ? Qt.rgba(0.08, 0.08, 0.08, 0.34)
+            : Qt.rgba(0.97, 0.97, 0.97, 0.28)
+
         border.width: 1
-        border.color: root.themeIsDark ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.6)
+        border.color: root.themeIsDark
+            ? Qt.rgba(1, 1, 1, 0.10)
+            : Qt.rgba(1, 1, 1, 0.48)
     }
 
-    // 3. La línea inferior/superior característica del modo "Line"
+    Rectangle {
+        anchors.fill: parent
+        radius: root.radiusValue
+        antialiasing: true
+        color: "transparent"
+        visible: true
+
+        gradient: Gradient {
+            orientation: root.isBottom ? Gradient.BottomToTop : Gradient.TopToBottom
+            GradientStop {
+                position: 0.0
+                color: root.themeIsDark
+                    ? Qt.rgba(1, 1, 1, 0.075)
+                    : Qt.rgba(1, 1, 1, 0.16)
+            }
+            GradientStop {
+                position: 0.22
+                color: root.themeIsDark
+                    ? Qt.rgba(1, 1, 1, 0.035)
+                    : Qt.rgba(1, 1, 1, 0.08)
+            }
+            GradientStop {
+                position: 1.0
+                color: Qt.rgba(1, 1, 1, 0.0)
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 1
+        radius: 1
+        antialiasing: true
+        anchors.top: root.isBottom ? undefined : parent.top
+        anchors.bottom: root.isBottom ? parent.bottom : undefined
+        color: root.themeIsDark
+            ? Qt.rgba(1, 1, 1, 0.12)
+            : Qt.rgba(1, 1, 1, 0.24)
+    }
+
     Rectangle {
         width: parent.width
         height: 2
         anchors.bottom: root.isBottom ? undefined : parent.bottom
         anchors.top: root.isBottom ? parent.top : undefined
-        color: root.themeIsDark ? Qt.rgba(1, 1, 1, root.borderOpacity * 2) : Qt.rgba(0, 0, 0, 0.20)
+        color: root.themeIsDark
+            ? Qt.rgba(1, 1, 1, Math.max(0.08, root.borderOpacity * 1.8))
+            : Qt.rgba(0, 0, 0, 0.18)
         visible: root.effectiveShowBorder
     }
 }

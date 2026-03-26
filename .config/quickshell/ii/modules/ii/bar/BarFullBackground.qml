@@ -3,7 +3,7 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common.functions as CF 
+import qs.modules.common.functions as CF
 import qs.modules.ii.ui 1.0
 import "." as Bar
 
@@ -28,7 +28,7 @@ Item {
     }
 
     function _styleFromUIState() {
-        if (typeof UIState === 'undefined') return ""
+        if (typeof UIState === "undefined") return ""
         const s = UIState.surfaceStyle
         return (s === "solid" || s === "glass" || s === "adaptive") ? s : ""
     }
@@ -60,6 +60,10 @@ Item {
         ? CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.35)
         : CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.25)
 
+    readonly property int safeFloatMargin: Config.options.bar.cornerStyle === 1
+        ? Math.max(0, Appearance.sizes.hyprlandGapsOut)
+        : 0
+
     Loader {
         id: bgLoader
         anchors.fill: parent
@@ -75,7 +79,7 @@ Item {
             anchors.fill: parent
 
             Loader {
-                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations 
+                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations
                 anchors.fill: barBackground
                 sourceComponent: StyledRectangularShadow {
                     anchors.fill: undefined
@@ -90,15 +94,18 @@ Item {
                 id: barBackground
                 z: -10
                 anchors.fill: parent
-                
-                anchors.margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut - 1) : 0
+                anchors.margins: root.safeFloatMargin
+
                 radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.full : 0
-                antialiasing: true
+                antialiasing: radius > 0
 
                 color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
 
-                border.width: 0 
+                border.width: 0
                 border.color: "transparent"
+
+                layer.enabled: radius > 0
+                layer.smooth: true
 
                 Behavior on color {
                     enabled: enableAnimations
@@ -108,12 +115,12 @@ Item {
 
             Rectangle {
                 id: barTopBorder
-                height: 1
+                height: 0
+                visible: false
                 color: Appearance.colors.colLayer0Border
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                visible: classicBgComponent.visible
             }
         }
     }
@@ -127,29 +134,32 @@ Item {
             Item {
                 id: overlayBg
                 anchors.fill: parent
-                anchors.margins: Appearance.sizes.hyprlandGapsOut - 1
+                anchors.margins: Math.max(0, Appearance.sizes.hyprlandGapsOut)
             }
 
             Bar.BarBgShadowOverlay {
                 targetItem: overlayBg
-                cornerStyle: 1 
-                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations 
+                cornerStyle: 1
+                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations
             }
 
             Bar.BarBgOverlay {
                 anchors.fill: overlayBg
                 position: root.isBottom ? "bottom" : "top"
-                cornerStyle: 1 
+                cornerStyle: 1
                 useGlassMode: true
                 showSolidBackground: false
                 backgroundColor: root.glassTint
-                
+
                 Rectangle {
                     anchors.fill: parent
                     color: "transparent"
                     border.width: 0
                     border.color: "transparent"
                     radius: Appearance.rounding.full
+                    antialiasing: radius > 0
+                    layer.enabled: radius > 0
+                    layer.smooth: true
                 }
             }
         }

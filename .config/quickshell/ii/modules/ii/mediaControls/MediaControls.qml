@@ -41,6 +41,7 @@ Scope {
             let p1 = players[i]
             let group = [i]
             for (let j = i + 1; j < players.length; ++j) {
+                let p2 = players[j]
                 if (p1.trackTitle && p2.trackTitle && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle)) ||
                     (p1.position - p2.position <= 2 && p1.length - p2.length <= 2)) {
                     group.push(j)
@@ -242,14 +243,7 @@ Scope {
                     Item {
                         id: visualContainer
                         anchors.fill: parent
-                        opacity: 0 
-                        
-                        layer.enabled: true
-                        layer.effect: DropShadow {
-                            horizontalOffset: 0; verticalOffset: 4; radius: 28; samples: 32
-                            color: Functions.ColorUtils.applyAlpha(Appearance.colors.colShadow, 0.20)
-                            transparentBorder: true
-                        }
+                        opacity: 0
 
                         Rectangle {
                             id: clipRect

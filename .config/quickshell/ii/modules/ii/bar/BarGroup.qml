@@ -17,14 +17,14 @@ Item {
 
     property bool unifyInside: false
     property bool unifyChildChips: false
-    
+
     property bool isNotch: false
 
     property real startRadius: Appearance.rounding.normal
     property real endRadius: Appearance.rounding.normal
 
-    property color colBackground: Appearance.m3colors.m3surfaceContainerLow
-    property bool showBorder: true
+    property color colBackground: Appearance.colors.colLayer0
+    property bool showBorder: false
     property real borderOpacity: 0.08
 
     property bool autoHide: true
@@ -72,33 +72,32 @@ Item {
 
     readonly property bool isBottom: (Config.options?.bar?.bottom ?? false)
 
-    // Condiciones de estilo
     readonly property bool isHugCorner: (Config.options?.bar?.cornerStyle === 0 || Config.options?.bar?.cornerStyle === "hug")
     readonly property bool isVisibleBg: (Config.options?.bar?.barBackgroundStyle === 1 || Config.options?.bar?.barBackgroundStyle === "visible")
     readonly property bool isTransparentBg: (Config.options?.bar?.barBackgroundStyle === 0 || Config.options?.bar?.barBackgroundStyle === "transparent" || Config.options?.bar?.barBackgroundStyle === "glass")
     readonly property bool isHybridBg: (groupBackgroundStyle === "hybrid")
-    
-    // Condicion para aplicar margen (Visible o Transparent en modo Hug + Hybrid)
+
     readonly property bool applyHybridMargin: isHugCorner && isHybridBg && (isVisibleBg || isTransparentBg)
 
-    // Margen exclusivo para reducir el tamano de las pills izquierda/derecha sin alterar el notch central
     readonly property int hybridPillMargin: (applyHybridMargin && isContainer && !isNotch) ? 4 : 0
 
     readonly property bool hasContent: gridLayout.visibleChildren.length > 0
     readonly property bool shouldBeVisible: autoHide ? hasContent : true
 
-    readonly property bool effectiveShowBorder: (!bridgeMode) && showBorder
-    readonly property bool effectiveShowHighlight: (!bridgeMode) && showHighlight
+    readonly property bool effectiveShowBorder: (!bridgeMode) && (!isNotch) && showBorder
+    readonly property bool effectiveShowHighlight: (!bridgeMode) && (!isNotch) && showHighlight
 
     readonly property int effectiveEdgeInset: (bridgeMode || disableFloatInset) ? 0 : (cornerIsFloat ? Math.max(2, edgeInset) : edgeInset)
 
     readonly property real pillMeasure: {
-        const m = vertical ? backgroundLoader.width : backgroundLoader.height
+        const m = vertical ? backgroundFrame.width : backgroundFrame.height
         return Math.max(1, m)
     }
 
     readonly property real pillRadius: Math.max(0, pillMeasure / 2)
     readonly property real rectRadius: Math.max(0, Appearance.rounding.small)
+
+    property bool forcePillStyle: false
 
     readonly property real baseRadius: {
         if (useLineBg) return 0
@@ -107,8 +106,6 @@ Item {
         if (root.forcePillStyle) return pillRadius
         return pillRadius
     }
-
-    property bool forcePillStyle: false
 
     readonly property bool allowFlatten: false
     readonly property bool flattenTop: allowFlatten && !vertical && !isBottom
@@ -162,14 +159,16 @@ Item {
     readonly property real effectiveStrokeWidth: {
         if (!root.effectiveShowBorder) return 0
         if (!root.isContainer || root.isBorderless) return 0
+        if (root.useLineBg) return 0
         return 1
     }
 
     visible: shouldBeVisible || opacity > 0.01
     opacity: shouldBeVisible ? 1 : 0
-    Behavior on opacity { 
+
+    Behavior on opacity {
         enabled: enableAnimations
-        NumberAnimation { duration: 160; easing.type: Easing.InOutQuad } 
+        NumberAnimation { duration: 160; easing.type: Easing.InOutQuad }
     }
 
     implicitWidth: shouldBeVisible
@@ -188,6 +187,7 @@ Item {
         enabled: root.enableSizeAnimation && enableAnimations
         NumberAnimation { duration: root.sizeAnimDuration; easing.type: Easing.OutCubic }
     }
+
     Behavior on implicitHeight {
         enabled: root.enableSizeAnimation && enableAnimations
         NumberAnimation { duration: root.sizeAnimDuration; easing.type: Easing.OutCubic }
@@ -195,30 +195,32 @@ Item {
 
     default property alias items: gridLayout.data
 
-    Loader {
-        id: backgroundLoader
+    Item {
+        id: backgroundFrame
         anchors.fill: parent
-        active: root.isContainer && !root.isBorderless && (root.shouldBeVisible || root.opacity > 0)
-
         anchors.margins: root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0)
 
-        //  margen dinamico para que las pills se encojan y no rocen los bordes
         anchors.topMargin: root.bridgeMode ? 0
-            : (hybridPillMargin > 0 ? hybridPillMargin 
+            : (hybridPillMargin > 0 ? hybridPillMargin
                 : (root.cornerIsFloat ? root.effectiveEdgeInset
-                    : ((useHybridBg && !vertical && !isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))))
+                    : ((useHybridBg && !vertical && !isBottom) ? 2 : (root.vertical ? 0 : root.effectiveEdgeInset))))
 
         anchors.bottomMargin: root.bridgeMode ? 0
-            : (hybridPillMargin > 0 ? hybridPillMargin 
+            : (hybridPillMargin > 0 ? hybridPillMargin
                 : (root.cornerIsFloat ? root.effectiveEdgeInset
-                    : ((useHybridBg && !vertical && isBottom) ? 0 : (root.vertical ? 0 : root.effectiveEdgeInset))))
+                    : ((useHybridBg && !vertical && isBottom) ? 2 : (root.vertical ? 0 : root.effectiveEdgeInset))))
 
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
+    }
+
+    Loader {
+        id: backgroundLoader
+        anchors.fill: backgroundFrame
+        active: root.isContainer && !root.isBorderless && (root.shouldBeVisible || root.opacity > 0)
 
         sourceComponent: {
             if (root.isGlassLineEffect) return glassLineBackgroundComponent
-            
             if (root.useLineBg) return lineBackgroundComponent
             if (root.useNotchBg) return notchBackgroundComponent
             return (root.useRectBg || root.cornerIsRect) ? rectBackgroundComponent : roundedBackgroundComponent
@@ -237,7 +239,7 @@ Item {
 
     Component {
         id: notchBackgroundComponent
-        Item {  }
+        Item { }
     }
 
     Component {
@@ -247,7 +249,7 @@ Item {
             antialiasing: true
             radius: root.rectRadius
             color: root.effectiveFill
-            
+
             border.width: root.effectiveStrokeWidth
             border.color: border.width > 0 ? root.effectiveBorderColor : "transparent"
 
@@ -314,11 +316,22 @@ Item {
     }
 
     Item {
-        anchors.fill: backgroundLoader
-        anchors.topMargin: root.padding + (root.isNotch && !root.cornerIsFloat && !root.isBottom ? 4 : 0)
-        anchors.bottomMargin: root.padding + (root.isNotch && !root.cornerIsFloat && root.isBottom ? 4 : 0)
-        anchors.leftMargin: root.padding
-        anchors.rightMargin: root.padding
+        id: contentFrame
+        anchors.fill: parent
+
+        anchors.topMargin: root.padding
+            + (root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0))
+            + ((root.useHybridBg && !root.vertical && !root.isBottom && root.hybridPillMargin === 0) ? 2 : 0)
+            + (root.isNotch && !root.cornerIsFloat && !root.isBottom ? 4 : 0)
+
+        anchors.bottomMargin: root.padding
+            + (root.bridgeMode ? 0 : (root.cornerIsFloat ? root.effectiveEdgeInset : 0))
+            + ((root.useHybridBg && !root.vertical && root.isBottom && root.hybridPillMargin === 0) ? 2 : 0)
+            + (root.isNotch && !root.cornerIsFloat && root.isBottom ? 4 : 0)
+
+        anchors.leftMargin: root.padding + (root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0))
+        anchors.rightMargin: root.padding + (root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0))
+
         clip: root.clipContent
 
         GridLayout {
