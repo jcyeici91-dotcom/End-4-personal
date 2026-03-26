@@ -26,6 +26,9 @@ Scope {
 
         exclusiveZone: 0
         implicitWidth: sidebarWidth
+        
+          implicitHeight: 800
+        
         WlrLayershell.namespace: root.isOnRight ? "quickshell:sidebarRight" : "quickshell:sidebarLeft"
         WlrLayershell.keyboardFocus: GlobalStates.sidebarRightOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         color: "transparent"
@@ -34,8 +37,7 @@ Scope {
             top: true
             left: !root.isOnRight
             right: root.isOnRight
-            bottom: true
-        }
+                 }
 
         onVisibleChanged: {
             if (visible) {

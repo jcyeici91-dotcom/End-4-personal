@@ -92,7 +92,7 @@ Scope {
             id: panelWindow
             visible: GlobalStates.mediaControlsOpen || content.panelOpacity > 0
             exclusiveZone: 0
-            exclusionMode: content.isHybridHugTransparent ? ExclusionMode.Ignore : ExclusionMode.Normal
+            exclusionMode: (content.isHybridNotchMode || content.isDetachedTransparentMode) ? ExclusionMode.Ignore : ExclusionMode.Normal
             color: "transparent"
             WlrLayershell.namespace: "quickshell:mediaControls"
             WlrLayershell.layer: GlobalStates.mediaControlsOpen ? WlrLayer.Overlay : WlrLayer.Background
@@ -121,7 +121,6 @@ Scope {
                     id: content
                     anchors.fill: parent
                     property real panelOpacity: panelBg.opacity
-                    property int topOvershoot: 20
                     
                     property int activeViewId: 0
                     property int currentVisualIndex: 0
@@ -133,15 +132,29 @@ Scope {
 
                     readonly property var cornerConf: Config.options?.bar?.cornerStyle ?? 0
                     readonly property bool isHug: cornerConf === 0 || cornerConf === "hug"
+                    readonly property bool isFloat: cornerConf === 1 || cornerConf === "float"
                     
                     readonly property var bgConf: Config.options?.bar?.barBackgroundStyle ?? 1
-                    readonly property bool isGlass: bgConf === 0 || bgConf === "glass"
+                    readonly property bool isGlass: bgConf === 0 || bgConf === "glass" || bgConf === "transparent"
+                    readonly property bool isAdaptive: bgConf === 2 || bgConf === "adaptive"
+                    
+                    readonly property bool isTransparentBar: isGlass || (isAdaptive && !root.hasActiveWindows)
                     
                     readonly property string groupConf: Config.options?.bar?.groupBackgroundStyle ?? ""
                     readonly property bool isHybrid: groupConf === "hybrid"
 
-                    readonly property bool isHybridHugTransparent: isHybrid && isGlass && isHug
-                    readonly property bool isVisibleHug: (bgConf === 1 || bgConf === "solid") && isHug
+                    readonly property bool isHybridNotchMode: isHybrid
+                    readonly property bool isDetachedTransparentMode: !isHybrid && isTransparentBar && (isHug || isFloat)
+
+                    readonly property int gapsOut: isFloat ? (Appearance.sizes.hyprlandGapsOut || 10) : 0
+                    readonly property int baseBarBottom: gapsOut + (Appearance.sizes.baseBarHeight || 40)
+
+                    readonly property int hybridNotchY: baseBarBottom - (isFloat ? 6 : 0) - (isHug ? 1 : 0)
+                    readonly property int detachedGapY: baseBarBottom + 8
+
+                    property int topOvershoot: (isHybridNotchMode || isDetachedTransparentMode) ? 0 : 20
+
+                    readonly property bool isVisibleHug: !isTransparentBar && isHug
 
                     readonly property int shoulderRadiusVal: Config.options?.statusBar?.backgroundCornerRadius ?? 20
 
@@ -241,7 +254,7 @@ Scope {
                         Rectangle {
                             id: clipRect
                             anchors.horizontalCenter: parent.horizontalCenter
-                            y: 0
+                            y: content.isHybridNotchMode ? content.hybridNotchY : (content.isDetachedTransparentMode ? content.detachedGapY : 0)
                             width: root.panelWidth
                             height: root.panelHeight
                             clip: true
@@ -255,8 +268,8 @@ Scope {
                                 opacity: 0
                                 color: content.isVisibleHug ? Appearance.colors.colLayer0 : (Appearance.m3colors.m3surfaceContainerLow || "#1e1e2e")
                                 
-                                topLeftRadius: 0
-                                topRightRadius: 0
+                                topLeftRadius: content.isDetachedTransparentMode ? root.popupRounding : 0
+                                topRightRadius: content.isDetachedTransparentMode ? root.popupRounding : 0
                                 bottomLeftRadius: root.popupRounding
                                 bottomRightRadius: root.popupRounding
 
@@ -579,23 +592,25 @@ Scope {
                         RoundCorner {
                             id: rightShoulder
                             anchors.right: clipRect.left
-                            y: panelBg.y + content.topOvershoot
+                            anchors.rightMargin: -1
+                            y: clipRect.y + panelBg.y + content.topOvershoot
                             implicitSize: content.shoulderRadiusVal > 0 ? content.shoulderRadiusVal : 20
                             corner: RoundCorner.CornerEnum.TopRight 
                             color: panelBg.color
                             opacity: 0
-                            visible: !content.isHybridHugTransparent
+                            visible: !content.isDetachedTransparentMode
                         }
                         
                         RoundCorner {
                             id: leftShoulder
                             anchors.left: clipRect.right
-                            y: panelBg.y + content.topOvershoot
+                            anchors.leftMargin: -1
+                            y: clipRect.y + panelBg.y + content.topOvershoot
                             implicitSize: content.shoulderRadiusVal > 0 ? content.shoulderRadiusVal : 20
                             corner: RoundCorner.CornerEnum.TopLeft 
                             color: panelBg.color
                             opacity: 0
-                            visible: !content.isHybridHugTransparent
+                            visible: !content.isDetachedTransparentMode
                         }
                     }
                 }

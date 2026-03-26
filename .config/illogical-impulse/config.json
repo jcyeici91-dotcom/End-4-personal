@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "honey_cream"
+            "type": "cocoa_rose"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2804.514404296875,
-                "y": 1639.5572666266028
+                "x": 2716.443803836138,
+                "y": 1609.9513033353367
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2765.1169308393432,
-                "y": 137.7361591045668
+                "x": 2645.8597130408652,
+                "y": 162.68232296674626
             }
         }
     },
@@ -199,9 +199,9 @@
         "barBackgroundStyle": 0,
         "borderless": false,
         "bottom": false,
-        "cornerStyle": 0,
+        "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rounded",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -223,11 +223,6 @@
             "left": [
                 {
                     "centered": false,
-                    "id": "policies_panel_button",
-                    "visible": true
-                },
-                {
-                    "centered": false,
                     "id": "workspaces",
                     "visible": true
                 },
@@ -241,11 +236,6 @@
                 {
                     "centered": false,
                     "id": "system_monitor",
-                    "visible": true
-                },
-                {
-                    "centered": false,
-                    "id": "dashboard_panel_button",
                     "visible": true
                 }
             ]
@@ -263,10 +253,10 @@
         "resources": {
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
-            "showCat": true,
+            "showCat": false,
             "showCpu": true,
             "showRam": true,
-            "showTemperature": false,
+            "showTemperature": true,
             "swapWarningThreshold": 85
         },
         "screenList": [
@@ -304,12 +294,12 @@
         "workspaces": {
             "activeIndicatorOpacity": 100,
             "alwaysShowNumbers": true,
-            "dynamicWorkspaces": true,
+            "dynamicWorkspaces": false,
             "maxWindowCount": 2,
             "monochromeIcons": false,
             "numberMap": [
             ],
-            "showAppIcons": true,
+            "showAppIcons": false,
             "showNumberDelay": 300,
             "shown": 3,
             "useNerdFont": false,
@@ -397,7 +387,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 4796,
+            "colorTemperature": 5020,
             "from": "19:00",
             "to": "06:30"
         }
@@ -599,10 +589,6 @@
                         "type": "idleInhibitor"
                     },
                     {
-                        "size": 2,
-                        "type": "darkMode"
-                    },
-                    {
                         "size": 1,
                         "type": "mic"
                     },
@@ -613,6 +599,10 @@
                     {
                         "size": 2,
                         "type": "nightLight"
+                    },
+                    {
+                        "size": 1,
+                        "type": "easyEffects"
                     }
                 ]
             },

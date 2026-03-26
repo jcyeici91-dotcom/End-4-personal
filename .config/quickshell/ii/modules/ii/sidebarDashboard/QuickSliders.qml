@@ -38,7 +38,6 @@ Rectangle {
 
         spacing: 8
 
-
         property int activeCount: {
             let count = 0;
             for (let i = 0; i < repeater.count; i++) {
@@ -46,7 +45,6 @@ Rectangle {
             }
             return count;
         }
-
 
         Repeater {
             id: repeater
@@ -97,7 +95,6 @@ Rectangle {
             Behavior on anchors.rightMargin {
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
             }
-
         }
     }
 }

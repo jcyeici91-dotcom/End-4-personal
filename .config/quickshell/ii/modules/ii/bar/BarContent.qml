@@ -209,8 +209,8 @@ Item {
             topMargin: root.cornerStyle === 1 ? 6 : 0
             left: leftStopper.right
         }
-        active: true
-        sourceComponent: root.useHybridGroups ? leftHybridComponent : leftClassicComponent
+        active: !root.useHybridGroups // Desactivado en modo hybrid
+        sourceComponent: leftClassicComponent
     }
 
     Component {
@@ -224,17 +224,6 @@ Item {
                     list: Config.options.bar.layouts.left
                     barSection: 0
                 }
-            }
-        }
-    }
-
-    Component {
-        id: leftHybridComponent
-        RowLayout {
-            spacing: 6
-            Repeater {
-                model: Config.options.bar.layouts.left
-                delegate: BarComponent { list: Config.options.bar.layouts.left; barSection: 0 }
             }
         }
     }
@@ -398,15 +387,35 @@ Item {
                     Repeater {
                         model: {
                             let arr = [];
+                            
+                            // 1. Agregamos la sección izquierda completa al notch central
+                            if (Config.options.bar.layouts.left) {
+                                arr = arr.concat(Config.options.bar.layouts.left);
+                            }
+                            
+                            // 2. Agregamos las secciones centrales
                             if (root.leftList) arr = arr.concat(root.leftList);
                             if (root.centerList) arr = arr.concat(root.centerList);
                             if (root.rightList) arr = arr.concat(root.rightList);
+                            
+                            // 3. Agregamos la sección derecha completa al notch central
+                            if (Config.options.bar.layouts.right) {
+                                arr = arr.concat(Config.options.bar.layouts.right);
+                            }
+                            
                             return arr.filter(Boolean);
                         }
                         delegate: BarComponent {
-                            list: Config.options.bar.layouts.center
-                            barSection: 1
-                            originalIndex: Config.options.bar.layouts.center.findIndex(e => e && modelData && e.id === modelData.id)
+                            // Detectamos dinámicamente de qué lista proviene cada módulo
+                            property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
+                            property bool isRightItem: Config.options.bar.layouts.right ? Config.options.bar.layouts.right.some(e => e && modelData && e.id === modelData.id) : false
+                            
+                            list: isLeftItem ? Config.options.bar.layouts.left : (isRightItem ? Config.options.bar.layouts.right : Config.options.bar.layouts.center)
+                            
+                            // 0 = Izquierda, 1 = Centro, 2 = Derecha
+                            barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
+                            
+                            originalIndex: list.findIndex(e => e && modelData && e.id === modelData.id)
                         }
                     }
                 }
@@ -432,8 +441,8 @@ Item {
             right: rightStopper.left
             rightMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
         }
-        active: true
-        sourceComponent: root.useHybridGroups ? rightHybridComponent : rightClassicComponent
+        active: !root.useHybridGroups // Desactivado en modo hybrid
+        sourceComponent: rightClassicComponent
     }
 
     Component {
@@ -447,17 +456,6 @@ Item {
                     list: rightRepeater.model
                     barSection: 2
                 }
-            }
-        }
-    }
-
-    Component {
-        id: rightHybridComponent
-        RowLayout {
-            spacing: 6
-            Repeater {
-                model: Config.options.bar.layouts.right
-                delegate: BarComponent { list: Config.options.bar.layouts.right; barSection: 2 }
             }
         }
     }
