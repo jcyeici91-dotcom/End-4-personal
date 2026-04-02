@@ -84,7 +84,8 @@ Item {
     readonly property bool hasContent: gridLayout.visibleChildren.length > 0
     readonly property bool shouldBeVisible: autoHide ? hasContent : true
 
-    readonly property bool effectiveShowBorder: (!bridgeMode) && (!isNotch) && showBorder
+    readonly property bool effectiveShowBorder: (!bridgeMode) && (!isNotch) && (showBorder || usePillsBg || useRectBg)
+    
     readonly property bool effectiveShowHighlight: (!bridgeMode) && (!isNotch) && showHighlight
 
     readonly property int effectiveEdgeInset: (bridgeMode || disableFloatInset) ? 0 : (cornerIsFloat ? Math.max(2, edgeInset) : edgeInset)
@@ -151,16 +152,23 @@ Item {
     readonly property color effectiveFill: {
         if (!root.isContainer || root.isBorderless)
             return "transparent"
+        
         return root.colBackground
     }
 
-    readonly property color effectiveBorderColor: Appearance.colors.colLayer0Border
+    readonly property color effectiveBorderColor: {
+        if (isVisibleBg && (usePillsBg || useRectBg)) {
+            return themeIsDark ? Qt.rgba(1, 1, 1, 0.20) : Qt.rgba(0, 0, 0, 0.20)
+        }
+        return Appearance.colors.colLayer0Border
+    }
 
     readonly property real effectiveStrokeWidth: {
         if (!root.effectiveShowBorder) return 0
         if (!root.isContainer || root.isBorderless) return 0
         if (root.useLineBg) return 0
-        return 1
+        
+        return (isVisibleBg && (usePillsBg || useRectBg)) ? 1.5 : 1
     }
 
     visible: shouldBeVisible || opacity > 0.01

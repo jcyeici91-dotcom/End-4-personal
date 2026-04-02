@@ -159,9 +159,8 @@ ContentPage {
                     }
                     options: [
                         { displayName: Translation.tr("Hug"),   icon: "line_curve",  value: 0 },
-                        { displayName: Translation.tr("Float"), icon: "page_header", value: 1 },
-                        { displayName: Translation.tr("Rect"),  icon: "toolbar",     value: 2 }
-                    ]
+                        { displayName: Translation.tr("Float"), icon: "page_header", value: 1 }
+                         ]
                 }
             }
 
@@ -213,12 +212,11 @@ ContentPage {
                     Config.options.bar.barBackgroundStyle = newValue;
                 }
 
-                // 0: Transparent | 1: Visible | 2: Adaptive | 
+                // 0: Transparent | 1: Visible |
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
-                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 },
-                  { displayName: Translation.tr("Adaptive"),    icon: "masked_transitions", value: 2 }
-                ]
+                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
+                   ]
             }
         }
     }

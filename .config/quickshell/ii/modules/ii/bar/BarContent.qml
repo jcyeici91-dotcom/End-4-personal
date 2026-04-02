@@ -327,12 +327,9 @@ Item {
                 id: hybridRoot
                 anchors.fill: parent
 
-                // 🔥 REGLA EXCLUSIVA PARA FLOAT + TRANSPARENTE 🔥
-                // Solo se activa si el modo es Float (1) y NO hay fondo sólido (Transparente)
-                property int floatGapPull: (Config.options.bar.cornerStyle === 1 && !root.showSolidBackground) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
+               property int floatGapPull: (Config.options.bar.cornerStyle === 1 && !root.showSolidBackground) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
 
-                // 1. PUENTE INVISIBLE QUE RELLENA EL HUECO (Solo aparece en Float+Transparent)
-                Rectangle {
+                    Rectangle {
                     anchors.left: centerNotch.left
                     anchors.right: centerNotch.right
                     anchors.top: !root.isBottom ? parent.top : undefined
@@ -346,8 +343,7 @@ Item {
                     visible: hybridRoot.floatGapPull > 0
                 }
 
-                // 2. ESQUINA CÓNCAVA DERECHA (ESTIRADA PARA ALCANZAR EL TECHO)
-                RoundCorner {
+                   RoundCorner {
                     anchors.right: centerNotch.left
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
@@ -360,8 +356,7 @@ Item {
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.TopRight
                 }
 
-                // 3. ESQUINA CÓNCAVA IZQUIERDA (ESTIRADA PARA ALCANZAR EL TECHO)
-                RoundCorner {
+                    RoundCorner {
                     anchors.left: centerNotch.right
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
@@ -384,14 +379,10 @@ Item {
                     }
                 }
 
-                // 4. EL NOTCH CENTRAL
-                Bar.BarGroup {
+                   Bar.BarGroup {
                     id: centerNotch
                     
-                    // 🔥 CORRECCIÓN DEL EXCESO DE ESPACIO ABAJO 🔥
-                    // Anclamos tanto el top como el bottom. Así el notch ocupa la altura real completa de la barra 
-                    // (igual que los módulos laterales), eliminando el exceso de espacio entre el notch y las ventanas.
-                    anchors.top: parent.top
+                  anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
                     
@@ -412,9 +403,7 @@ Item {
                     unifyChildChips: true   
                     
                     width: implicitWidth
-                    // Se elimina 'height: implicitHeight' para permitir que los anchors top/bottom estiren 
-                    // la píldora y alineen su límite inferior con el resto de la interfaz.
-                    
+                                      
                     Behavior on width { 
                         enabled: enableAnimations
                         NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
@@ -424,32 +413,27 @@ Item {
                         model: {
                             let arr = [];
                             
-                            // 1. Agregamos la sección izquierda completa al notch central
                             if (Config.options.bar.layouts.left) {
                                 arr = arr.concat(Config.options.bar.layouts.left);
                             }
                             
-                            // 2. Agregamos las secciones centrales
-                            if (root.leftList) arr = arr.concat(root.leftList);
+                           if (root.leftList) arr = arr.concat(root.leftList);
                             if (root.centerList) arr = arr.concat(root.centerList);
                             if (root.rightList) arr = arr.concat(root.rightList);
                             
-                            // 3. Agregamos la sección derecha completa al notch central
-                            if (Config.options.bar.layouts.right) {
+                             if (Config.options.bar.layouts.right) {
                                 arr = arr.concat(Config.options.bar.layouts.right);
                             }
                             
                             return arr.filter(Boolean);
                         }
                         delegate: BarComponent {
-                            // Detectamos dinámicamente de qué lista proviene cada módulo
-                            property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
+                          property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
                             property bool isRightItem: Config.options.bar.layouts.right ? Config.options.bar.layouts.right.some(e => e && modelData && e.id === modelData.id) : false
                             
                             list: isLeftItem ? Config.options.bar.layouts.left : (isRightItem ? Config.options.bar.layouts.right : Config.options.bar.layouts.center)
                             
-                            // 0 = Izquierda, 1 = Centro, 2 = Derecha
-                            barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
+                       barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
                             
                             originalIndex: list.findIndex(e => e && modelData && e.id === modelData.id)
                         }

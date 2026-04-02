@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "scheme-auto"
+            "type": "amber_oat"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -172,8 +172,8 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2854.857346754807,
-                "y": 1627.3128881209932
+                "x": 2709.581261268029,
+                "y": 1658.2942770933491
             },
             "weather": {
                 "enable": true,
@@ -272,7 +272,7 @@
         "screenList": [
         ],
         "sizes": {
-            "height": 45,
+            "height": 40,
             "width": 45
         },
         "timers": {
