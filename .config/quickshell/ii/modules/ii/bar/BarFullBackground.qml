@@ -18,6 +18,9 @@ Item {
 
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
+    // 🔥 CLAVE: detectar hybrid global del bar
+    readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
+
     function _styleFromConfig(v) {
         switch (v) {
             case 0: return "glass"
@@ -64,11 +67,12 @@ Item {
         ? Math.max(0, Appearance.sizes.hyprlandGapsOut)
         : 0
 
+    // 🔥 En hybrid NO se dibuja absolutamente ningún fondo full-width
     Loader {
         id: bgLoader
         anchors.fill: parent
         z: -10
-        active: root.enabled
+        active: root.enabled && !root.useHybridGroups
         sourceComponent: root.useOverlayBg ? overlayBgComponent : classicBgComponent
     }
 
@@ -79,7 +83,9 @@ Item {
             anchors.fill: parent
 
             Loader {
-                active: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations
+                active: !!(Config?.options?.bar?.floatStyleShadow)
+                        && enableAnimations
+                        && !root.useHybridGroups
                 anchors.fill: barBackground
                 sourceComponent: StyledRectangularShadow {
                     anchors.fill: undefined
@@ -95,6 +101,8 @@ Item {
                 z: -10
                 anchors.fill: parent
                 anchors.margins: root.safeFloatMargin
+
+                visible: !root.useHybridGroups
 
                 radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.full : 0
                 antialiasing: radius > 0
@@ -135,16 +143,21 @@ Item {
                 id: overlayBg
                 anchors.fill: parent
                 anchors.margins: Math.max(0, Appearance.sizes.hyprlandGapsOut)
+                visible: !root.useHybridGroups
             }
 
             Bar.BarBgShadowOverlay {
                 targetItem: overlayBg
                 cornerStyle: 1
-                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow) && enableAnimations
+                visibleWhen: !!(Config?.options?.bar?.floatStyleShadow)
+                             && enableAnimations
+                             && !root.useHybridGroups
             }
 
             Bar.BarBgOverlay {
                 anchors.fill: overlayBg
+                visible: !root.useHybridGroups
+
                 position: root.isBottom ? "bottom" : "top"
                 cornerStyle: 1
                 useGlassMode: true

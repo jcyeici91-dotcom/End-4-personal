@@ -103,20 +103,24 @@ Item {
                 property int index: wrappedFrameVariant.variantModel.indexOf(monitorScope.modelData)
                 property bool hasActiveWindows: false
                 
-                   property bool showBarBackground: {
+                property bool showBarBackground: {
                     let style = Config.options.bar.barBackgroundStyle;
                     let groupStyle = Config.options.bar.groupBackgroundStyle;
                     let cornerStyle = Config.options.bar.cornerStyle;
 
                     let isHybrid = groupStyle === "hybrid";
-                    let isHugTranspRect = (cornerStyle === 0 && style === 0 && (groupStyle === "rect" || groupStyle === "pills" || groupStyle === "rounded" || groupStyle === ""));
                     
-                   let isAdaptiveEmpty = (style === 2 && !monitorScope.hasActiveWindows && (cornerStyle === 0 || cornerStyle === 1));
+                    // 🔥 LA CLAVE ESTÁ AQUÍ 🔥
+                    // Expandimos la lógica: ahora permite que el marco se dibuje tanto en Hug (0) como en Float (1)
+                    // cuando la barra está en modo Transparente.
+                    let isTranspRect = ((cornerStyle === 0 || cornerStyle === 1) && style === 0 && (groupStyle === "rect" || groupStyle === "pills" || groupStyle === "rounded" || groupStyle === ""));
+                    
+                    let isAdaptiveEmpty = (style === 2 && !monitorScope.hasActiveWindows && (cornerStyle === 0 || cornerStyle === 1));
 
-                         return style === 1 || 
+                    return style === 1 || 
                            (style === 2 && monitorScope.hasActiveWindows) || 
                            (isHybrid && (style === 0 || style === 2)) ||
-                           isHugTranspRect ||
+                           isTranspRect || // <--- Aplica la lógica reparada
                            isAdaptiveEmpty;
                 }
 

@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "golden_haze"
+            "type": "scheme-auto"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -107,7 +107,7 @@
             "widgetsFactor": 1.2,
             "workspaceZoom": 1.07
         },
-        "thumbnailPath": "",
+        "thumbnailPath": "/home/jcgomez91/.config/hypr/custom/scripts/mpvpaper_thumbnails/superman-dark-hero-dc-live-wallpaper-wallsflow-com.mp4.jpg",
         "wallpaperPath": "/home/jcgomez91/Pictures/Wallpapers/05.jpg",
         "widgets": {
             "clock": {
@@ -122,9 +122,9 @@
                     "dialNumberStyle": "full",
                     "hourHandStyle": "hollow",
                     "hourMarks": true,
-                    "minuteHandStyle": "thin",
+                    "minuteHandStyle": "medium",
                     "secondHandStyle": "classic",
-                    "sides": 23,
+                    "sides": 14,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -151,8 +151,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 115.41528946314043,
-                "y": 156.97005834334914
+                "x": 420.1802571614578,
+                "y": 301.95594200721075
             },
             "media": {
                 "backgroundShape": "Cookie6Sided",
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2843.1161796374204,
-                "y": 1676.4717923677888
+                "x": 2854.857346754807,
+                "y": 1627.3128881209932
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2799.3601700220347,
-                "y": 159.50536483373367
+                "x": 2749.2364470653047,
+                "y": 193.13730093149007
             }
         }
     },
@@ -211,18 +211,6 @@
             "center": [
                 {
                     "centered": false,
-                    "id": "music_player",
-                    "visible": true
-                },
-                {
-                    "centered": false,
-                    "id": "clock",
-                    "visible": true
-                }
-            ],
-            "left": [
-                {
-                    "centered": false,
                     "id": "workspaces",
                     "visible": true
                 },
@@ -232,10 +220,32 @@
                     "visible": true
                 }
             ],
+            "left": [
+                {
+                    "centered": false,
+                    "id": "policies_panel_button",
+                    "visible": true
+                },
+                {
+                    "centered": false,
+                    "id": "music_player",
+                    "visible": true
+                }
+            ],
             "right": [
                 {
                     "centered": false,
                     "id": "system_monitor",
+                    "visible": true
+                },
+                {
+                    "centered": false,
+                    "id": "clock",
+                    "visible": true
+                },
+                {
+                    "centered": false,
+                    "id": "dashboard_panel_button",
                     "visible": true
                 }
             ]
@@ -253,10 +263,10 @@
         "resources": {
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
-            "showCat": true,
+            "showCat": false,
             "showCpu": true,
             "showRam": true,
-            "showTemperature": true,
+            "showTemperature": false,
             "swapWarningThreshold": 85
         },
         "screenList": [
@@ -299,7 +309,7 @@
             "monochromeIcons": false,
             "numberMap": [
             ],
-            "showAppIcons": false,
+            "showAppIcons": true,
             "showNumberDelay": 300,
             "shown": 3,
             "useNerdFont": false,
@@ -311,11 +321,11 @@
         }
     },
     "battery": {
-        "automaticSuspend": true,
+        "automaticSuspend": false,
         "critical": 5,
         "full": 101,
         "low": 20,
-        "suspend": 3
+        "suspend": 20
     },
     "calendar": {
         "locale": "en-GB"
@@ -355,6 +365,9 @@
     "hacks": {
         "arbitraryRaceConditionDelay": 20
     },
+    "hyprland": {
+        "enableCustomConfig": true
+    },
     "interactions": {
         "deadPixelWorkaround": {
             "enable": false
@@ -387,7 +400,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 5020,
+            "colorTemperature": 4898,
             "from": "19:00",
             "to": "06:30"
         }
@@ -603,6 +616,10 @@
                     {
                         "size": 1,
                         "type": "easyEffects"
+                    },
+                    {
+                        "size": 1,
+                        "type": "bluetooth"
                     }
                 ]
             },

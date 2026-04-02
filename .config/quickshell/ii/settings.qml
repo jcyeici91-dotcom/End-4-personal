@@ -51,6 +51,13 @@ ApplicationWindow {
             icon: "texture",
             component: "modules/settings/BackgroundConfig.qml"
         },
+        // 👇 AQUÍ AGREGAMOS LA NUEVA PÁGINA DE HYPRLAND 👇
+        {
+            name: Translation.tr("Hyprland"),
+            icon: "desktop_windows", // Usando un ícono Material para ventanas/escritorio
+            component: "modules/settings/HyprlandConfig.qml"
+        },
+        // 👆 ------------------------------------------- 👆
         {
             name: Translation.tr("Interface"),
             icon: "bottom_app_bar",
@@ -192,23 +199,6 @@ ApplicationWindow {
                         root.lastSearchIndex = -1
                         root.resultsCount = 0
                     }
-
-                    // We may use this in the future, this only searches the best result
-                    /* onAccepted: {
-                        if (!searchInput.text || searchInput.text.trim() === "") return
-                        
-                        let normalizedText = searchInput.text.toLowerCase()
-                        let bestResult = SearchRegistry.getBestResult(normalizedText)
-
-                        if (!bestResult) {
-                            noMoreResultsAnim.restart()
-                            return
-                        }
-
-                        root.currentPage = bestResult.pageIndex
-                        root.scrollPos = bestResult.yPos
-                        SearchRegistry.currentSearch = bestResult.matchedString
-                    } */
 
                     onAccepted: {
                         const result = SearchRegistry.getResultsRanked(searchInput.text)

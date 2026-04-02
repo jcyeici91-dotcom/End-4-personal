@@ -209,7 +209,7 @@ Item {
             topMargin: root.cornerStyle === 1 ? 6 : 0
             left: leftStopper.right
         }
-        active: !root.useHybridGroups // Desactivado en modo hybrid
+        active: !root.useHybridGroups 
         sourceComponent: leftClassicComponent
     }
 
@@ -324,21 +324,51 @@ Item {
         Component {
             id: middleHybridComponent
             Item {
+                id: hybridRoot
                 anchors.fill: parent
 
+                // 🔥 REGLA EXCLUSIVA PARA FLOAT + TRANSPARENTE 🔥
+                // Solo se activa si el modo es Float (1) y NO hay fondo sólido (Transparente)
+                property int floatGapPull: (Config.options.bar.cornerStyle === 1 && !root.showSolidBackground) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
+
+                // 1. PUENTE INVISIBLE QUE RELLENA EL HUECO (Solo aparece en Float+Transparent)
+                Rectangle {
+                    anchors.left: centerNotch.left
+                    anchors.right: centerNotch.right
+                    anchors.top: !root.isBottom ? parent.top : undefined
+                    anchors.bottom: root.isBottom ? parent.bottom : undefined
+                    
+                    anchors.topMargin: !root.isBottom ? -hybridRoot.floatGapPull : 0
+                    anchors.bottomMargin: root.isBottom ? -hybridRoot.floatGapPull : 0
+                    
+                    height: hybridRoot.floatGapPull + (centerNotch.height / 2)
+                    color: centerNotch.effectiveFill
+                    visible: hybridRoot.floatGapPull > 0
+                }
+
+                // 2. ESQUINA CÓNCAVA DERECHA (ESTIRADA PARA ALCANZAR EL TECHO)
                 RoundCorner {
                     anchors.right: centerNotch.left
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
+                    
+                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    
                     width: height
                     color: centerNotch.effectiveFill
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.TopRight
                 }
 
+                // 3. ESQUINA CÓNCAVA IZQUIERDA (ESTIRADA PARA ALCANZAR EL TECHO)
                 RoundCorner {
                     anchors.left: centerNotch.right
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
+                    
+                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    
                     width: height
                     color: centerNotch.effectiveFill
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft
@@ -354,11 +384,20 @@ Item {
                     }
                 }
 
+                // 4. EL NOTCH CENTRAL
                 Bar.BarGroup {
                     id: centerNotch
-                    anchors.top: !root.isBottom ? parent.top : undefined
-                    anchors.bottom: root.isBottom ? parent.bottom : undefined
+                    
+                    // 🔥 CORRECCIÓN DEL EXCESO DE ESPACIO ABAJO 🔥
+                    // Anclamos tanto el top como el bottom. Así el notch ocupa la altura real completa de la barra 
+                    // (igual que los módulos laterales), eliminando el exceso de espacio entre el notch y las ventanas.
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
+                    
+                    anchors.topMargin: !root.isBottom ? -edgeInset : 0
+                    anchors.bottomMargin: root.isBottom ? -edgeInset : 0
+                    
                     vertical: false
                     
                     spacing: root.pillGap 
@@ -368,18 +407,15 @@ Item {
                     autoHide: true
                     
                     isNotch: true            
-                    showBorder: false       
+                    showBorder: false        
                     showHighlight: false    
                     unifyChildChips: true   
                     
                     width: implicitWidth
-                    height: implicitHeight
+                    // Se elimina 'height: implicitHeight' para permitir que los anchors top/bottom estiren 
+                    // la píldora y alineen su límite inferior con el resto de la interfaz.
                     
                     Behavior on width { 
-                        enabled: enableAnimations
-                        NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
-                    }
-                    Behavior on height { 
                         enabled: enableAnimations
                         NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
                     }

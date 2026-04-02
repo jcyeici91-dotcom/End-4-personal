@@ -278,6 +278,12 @@ Singleton {
                 }
             }
 
+            // 👇 SECCIÓN DE HYPRLAND AGREGADA AQUÍ 👇
+            property JsonObject hyprland: JsonObject {
+                property bool enableCustomConfig: true 
+            }
+            // 👆 ---------------------------------- 👆
+
             property JsonObject bar: JsonObject {
                 property JsonObject activeWindow: JsonObject {
                     property bool fixedSize: false

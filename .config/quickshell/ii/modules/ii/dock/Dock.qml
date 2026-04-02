@@ -36,21 +36,23 @@ Scope {
     readonly property bool dockAtTop: barIsBottom
     readonly property string dockEdge: dockAtTop ? "top" : "bottom"
 
-    // --- LÓGICA DE UNIÓN / FLOTACIÓN ESTANDARIZADA ---
+    // --- LÓGICA DE UNIÓN / FLOTACIÓN ESTANDARIZADA CORREGIDA ---
     readonly property bool isFloatOrHybrid: {
-        // 1. Si está explícitamente en "Float" (1), siempre flota.
-        if (Config.options?.bar?.cornerStyle === 1) return true;
-        
-        // 2. Si el estilo de fondo es "Crystal" (3), siempre flota.
+        // 1. Si el estilo de fondo es "Crystal" (3), siempre flota y se separa.
         if (Config.options?.bar?.barBackgroundStyle === 3) return true;
         
-        // 3. NUEVO: Si está en "Hug" (0) y es "Transparente" (0) [ej. Hybrid + Hug + Transparente], SE UNE al borde.
-        if (Config.options?.bar?.cornerStyle === 0 && Config.options?.bar?.barBackgroundStyle === 0) return false;
+        // 2. CORRECCIÓN PRINCIPAL: Si estás usando "Float" (1) pero con fondo "Transparente" (0)
+        // o en un modo "Hybrid", forzamos a que el dock SE UNA al borde (false)
+        // para que dibuje las curvas hacia afuera como en la imagen.
+        if (Config.options?.bar?.cornerStyle === 1 && Config.options?.bar?.barBackgroundStyle === 0) return false;
         
-        // 4. Si es Transparente (0) pero no estaba en Hug, flota.
-        if (Config.options?.bar?.barBackgroundStyle === 0) return true;
+        // 3. Si está explícitamente en "Hug" (0) o "Hybrid" (2), siempre se une al borde.
+        if (Config.options?.bar?.cornerStyle === 0 || Config.options?.bar?.cornerStyle === 2) return false;
         
-        // Por defecto, se une a los bordes (Hug + Solid, etc)
+        // 4. Solo permitimos que flote si es estrictamente "Float" (1) y "Sólido" (1).
+        if (Config.options?.bar?.cornerStyle === 1 && Config.options?.bar?.barBackgroundStyle === 1) return true;
+        
+        // Por defecto, se une a los bordes para garantizar las curvas (Hug)
         return false;
     }
     
@@ -555,12 +557,12 @@ Scope {
                 right: true
             }
 
-            // Exclusión de zona: si está anclado (pinned) pero flotando, dejamos espacio abajo.
+            // Exclusión de zona
             exclusiveZone: root.pinned 
                 ? (implicitHeight - (root.isFloatOrHybrid ? Appearance.sizes.elevationMargin : 0)) 
                 : 0
 
-            // Base radius para redondear bordes si está flotando
+            // Base radius para redondear bordes si está flotando o unido
             readonly property int baseRadius: Appearance.rounding.large
 
             // Medidas implícitas de la ventana

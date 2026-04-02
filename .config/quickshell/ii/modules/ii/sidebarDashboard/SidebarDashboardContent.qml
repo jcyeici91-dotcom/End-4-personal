@@ -7,6 +7,7 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 
 import Quickshell
 import Quickshell.Bluetooth
@@ -43,10 +44,13 @@ Item {
 
     readonly property real shapeRadius: Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18
 
+    // --- LÓGICA DE FLOTACIÓN (HUG/DOCKED) ---
+    readonly property bool isFloatOrHybrid: _opts ? ((_opts.bar?.cornerStyle === 1) || (_opts.bar?.barBackgroundStyle === 0) || (_opts.bar?.barBackgroundStyle === 3)) : false
     readonly property int floatingGap: 12
+    // ----------------------------------------
 
     property real pillSpacing: sidebarPadding
-    readonly property real pillsRowWidth: sidebarWidth - (sidebarPadding * 2) - (shapeRadius * 2)
+    readonly property real pillsRowWidth: sidebarWidth - sidebarPadding * 2 - shapeRadius
     readonly property real twoUpPillWidth: Math.floor((pillsRowWidth - pillSpacing) / 2)
 
     Connections {
@@ -69,25 +73,111 @@ Item {
         id: sidebarRightBackground
         anchors.fill: parent
         
-        anchors.topMargin: root.floatingGap
-        anchors.bottomMargin: root.floatingGap
-        anchors.leftMargin: root.floatingGap
-        anchors.rightMargin: root.floatingGap
+        // Se aplican márgenes si la barra está flotando
+        anchors.topMargin: root.isFloatOrHybrid ? root.floatingGap : 0
+        anchors.bottomMargin: root.isFloatOrHybrid ? root.floatingGap : 0
+        anchors.leftMargin: root.isFloatOrHybrid && !root.isOnRight ? root.floatingGap : 0
+        anchors.rightMargin: root.isFloatOrHybrid && root.isOnRight ? root.floatingGap : 0
 
-           Rectangle {
+        // Loader para cambiar dinámicamente entre la forma unida o la forma flotante
+        Loader {
             anchors.fill: parent
-            color: Appearance.colors.colLayer0
-            radius: root.shapeRadius
-            border.width: 1
-            border.color: Appearance.colors.colLayer0Border
+            sourceComponent: root.isFloatOrHybrid ? floatingBgComponent : unitedBgComponent
+        }
+
+        Component {
+            id: floatingBgComponent
+            Rectangle {
+                color: Appearance.colors.colLayer0
+                radius: root.shapeRadius
+                border.width: 1
+                border.color: Appearance.colors.colLayer0Border
+            }
+        }
+
+        Component {
+            id: unitedBgComponent
+            Shape {
+                id: bgShape
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+
+                property real w: width
+                property real h: height
+                property real rad: root.shapeRadius
+
+                ShapePath {
+                    fillColor: Appearance.colors.colLayer0
+                    strokeColor: "transparent"
+                    strokeWidth: 0
+                    startX: root.isOnRight ? 0 : bgShape.w
+                    startY: 0
+
+                    PathQuad {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.rad
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.h - bgShape.rad
+                    }
+                    PathQuad {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: bgShape.h
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: bgShape.h
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.w : 0
+                        y: bgShape.h
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.w : 0
+                        y: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: 0
+                    }
+                }
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Appearance.colors.colLayer0Border
+                    strokeWidth: 1
+                    capStyle: ShapePath.FlatCap
+                    startX: root.isOnRight ? 0 : bgShape.w
+                    startY: 0
+
+                    PathQuad {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.rad
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: 0
+                    }
+                    PathLine {
+                        x: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        y: bgShape.h - bgShape.rad
+                    }
+                    PathQuad {
+                        x: root.isOnRight ? 0 : bgShape.w
+                        y: bgShape.h
+                        controlX: root.isOnRight ? bgShape.rad : bgShape.w - bgShape.rad
+                        controlY: bgShape.h
+                    }
+                }
+            }
         }
 
         ColumnLayout {
             anchors.fill: parent
             anchors.topMargin: sidebarPadding
             anchors.bottomMargin: sidebarPadding
-            anchors.leftMargin: sidebarPadding + root.shapeRadius
-            anchors.rightMargin: sidebarPadding + root.shapeRadius
+            // Ajuste de margen interior para que sea simétrico si está flotando
+            anchors.leftMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? root.shapeRadius : 0))
+            anchors.rightMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? 0 : root.shapeRadius))
             spacing: sidebarPadding
 
             SystemButtonRow {
@@ -198,6 +288,13 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+            }
+
+            BottomWidgetGroup {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillHeight: false
+                Layout.fillWidth: true
+                Layout.preferredHeight: implicitHeight
             }
         }
     }
@@ -422,7 +519,33 @@ Item {
                 }
                 StyledToolTip { text: Translation.tr("Settings") }
             }
-                         
+            
+            QuickToggleButton {
+                id: updateButton
+                toggled: confirm
+                property bool confirm: false
+                buttonIcon: confirm ? "check" : "download"
+                
+                Timer {
+                    id: confirmTimer
+                    interval: 2000
+                    onTriggered: { confirmTimer.stop(); updateButton.confirm = false }
+                }
+                
+                onClicked: {
+                    if (confirm) {
+                        GlobalStates.sidebarRightOpen = false;
+                        const sp = root._opts?.update?.scriptPath ?? ""
+                        const sf = root._opts?.update?.scriptFlags ?? ""
+                        if (sp.length > 0) Quickshell.execDetached(["bash", "-c", sp + " " + sf ]);
+                    } else {
+                        confirm = true
+                        confirmTimer.start()
+                    }
+                }
+                StyledToolTip { text: Translation.tr("Update the ii-vynx") }
+            }
+            
             QuickToggleButton {
                 toggled: false
                 buttonIcon: "power_settings_new"

@@ -39,6 +39,13 @@ Scope {
                 property bool hasActiveWindows: false
                 property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
+                // 🔥 LA REGLA EXCLUSIVA 🔥
+                // Detectamos si estamos exactamente en Float + Transparente + Hybrid
+                property bool isFloatTranspHybrid: Config.options.bar.cornerStyle === 1 && !showBarBackground && Config.options.bar.groupBackgroundStyle === "hybrid"
+
+                // Calculamos el gap de flotación. Si estamos en la combinación especial, lo anulamos (0) para que se pegue al borde.
+                property int floatGap: (Config.options.bar.cornerStyle === 1 && !isFloatTranspHybrid) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
+
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
                     target: HyprlandData
@@ -52,7 +59,6 @@ Scope {
                     }
                 }
                 
-
                 Timer {
                     id: showBarTimer
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
@@ -74,11 +80,17 @@ Scope {
                 }
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
-                exclusionMode: ExclusionMode.Ignore
-                exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 :
-                    Appearance.sizes.baseBarHeight + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
+                
+                // La matemática de colisión: Alto de la barra + Gap (que será 0 en la combinación especial)
+                property int totalReservedSpace: Appearance.sizes.barHeight + floatGap
+
+                exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 : totalReservedSpace
+                exclusionMode: exclusiveZone > 0 ? ExclusionMode.Normal : ExclusionMode.Ignore
+                
                 WlrLayershell.namespace: "quickshell:bar"
-                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
+                
+                // Restauramos la suma del floatGap al implicitHeight para que dibuje el margen cuando sea necesario
+                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + floatGap
                 mask: Region {
                     item: hoverMaskRegion
                 }
@@ -132,7 +144,8 @@ Scope {
                             left: parent.left
                             top: parent.top
                             bottom: undefined
-                            topMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : 0
+                            // Volvemos a usar el floatGap (que dinámicamente será 0 o el valor real)
+                            topMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : barRoot.floatGap
                             bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
                             rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
                         }
@@ -158,80 +171,66 @@ Scope {
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-                                anchors.bottomMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : 0
+                                // Lo aplicamos también para la parte inferior
+                                anchors.bottomMargin: ((Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : barRoot.floatGap) + ((Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1)
                             }
                         }
                     }
 
-                    // Round decorators
+                    // --- LÓGICA MAESTRA DE BORDES REDONDEADOS ---
                     Loader {
                         id: roundDecorators
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: barContent.bottom
-                            bottom: undefined
-                        }
+                        
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        
+                        property bool hugSolid: Config.options.bar.cornerStyle === 0 && showBarBackground
+                        
+                        y: !Config.options.bar.bottom 
+                            ? (hugSolid ? barContent.y + barContent.height : 0) 
+                            : (hugSolid ? barContent.y - height : parent.height - height)
+                        
                         height: Appearance.rounding.screenRounding
-                        active: showBarBackground && Config.options.bar.cornerStyle === 0 // Hug
-
-                        states: State {
-                            name: "bottom"
-                            when: Config.options.bar.bottom
-                            AnchorChanges {
-                                target: roundDecorators
-                                anchors {
-                                    right: parent.right
-                                    left: parent.left
-                                    top: undefined
-                                    bottom: barContent.top
-                                }
-                            }
-                        }
+                        
+                        active: true
 
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
+                            readonly property real overlap: 1.0 
+                            readonly property color decorColor: Appearance.colors.colLayer0
+
                             RoundCorner {
                                 id: leftCorner
-                                anchors {
-                                    top: parent.top
-                                    bottom: parent.bottom
-                                    left: parent.left
-                                }
-
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                
+                                anchors.topMargin: !Config.options.bar.bottom ? -overlap : 0
+                                anchors.bottomMargin: Config.options.bar.bottom ? -overlap : 0
+                                anchors.leftMargin: -overlap
+                                
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
-
-                                corner: RoundCorner.CornerEnum.TopLeft
-                                states: State {
-                                    name: "bottom"
-                                    when: Config.options.bar.bottom
-                                    PropertyChanges {
-                                        leftCorner.corner: RoundCorner.CornerEnum.BottomLeft
-                                    }
-                                }
+                                color: decorColor
+                                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
                             }
+
                             RoundCorner {
                                 id: rightCorner
-                                anchors {
-                                    right: parent.right
-                                    top: !Config.options.bar.bottom ? parent.top : undefined
-                                    bottom: Config.options.bar.bottom ? parent.bottom : undefined
-                                }
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                
+                                anchors.topMargin: !Config.options.bar.bottom ? -overlap : 0
+                                anchors.bottomMargin: Config.options.bar.bottom ? -overlap : 0
+                                anchors.rightMargin: -overlap
+                                
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
-
-                                corner: RoundCorner.CornerEnum.TopRight
-                                states: State {
-                                    name: "bottom"
-                                    when: Config.options.bar.bottom
-                                    PropertyChanges {
-                                        rightCorner.corner: RoundCorner.CornerEnum.BottomRight
-                                    }
-                                }
+                                color: decorColor
+                                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
                             }
                         }
                     }
+                    // --- FIN LÓGICA MAESTRA ---
                 }
             }
         }

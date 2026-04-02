@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import qs
 import qs.services
 import qs.modules.common
@@ -7,558 +9,854 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import QtQuick.Shapes
+import QtQuick.Effects
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
 MouseArea {
     id: wallpaperSelectorContent
-    property int columns: 4
-    property real previewCellAspectRatio: 4 / 3
+
     property bool useDarkMode: Appearance.m3colors.darkmode
-    property bool favMode: false
-    property bool browserMode: false
+    property string defaultWallpaperDir: Directories.pictures + "/Wallpapers"
+    property string animatedWallpaperDir: Directories.pictures + "/Wallpapers/animados"
+    property string currentWallpaperDir: defaultWallpaperDir
+    
+    property int currentViewMode: 0 
 
-    property var moreOptionsModelData: null
-    property string filterText: extraOptions.text
-
-    property var apiImages: {
-        let allImages = [];
-        for (let i = 0; i < WallpaperBrowser.responses.length; i++) {
-            let resp = WallpaperBrowser.responses[i];
-            if (resp.images) {
-                for (let j = 0; j < resp.images.length; j++) {
-                    let img = resp.images[j];
-                    allImages.push({
-                        filePath: img.preview_url,
-                        fileUrl: img.file_url,
-                        fileName: "wallhaven-" + img.id || "image",
-                        fileIsDir: false,
-                        isApi: true,
-                        imageData: img
-                    });
-                }
-            }
-        }
-        return allImages;
-    }
-
-    function updateThumbnails() {
-        const totalImageMargin = (Appearance.sizes.wallpaperSelectorItemMargins + Appearance.sizes.wallpaperSelectorItemPadding) * 2
-        const thumbnailSizeName = Images.thumbnailSizeNameForDimensions(grid.cellWidth - totalImageMargin, grid.cellHeight - totalImageMargin)
-        Wallpapers.generateThumbnail(thumbnailSizeName)
-    }
-
-    Connections {
-        target: Wallpapers
-        function onDirectoryChanged() {
-            // we need a better way instead of these 'mode' properties
-            wallpaperSelectorContent.favMode = false;
-            wallpaperSelectorContent.browserMode = false;
-            wallpaperSelectorContent.updateThumbnails()
-        }
-    }
-
-    Connections {
-        target: Persistent.states.wallpaper
-        function onFavouritesChanged() {
-            if (wallpaperSelectorContent.favMode) {
-                wallpaperSelectorContent.refreshFavourites();
-            }
-        }
-    }
-
-    ListModel {
-        id: favouritesModel
-    }
-
-    function refreshFavourites() {
-        favouritesModel.clear();
-        const favs = Persistent.states.wallpaper.favourites;
-        const query = filterText.toLowerCase();
-        for (let i = 0; i < favs.length; i++) {
-            const path = favs[i];
-            const fileName = path.split('/').pop();
-            if (query === "" || fileName.toLowerCase().includes(query)) {
-                favouritesModel.append({
-                    filePath: path,
-                    fileName: fileName,
-                    fileIsDir: false
-                });
-            }
-        }
-    }
-
-    function handleFilePasting(event) {
-        const currentClipboardEntry = Cliphist.entries[0]
-        if (/^\d+\tfile:\/\/\S+/.test(currentClipboardEntry)) {
-            const url = StringUtils.cleanCliphistEntry(currentClipboardEntry);
-            Wallpapers.setDirectory(FileUtils.trimFileProtocol(decodeURIComponent(url)));
-            event.accepted = true;
-        } else {
-            event.accepted = false; // No image, let text pasting proceed
-        }
-    }
+    property int sliceWidth: 120
+    property int expandedWidth: Math.min(width * 0.55, 750)
+    property int skewOffset: 35
+    property int sliceSpacing: -18
 
     function selectWallpaperPath(filePath) {
         if (filePath && filePath.length > 0) {
-            Wallpapers.select(filePath, wallpaperSelectorContent.useDarkMode);
-            filterText = "";
-            wallpaperSelectorContent.browserMode = false;
+            Wallpapers.select(filePath, wallpaperSelectorContent.useDarkMode)
         }
     }
 
-    function getWallhavenId(url) {
-        if (!url) return null
-        const urlStr = url.toString();
-        const fileName = urlStr.split('/').pop();
-        const fileNameWithoutExt = fileName.split('.')[0];
-        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i);
-        return match ? match[1] : null;
-    }
-    
-    function searchForSimilarImages(id) {
-        WallpaperBrowser.clearResponses();
-        WallpaperBrowser.moreLikeThisPicture(id, 1);
-        wallpaperSelectorContent.browserMode = true;
-        wallpaperSelectorContent.favMode = false;
-        filterText = "";
+    function getActiveView() {
+        if (currentViewMode === 0) return sliceListView
+        if (currentViewMode === 1) return gridListView
+        if (currentViewMode === 2) return carouselListView
+        if (currentViewMode === 3) return arcListView
+        return null
     }
 
-    function toggleFavourite(path) {
-        const favs = Array.from(Persistent.states.wallpaper.favourites);
-        const index = favs.indexOf(path);
-        if (index === -1) {
-            favs.push(path);
-        } else {
-            favs.splice(index, 1);
-        }
-        Persistent.states.wallpaper.favourites = favs;
+    function currentItemData() {
+        let view = getActiveView()
+        if (!view || !view.model || view.count <= 0) return null
+        if (typeof view.model.get === "function") return view.model.get(view.currentIndex)
+        return null
     }
 
-    acceptedButtons: Qt.BackButton | Qt.ForwardButton
+    function activateCurrent() {
+        const item = currentItemData()
+        if (!item) return
+        wallpaperSelectorContent.selectWallpaperPath(item.actualPath || item.filePath)
+    }
+
+    function moveSelection(delta) {
+        let view = getActiveView()
+        if (!view || view.count <= 0) return
+        let next = view.currentIndex + delta
+        if (next < 0) next = view.count - 1
+        if (next >= view.count) next = 0
+        view.currentIndex = next
+    }
+
+    acceptedButtons: Qt.BackButton | Qt.ForwardButton | Qt.LeftButton
+    hoverEnabled: true
+    focus: true
+
+    onClicked: mouse => { forceActiveFocus() }
+
     onPressed: event => {
         if (event.button === Qt.BackButton) {
-            Wallpapers.navigateBack();
+            moveSelection(-1); event.accepted = true
         } else if (event.button === Qt.ForwardButton) {
-            Wallpapers.navigateForward();
+            moveSelection(1); event.accepted = true
         }
+    }
+
+    onWheel: wheel => {
+        if (wheel.angleDelta.y > 0 || wheel.angleDelta.x > 0) {
+            moveSelection(-1)
+        } else if (wheel.angleDelta.y < 0 || wheel.angleDelta.x < 0) {
+            moveSelection(1)
+        }
+        wheel.accepted = true
     }
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
-            GlobalStates.wallpaperSelectorOpen = false;
-            event.accepted = true;
-        } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
-            wallpaperSelectorContent.handleFilePasting(event);
-        } else if (event.modifiers & Qt.AltModifier && event.key === Qt.Key_Up) {
-            Wallpapers.navigateUp();
-            event.accepted = true;
-        } else if (event.modifiers & Qt.AltModifier && event.key === Qt.Key_Left) {
-            Wallpapers.navigateBack();
-            event.accepted = true;
-        } else if (event.modifiers & Qt.AltModifier && event.key === Qt.Key_Right) {
-            Wallpapers.navigateForward();
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Left) {
-            grid.moveSelection(-1);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Right) {
-            grid.moveSelection(1);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Up) {
-            grid.moveSelection(-grid.columns);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Down) {
-            grid.moveSelection(grid.columns);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            grid.activateCurrent();
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Backspace) {
-            if (filterText.length > 0) {
-                filterText = filterText.substring(0, filterText.length - 1);
-            }
-            filterField.forceActiveFocus();
-            event.accepted = true;
-        } else if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_L) {
-            addressBar.focusBreadcrumb();
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Slash) {
-            filterField.forceActiveFocus();
-            event.accepted = true;
-        } else {
-            if (event.text.length > 0) {
-                filterText += event.text;
-                filterField.cursorPosition = filterText.length;
-                filterField.forceActiveFocus();
-            }
-            event.accepted = true;
+            GlobalStates.wallpaperSelectorOpen = false
+            event.accepted = true
+        } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up) {
+            moveSelection(-1); event.accepted = true
+        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down) {
+            moveSelection(1); event.accepted = true
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+            activateCurrent(); event.accepted = true
         }
     }
 
-    implicitHeight: mainLayout.implicitHeight
-    implicitWidth: mainLayout.implicitWidth
+    implicitWidth: 1200
+    implicitHeight: 620
 
-    StyledRectangularShadow {
-        target: wallpaperGridBackground
-    }
-    Rectangle {
-        id: wallpaperGridBackground
-        anchors {
-            fill: parent
-            margins: Appearance.sizes.elevationMargin
-        }
-        focus: true
-        border.width: 1
-        border.color: Appearance.colors.colLayer0Border
-        color: Appearance.colors.colLayer0
-        radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
-
-        property int calculatedRows: Math.ceil(grid.count / grid.columns)
-
-        implicitWidth: gridColumnLayout.implicitWidth
-        implicitHeight: gridColumnLayout.implicitHeight
-
-        RowLayout {
-            id: mainLayout
-            anchors.fill: parent
-            spacing: -4
-
-            Rectangle {
-                Layout.fillHeight: true
-                Layout.margins: 4
-                implicitWidth: quickDirColumnLayout.implicitWidth
-                implicitHeight: quickDirColumnLayout.implicitHeight
-                color: Appearance.colors.colLayer1
-                radius: wallpaperGridBackground.radius - Layout.margins
-
-                ColumnLayout {
-                    id: quickDirColumnLayout
-                    anchors.fill: parent
-                    spacing: 0
-
-                    StyledText {
-                        Layout.margins: 12
-                        font {
-                            pixelSize: Appearance.font.pixelSize.normal
-                            weight: Font.Medium
-                        }
-                        text: Translation.tr("Pick a wallpaper")
-                    }
-                    Item {
-                        id: quickDirsContainer
-                        Layout.fillHeight: true
-                        Layout.fillWidth: true
-                        implicitWidth: 160
-
-                        Flickable {
-                            id: sideBarFlickable
-                            anchors.fill: parent
-                            contentHeight: sideBarRail.implicitHeight
-                            clip: true
-                            interactive: contentHeight > height
-                            
-                            ScrollBar.vertical: StyledScrollBar { 
-                                visible: sideBarFlickable.interactive
-                            }
-
-                            NavigationRailTabArray {
-                                id: sideBarRail
-                                anchors.top: parent.top
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                Layout.topMargin: 0
-                                expanded: true
-                                currentIndex: {
-                                    const model = sideBarRepeater.model;
-                                    for (let i = 0; i < model.length; i++) {
-                                        let item = model[i];
-                                        let isToggled = false;
-                                        if (item.path === "FAVOURITES_MODE") isToggled = wallpaperSelectorContent.favMode;
-                                        else if (item.path === "BROWSER_MODE") isToggled = wallpaperSelectorContent.browserMode;
-                                        else isToggled = !wallpaperSelectorContent.favMode && !wallpaperSelectorContent.browserMode && Wallpapers.directory === Qt.resolvedUrl(item.path);
-                                        
-                                        if (isToggled) return i;
-                                    }
-                                    return -1;
-                                }
-
-                                Repeater {
-                                    id: sideBarRepeater
-                                    model: [
-                                        { icon: "home", name: Translation.tr("Home"), path: Directories.home }, 
-                                        { icon: "docs", name: Translation.tr("Documents"), path: Directories.documents }, 
-                                        { icon: "download", name: Translation.tr("Downloads"), path: Directories.downloads }, 
-                                        { icon: "image", name: Translation.tr("Pictures"), path: Directories.pictures }, 
-                                        { icon: "movie", name: Translation.tr("Videos"), path: Directories.videos }, 
-                                        { icon: "public", name: Translation.tr("Browser"), path: "BROWSER_MODE" }, 
-                                        { icon: "favorite", name: Translation.tr("Favourites"), path: "FAVOURITES_MODE" }, 
-                                        { icon: "", name: "---", path: "INTENTIONALLY_INVALID_DIR" }, 
-                                        ...Config.options.wallpaperSelector.directories,
-                                        ...(Config.options.policies.weeb === 1 ? [{ icon: "favorite", name: Translation.tr("Homework"), path: `${Directories.pictures}/homework` }] : []),
-                                    ]
-                                    delegate: NavigationRailButton {
-                                        id: quickDirButton
-                                        required property var modelData
-                                        required property int index
-                                        
-                                        baseSize: 40
-                                        baseHighlightHeight: 32
-                                        iconSize: 18
-                                        
-                                        buttonIcon: modelData.icon
-                                        buttonText: modelData.name
-                                        expanded: true
-                                        toggled: sideBarRail.currentIndex === index
-                                        showToggledHighlight: false
-                                        
-                                        onClicked: {
-                                            if (quickDirButton.modelData.path === "FAVOURITES_MODE") {
-                                                wallpaperSelectorContent.favMode = true;
-                                                wallpaperSelectorContent.browserMode = false;
-                                                wallpaperSelectorContent.refreshFavourites();
-                                            } else if (quickDirButton.modelData.path === "BROWSER_MODE") {
-                                                wallpaperSelectorContent.favMode = false;
-                                                wallpaperSelectorContent.browserMode = true;
-                                            } else {
-                                                wallpaperSelectorContent.favMode = false;
-                                                wallpaperSelectorContent.browserMode = false;
-                                                Wallpapers.setDirectory(quickDirButton.modelData.path)
-                                            }
-                                            wallpaperSelectorContent.moreOptionsModelData = null
-                                        }
-                                        enabled: modelData.icon.length > 0
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ColumnLayout {
-                id: gridColumnLayout
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                AddressBar {
-                    id: addressBar
-                    Layout.margins: 4
-                    Layout.fillWidth: true
-                    Layout.fillHeight: false
-                    directory: Wallpapers.effectiveDirectory
-                    visible: !wallpaperSelectorContent.favMode && !wallpaperSelectorContent.browserMode
-                    onNavigateToDirectory: path => {
-                        Wallpapers.setDirectory(path.length == 0 ? "/" : path);
-                    }
-                    radius: wallpaperGridBackground.radius - Layout.margins
-                }
-
-                Rectangle {
-                    visible: wallpaperSelectorContent.favMode || wallpaperSelectorContent.browserMode
-                    Layout.margins: 4
-                    Layout.fillWidth: true
-                    implicitHeight: addressBar.implicitHeight
-                    color: Appearance.colors.colLayer2
-                    radius: wallpaperGridBackground.radius - Layout.margins
-
-                    RowLayout {
-                        spacing: 12
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 14
-                        
-                        MaterialSymbol {
-                            text: wallpaperSelectorContent.browserMode ? "public" : "favorite"
-                            color: Appearance.colors.colPrimary
-                            iconSize: Appearance.font.pixelSize.larger
-                        }
-                        ConfigSelectionArray {
-                            options: {
-                                let items = [{ displayName: wallpaperSelectorContent.browserMode ? Translation.tr("Wallpaper Browser") : Translation.tr("Favourites"), isRoot: true }];
-                                if (wallpaperSelectorContent.browserMode) {
-                                    const tags = WallpaperBrowser.currentSearchTags;
-                                    for (let i = 0; i < tags.length; i++) {
-                                        items.push({ displayName: tags[i], value: tags[i] });
-                                    }
-                                }
-                                return items;
-                            }
-                            onSelected: newValue => {
-                                if (!newValue) return;
-                                wallpaperSelectorContent.moreOptionsModelData = null
-                                WallpaperBrowser.clearResponses();
-                                WallpaperBrowser.makeRequest([newValue], 20, 1);
-                            }
-                        }
-                    }
-                    
-                }
-
-                Item {
-                    id: gridDisplayRegion
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    StyledIndeterminateProgressBar {
-                        id: indeterminateProgressBar
-                        visible: (Wallpapers.thumbnailGenerationRunning && value == 0) || (wallpaperSelectorContent.browserMode && WallpaperBrowser.runningRequests > 0)
-                        anchors {
-                            bottom: parent.top
-                            left: parent.left
-                            right: parent.right
-                            leftMargin: 4
-                            rightMargin: 4
-                        }
-                    }
-
-                    StyledProgressBar {
-                        visible: Wallpapers.thumbnailGenerationRunning && value > 0
-                        value: Wallpapers.thumbnailGenerationProgress
-                        anchors.fill: indeterminateProgressBar
-                    }
-
-                    StyledText {
-                        visible: (wallpaperSelectorContent.favMode && grid.model.count === 0) || (wallpaperSelectorContent.browserMode && grid.model.length === 0)
-                        text: {
-                            if (wallpaperSelectorContent.browserMode) {
-                                return (WallpaperBrowser.runningRequests > 0) ? Translation.tr("Searching...") : Translation.tr("Search wallpapers with the search bar at the bottom.");
-                            }
-                            return Translation.tr("No favourites yet. Click the heart icon on any wallpaper to add it to favourites.");
-                        }
-                        anchors.centerIn: parent
-
-                        font.family: Appearance.font.family.reading
-                    }
-
-                    GridView {
-                        id: grid
-                        visible: count > 0
-
-                        readonly property int columns: wallpaperSelectorContent.columns
-                        readonly property int rows: Math.max(1, Math.ceil(count / columns))
-                        property int currentIndex: 0
-
-                        anchors.fill: parent
-                        cellWidth: width / wallpaperSelectorContent.columns
-                        cellHeight: cellWidth / wallpaperSelectorContent.previewCellAspectRatio
-                        interactive: true
-                        clip: true
-                        keyNavigationWraps: true
-                        boundsBehavior: Flickable.StopAtBounds
-                        bottomMargin: extraOptions.implicitHeight
-                        ScrollBar.vertical: StyledScrollBar {}
-
-                        Component.onCompleted: {
-                            Qt.callLater(() => loadTimer.start())
-                            wallpaperSelectorContent.updateThumbnails()
-                        }
-
-                        function moveSelection(delta) {
-                            currentIndex = Math.max(0, Math.min(grid.model.count - 1, currentIndex + delta));
-                            positionViewAtIndex(currentIndex, GridView.Contain);
-                        }
-
-                        function activateCurrent() {
-                            const item = wallpaperSelectorContent.browserMode ? grid.model[currentIndex] : grid.model.get(currentIndex)
-                            wallpaperSelectorContent.selectWallpaperPath(item.actualPath || item.filePath);
-                        }
-
-                        property int loadedCount: 0
-
-                        Timer {
-                            id: loadTimer
-                            interval: 16
-                            repeat: true
-                            running: false
-                            onTriggered: {
-                                grid.loadedCount += 1
-                                if (grid.loadedCount >= grid.count) loadTimer.stop()
-                            }
-                        }
-
-                        model: wallpaperSelectorContent.browserMode ? wallpaperSelectorContent.apiImages : (wallpaperSelectorContent.favMode ? favouritesModel : Wallpapers.folderModel)
-                        onModelChanged: currentIndex = 0
-                        delegate: WallpaperDirectoryItem {
-                            required property var modelData
-                            required property int index
-                            fileModelData: modelData
-                            width: grid.cellWidth
-                            height: grid.cellHeight
-                            colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
-                            colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colOnSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
-                            shouldLoad: index < grid.loadedCount
-
-                            onEntered: {
-                                grid.currentIndex = index;
-                            }
-                            
-                            onActivated: {
-                                wallpaperSelectorContent.selectWallpaperPath(fileModelData.actualPath || fileModelData.filePath);
-                            }
-
-                            onSearchSimilarRequested: (path, id) => {
-                                wallpaperSelectorContent.searchForSimilarImages(id)
-                            }
-                            onMoreOptionsRequested: (modelData) => {
-                                //console.log("[Wallpaper Selector] More options requested:")
-                                wallpaperSelectorContent.moreOptionsModelData = modelData
-                            }
-                        }
-
-                        layer.enabled: true
-                        layer.effect: OpacityMask {
-                            maskSource: Rectangle {
-                                width: gridDisplayRegion.width
-                                height: gridDisplayRegion.height
-                                radius: wallpaperGridBackground.radius
-                            }
-                        }
-                    }
-
-                    ExtraOptionsToolbar {
-                        id: extraOptions
-                        colBackground: Appearance.m3colors.m3surfaceContainerLow
-                        anchors {
-                            bottom: parent.bottom
-                            horizontalCenter: parent.horizontalCenter
-                            bottomMargin: 8
-                        }
-                    }
-
-                    ImageOptionsToolbar {
-                        z: 1
-                        colBackground: Appearance.colors.colPrimary
-                        anchors {
-                            bottom: parent.bottom
-                            bottomMargin: 8
-                            right: parent.right
-                            rightMargin: 16
-                        }
-                    }
-
-                    
-                }
-            }
-        }
+    Component.onCompleted: {
+        Wallpapers.setDirectory(currentWallpaperDir)
+        Qt.callLater(() => forceActiveFocus())
     }
 
     Connections {
         target: GlobalStates
         function onWallpaperSelectorOpenChanged() {
             if (GlobalStates.wallpaperSelectorOpen && monitorIsFocused) {
-                filterField.forceActiveFocus();
+                Wallpapers.setDirectory(currentWallpaperDir)
+                Qt.callLater(() => wallpaperSelectorContent.forceActiveFocus())
             }
         }
     }
 
-    Connections {
-        target: Wallpapers
-        function onChanged() {
-            GlobalStates.wallpaperSelectorOpen = false;
+    Component {
+        id: mediaPreviewFactory
+        Item {
+            id: mediaRoot
+            anchors.fill: parent
+            property var mData: parent.itemModelData
+            property bool mActive: parent.itemActive
+            
+            property string fileExt: mData && mData.fileName ? mData.fileName.split('.').pop().toLowerCase() : ""
+            property bool isVid: ["mp4", "webm", "mkv", "mov"].includes(fileExt)
+            property bool isGif: fileExt === "gif"
+            
+            function getUrl(path) {
+                if (!path) return ""
+                return path.startsWith("file://") ? path : "file://" + path
+            }
+
+            Image {
+                anchors.fill: parent
+                visible: (!mediaRoot.isVid && !mediaRoot.isGif) || (mediaRoot.isVid && !mediaRoot.mActive)
+                source: mediaRoot.mData ? getUrl(mediaRoot.mData.thumbnail || mediaRoot.mData.previewPath || mediaRoot.mData.filePath) : ""
+                fillMode: Image.PreserveAspectCrop
+                smooth: true
+                asynchronous: true
+                cache: true
+            }
+            
+            AnimatedImage {
+                anchors.fill: parent
+                visible: mediaRoot.isGif
+                source: mediaRoot.isGif && mediaRoot.mData ? getUrl(mediaRoot.mData.filePath) : ""
+                fillMode: Image.PreserveAspectCrop
+                playing: mediaRoot.mActive
+            }
+            
+            Loader {
+                anchors.fill: parent
+                active: mediaRoot.isVid
+                sourceComponent: Item {
+                    MediaPlayer {
+                        id: mplayer
+                        source: mediaRoot.mData ? mediaRoot.getUrl(mediaRoot.mData.filePath) : ""
+                        audioOutput: AudioOutput { muted: true }
+                        videoOutput: voutput
+                        loops: MediaPlayer.Infinite
+                    }
+                    VideoOutput {
+                        id: voutput
+                        anchors.fill: parent
+                        fillMode: VideoOutput.PreserveAspectCrop
+                    }
+                    Connections {
+                        target: mediaRoot
+                        function onMActiveChanged() {
+                            if (mediaRoot.mActive) mplayer.play()
+                            else mplayer.pause()
+                        }
+                    }
+                    Component.onCompleted: {
+                        if (mediaRoot.mActive) mplayer.play()
+                    }
+                }
+            }
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 14
+        spacing: 12
+
+        Rectangle {
+            id: premiumFilterBar
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: 5
+            Layout.bottomMargin: 5
+            Layout.preferredHeight: 48
+            Layout.preferredWidth: filterRow.implicitWidth + 32
+            radius: height / 2
+            color: Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 0.7)
+            border.width: 1
+            border.color: Qt.rgba(1, 1, 1, 0.15)
+
+            Row {
+                id: filterRow
+                anchors.centerIn: parent
+                spacing: 8
+
+                Rectangle {
+                    width: 120; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentWallpaperDir === wallpaperSelectorContent.defaultWallpaperDir
+                    property bool isHovered: staticMouseArea.containsMouse
+
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 6
+                        Text {
+                            text: "󰋩"
+                            font.pixelSize: 14
+                            color: parent.parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                        }
+                        Text {
+                            text: "Estáticos"
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            color: parent.parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                        }
+                    }
+
+                    MouseArea {
+                        id: staticMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            wallpaperSelectorContent.currentWallpaperDir = wallpaperSelectorContent.defaultWallpaperDir
+                            Wallpapers.setDirectory(wallpaperSelectorContent.currentWallpaperDir)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: 120; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentWallpaperDir === wallpaperSelectorContent.animatedWallpaperDir
+                    property bool isHovered: animMouseArea.containsMouse
+
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 6
+                        Text {
+                            text: "󰕧"
+                            font.pixelSize: 14
+                            color: parent.parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                        }
+                        Text {
+                            text: "Animados"
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            color: parent.parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                        }
+                    }
+
+                    MouseArea {
+                        id: animMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            wallpaperSelectorContent.currentWallpaperDir = wallpaperSelectorContent.animatedWallpaperDir
+                            Wallpapers.setDirectory(wallpaperSelectorContent.currentWallpaperDir)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: 1; height: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Qt.rgba(1, 1, 1, 0.2)
+                    anchors.margins: 4
+                }
+
+                Rectangle {
+                    width: 40; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentViewMode === 0
+                    property bool isHovered: view0MouseArea.containsMouse
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Text { anchors.centerIn: parent; text: "󰕰"; font.pixelSize: 18; color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0 }
+                    MouseArea { id: view0MouseArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wallpaperSelectorContent.currentViewMode = 0 }
+                }
+
+                Rectangle {
+                    width: 40; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentViewMode === 1
+                    property bool isHovered: view1MouseArea.containsMouse
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Text { anchors.centerIn: parent; text: "󰾍"; font.pixelSize: 18; color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0 }
+                    MouseArea { id: view1MouseArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wallpaperSelectorContent.currentViewMode = 1 }
+                }
+
+                Rectangle {
+                    width: 40; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentViewMode === 2
+                    property bool isHovered: view2MouseArea.containsMouse
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Text { anchors.centerIn: parent; text: "󰞉"; font.pixelSize: 18; color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0 }
+                    MouseArea { id: view2MouseArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wallpaperSelectorContent.currentViewMode = 2 }
+                }
+
+                Rectangle {
+                    width: 40; height: 36; radius: 18
+                    property bool isSelected: wallpaperSelectorContent.currentViewMode === 3
+                    property bool isHovered: view3MouseArea.containsMouse
+                    color: isSelected ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent")
+                    border.width: isSelected ? 0 : 1
+                    border.color: isHovered && !isSelected ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Text { anchors.centerIn: parent; text: "󰋫"; font.pixelSize: 18; color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0 }
+                    MouseArea { id: view3MouseArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wallpaperSelectorContent.currentViewMode = 3 }
+                }
+            }
+        }
+
+        StackLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: wallpaperSelectorContent.currentViewMode
+
+            Item {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                ListView {
+                    id: sliceListView
+                    anchors.fill: parent
+                    orientation: ListView.Horizontal
+                    model: Wallpapers.folderModel
+                    clip: true
+                    spacing: wallpaperSelectorContent.sliceSpacing
+
+                    flickDeceleration: 1500
+                    maximumFlickVelocity: 3000
+                    boundsBehavior: Flickable.StopAtBounds
+                    preferredHighlightBegin: (width - wallpaperSelectorContent.expandedWidth) / 2
+                    preferredHighlightEnd: (width + wallpaperSelectorContent.expandedWidth) / 2
+                    highlightRangeMode: ListView.StrictlyEnforceRange
+                    highlightMoveDuration: 350
+                    
+                    header: Item { width: (sliceListView.width - wallpaperSelectorContent.expandedWidth) / 2; height: 1 }
+                    footer: Item { width: (sliceListView.width - wallpaperSelectorContent.expandedWidth) / 2; height: 1 }
+
+                    delegate: Item {
+                        id: sliceDelegate
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isCurrent: ListView.isCurrentItem
+                        readonly property bool isHovered: itemMouseArea.containsMouse
+                        readonly property bool isHiddenDir: modelData.fileName === "animados" || modelData.fileName === "gifs" || modelData.fileIsDir === true
+
+                        width: isHiddenDir ? 0 : (isCurrent ? wallpaperSelectorContent.expandedWidth : wallpaperSelectorContent.sliceWidth)
+                        height: sliceListView.height
+                        visible: !isHiddenDir
+                        z: isCurrent ? 100 : (isHovered ? 90 : 50 - Math.abs(index - sliceListView.currentIndex))
+
+                        Behavior on width { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+
+                        MouseArea {
+                            id: itemMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (!isCurrent) sliceListView.currentIndex = index
+                                else wallpaperSelectorContent.selectWallpaperPath(modelData.actualPath || modelData.filePath)
+                            }
+                        }
+
+                        Item {
+                            id: sliceImageContainer
+                            anchors.fill: parent
+                            
+                            Loader {
+                                anchors.fill: parent
+                                sourceComponent: mediaPreviewFactory
+                                property var itemModelData: modelData
+                                property bool itemActive: sliceDelegate.isCurrent || sliceDelegate.isHovered
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: Qt.rgba(0, 0, 0, sliceDelegate.isCurrent ? 0 : (sliceDelegate.isHovered ? 0.2 : 0.55))
+                                Behavior on color { ColorAnimation { duration: 250 } }
+                            }
+
+                            layer.enabled: true
+                            layer.smooth: true
+                            layer.samples: 4
+                            layer.effect: MultiEffect {
+                                maskEnabled: true
+                                maskSource: ShaderEffectSource {
+                                    sourceItem: Item {
+                                        width: sliceImageContainer.width
+                                        height: sliceImageContainer.height
+                                        Shape {
+                                            anchors.fill: parent
+                                            antialiasing: true
+                                            preferredRendererType: Shape.CurveRenderer
+                                            ShapePath {
+                                                fillColor: "white"
+                                                strokeColor: "transparent"
+                                                startX: wallpaperSelectorContent.skewOffset; startY: 0
+                                                PathLine { x: sliceDelegate.width; y: 0 }
+                                                PathLine { x: sliceDelegate.width - wallpaperSelectorContent.skewOffset; y: sliceDelegate.height }
+                                                PathLine { x: 0; y: sliceDelegate.height }
+                                                PathLine { x: wallpaperSelectorContent.skewOffset; y: 0 }
+                                            }
+                                        }
+                                    }
+                                }
+                                maskThresholdMin: 0.3
+                                maskSpreadAtMin: 0.3
+                            }
+                        }
+
+                        Shape {
+                            anchors.fill: parent
+                            antialiasing: true
+                            preferredRendererType: Shape.CurveRenderer
+                            ShapePath {
+                                fillColor: "transparent"
+                                strokeColor: sliceDelegate.isCurrent ? Appearance.colors.colPrimary : (sliceDelegate.isHovered ? Qt.rgba(1, 1, 1, 0.4) : Qt.rgba(1, 1, 1, 0.1))
+                                strokeWidth: sliceDelegate.isCurrent ? 3 : 1
+                                Behavior on strokeColor { ColorAnimation { duration: 200 } }
+                                startX: wallpaperSelectorContent.skewOffset; startY: 0
+                                PathLine { x: sliceDelegate.width; y: 0 }
+                                PathLine { x: sliceDelegate.width - wallpaperSelectorContent.skewOffset; y: sliceDelegate.height }
+                                PathLine { x: 0; y: sliceDelegate.height }
+                                PathLine { x: wallpaperSelectorContent.skewOffset; y: 0 }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            anchors.left: parent.left; anchors.leftMargin: wallpaperSelectorContent.skewOffset
+                            anchors.right: parent.right; anchors.rightMargin: wallpaperSelectorContent.skewOffset
+                            height: 60
+                            color: Qt.rgba(0, 0, 0, 0.7)
+                            opacity: sliceDelegate.isCurrent ? 1.0 : 0.0
+                            Behavior on opacity { NumberAnimation { duration: 250 } }
+                            visible: opacity > 0
+                            StyledText {
+                                anchors.centerIn: parent
+                                text: (modelData.fileName || "").replace(/\.[^/.]+$/, "")
+                                color: "white"
+                                font.pixelSize: Appearance.font.pixelSize.large
+                                font.weight: Font.Bold
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                GridView {
+                    id: gridListView
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    model: Wallpapers.folderModel
+                    clip: true
+                    cellWidth: 260
+                    cellHeight: 180
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    delegate: Item {
+                        id: gridDelegate
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isCurrent: GridView.isCurrentItem
+                        readonly property bool isHovered: gridMouseArea.containsMouse
+                        readonly property bool isHiddenDir: modelData.fileName === "animados" || modelData.fileName === "gifs" || modelData.fileIsDir === true
+
+                        width: isHiddenDir ? 0 : gridListView.cellWidth
+                        height: isHiddenDir ? 0 : gridListView.cellHeight
+                        visible: !isHiddenDir
+
+                        Item {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            scale: isHovered || isCurrent ? 1.05 : 1.0
+                            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+
+                            Rectangle {
+                                id: gridCard
+                                anchors.fill: parent
+                                radius: 16
+                                color: Qt.rgba(0.1, 0.1, 0.1, 1)
+                                border.width: isCurrent ? 3 : (isHovered ? 2 : 1)
+                                border.color: isCurrent ? Appearance.colors.colPrimary : (isHovered ? Qt.rgba(1, 1, 1, 0.4) : Qt.rgba(1, 1, 1, 0.1))
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+                                
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true; shadowColor: Qt.rgba(0, 0, 0, 0.5)
+                                    shadowBlur: isHovered ? 0.8 : 0.4
+                                    shadowVerticalOffset: isHovered ? 6 : 2
+                                }
+
+                                Item {
+                                    anchors.fill: parent
+                                    anchors.margins: gridCard.border.width
+                                    
+                                    Loader {
+                                        anchors.fill: parent
+                                        sourceComponent: mediaPreviewFactory
+                                        property var itemModelData: modelData
+                                        property bool itemActive: gridDelegate.isCurrent || gridDelegate.isHovered
+                                    }
+
+                                    layer.enabled: true
+                                    layer.effect: MultiEffect {
+                                        maskEnabled: true
+                                        maskSource: ShaderEffectSource {
+                                            sourceItem: Rectangle {
+                                                width: gridCard.width - (gridCard.border.width * 2)
+                                                height: gridCard.height - (gridCard.border.width * 2)
+                                                radius: 16 - gridCard.border.width
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: gridCard.border.width
+                                    radius: 16 - gridCard.border.width
+                                    color: Qt.rgba(0, 0, 0, isCurrent ? 0 : (isHovered ? 0.1 : 0.4))
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                }
+
+                                Rectangle {
+                                    anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
+                                    anchors.margins: gridCard.border.width; height: 40; radius: 16 - gridCard.border.width
+                                    color: Qt.rgba(0, 0, 0, 0.8)
+                                    opacity: isCurrent || isHovered ? 1.0 : 0.0
+                                    Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                                    Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; height: 16; color: Qt.rgba(0, 0, 0, 0.8) }
+                                    StyledText {
+                                        anchors.centerIn: parent
+                                        text: (modelData.fileName || "").replace(/\.[^/.]+$/, "")
+                                        color: "white"
+                                        font.pixelSize: Appearance.font.pixelSize.medium
+                                        font.weight: Font.Bold
+                                        elide: Text.ElideRight
+                                        width: parent.width - 20
+                                        horizontalAlignment: Text.AlignHCenter
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: gridMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (!isCurrent) gridListView.currentIndex = index
+                                    else wallpaperSelectorContent.selectWallpaperPath(modelData.actualPath || modelData.filePath)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                ListView {
+                    id: carouselListView
+                    anchors.fill: parent
+                    orientation: ListView.Horizontal
+                    model: Wallpapers.folderModel
+                    spacing: -240
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    preferredHighlightBegin: width / 2 - 200
+                    preferredHighlightEnd: width / 2 + 200
+                    highlightRangeMode: ListView.StrictlyEnforceRange
+                    highlightMoveDuration: 400
+
+                    header: Item { width: carouselListView.width / 2 - 200; height: 1 }
+                    footer: Item { width: carouselListView.width / 2 - 200; height: 1 }
+
+                    delegate: Item {
+                        id: carouselDelegate
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isCurrent: ListView.isCurrentItem
+                        readonly property bool isHovered: carouselMouseArea.containsMouse
+                        readonly property bool isHiddenDir: modelData.fileName === "animados" || modelData.fileName === "gifs" || modelData.fileIsDir === true
+
+                        width: isHiddenDir ? 0 : 400
+                        height: carouselListView.height
+                        visible: !isHiddenDir
+
+                        property real itemCenter: x + width / 2
+                        property real viewCenter: carouselListView.contentX + carouselListView.width / 2
+                        property real dist: Math.abs(itemCenter - viewCenter)
+                        property real scaleRatio: Math.max(0.65, 1.0 - dist / 800)
+                        
+                        z: isCurrent ? 100 : Math.floor(scaleRatio * 100)
+
+                        Item {
+                            anchors.centerIn: parent
+                            width: parent.width * carouselDelegate.scaleRatio
+                            height: parent.height * 0.85 * carouselDelegate.scaleRatio
+
+                            Rectangle {
+                                id: carouselCard
+                                anchors.fill: parent
+                                radius: 24
+                                color: Qt.rgba(0.1, 0.1, 0.1, 1)
+                                border.width: carouselDelegate.isCurrent ? 4 : 2
+                                border.color: carouselDelegate.isCurrent ? Appearance.colors.colPrimary : Qt.rgba(1, 1, 1, 0.2)
+                                
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true; shadowColor: Qt.rgba(0, 0, 0, 0.6)
+                                    shadowBlur: carouselDelegate.isCurrent ? 1.0 : 0.5
+                                    shadowVerticalOffset: carouselDelegate.isCurrent ? 8 : 4
+                                }
+
+                                Item {
+                                    anchors.fill: parent
+                                    anchors.margins: carouselCard.border.width
+                                    
+                                    Loader {
+                                        anchors.fill: parent
+                                        sourceComponent: mediaPreviewFactory
+                                        property var itemModelData: modelData
+                                        property bool itemActive: carouselDelegate.isCurrent
+                                    }
+
+                                    layer.enabled: true
+                                    layer.effect: MultiEffect {
+                                        maskEnabled: true
+                                        maskSource: ShaderEffectSource {
+                                            sourceItem: Rectangle {
+                                                width: carouselCard.width - (carouselCard.border.width * 2)
+                                                height: carouselCard.height - (carouselCard.border.width * 2)
+                                                radius: 24 - carouselCard.border.width
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: carouselCard.border.width
+                                    radius: 24 - carouselCard.border.width
+                                    color: Qt.rgba(0, 0, 0, carouselDelegate.isCurrent ? 0 : 0.5)
+                                    Behavior on color { ColorAnimation { duration: 300 } }
+                                }
+
+                                Rectangle {
+                                    anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
+                                    anchors.margins: carouselCard.border.width; height: 60; radius: 24 - carouselCard.border.width
+                                    color: Qt.rgba(0, 0, 0, 0.8)
+                                    opacity: carouselDelegate.isCurrent ? 1.0 : 0.0
+                                    Behavior on opacity { NumberAnimation { duration: 300 } }
+
+                                    Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; height: 20; color: Qt.rgba(0, 0, 0, 0.8) }
+                                    StyledText {
+                                        anchors.centerIn: parent
+                                        text: (modelData.fileName || "").replace(/\.[^/.]+$/, "")
+                                        color: "white"
+                                        font.pixelSize: Appearance.font.pixelSize.large
+                                        font.weight: Font.Bold
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: carouselMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (!carouselDelegate.isCurrent) carouselListView.currentIndex = index
+                                    else wallpaperSelectorContent.selectWallpaperPath(modelData.actualPath || modelData.filePath)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                ListView {
+                    id: arcListView
+                    anchors.fill: parent
+                    orientation: ListView.Horizontal
+                    model: Wallpapers.folderModel
+                    spacing: 20
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    preferredHighlightBegin: width / 2 - 150
+                    preferredHighlightEnd: width / 2 + 150
+                    highlightRangeMode: ListView.StrictlyEnforceRange
+                    highlightMoveDuration: 400
+
+                    header: Item { width: arcListView.width / 2 - 150; height: 1 }
+                    footer: Item { width: arcListView.width / 2 - 150; height: 1 }
+
+                    delegate: Item {
+                        id: arcDelegate
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isCurrent: ListView.isCurrentItem
+                        readonly property bool isHovered: arcMouseArea.containsMouse
+                        readonly property bool isHiddenDir: modelData.fileName === "animados" || modelData.fileName === "gifs" || modelData.fileIsDir === true
+
+                        width: isHiddenDir ? 0 : 300
+                        height: arcListView.height
+                        visible: !isHiddenDir
+
+                        property real itemCenter: x + width / 2
+                        property real viewCenter: arcListView.contentX + arcListView.width / 2
+                        property real dist: itemCenter - viewCenter
+                        property real absDist: Math.abs(dist)
+                        property real ratio: Math.max(0, 1 - absDist / (arcListView.width / 1.5))
+                        
+                        y: (1 - ratio) * 80 + (arcListView.height - 400) / 2
+                        rotation: dist / 25
+                        scale: 0.7 + 0.3 * ratio
+                        z: Math.floor(ratio * 100)
+
+                        Rectangle {
+                            id: arcCard
+                            width: 300
+                            height: 400
+                            anchors.centerIn: parent
+                            radius: 12
+                            color: Qt.rgba(0.1, 0.1, 0.1, 1)
+                            border.width: arcDelegate.isCurrent ? 4 : 2
+                            border.color: arcDelegate.isCurrent ? Appearance.colors.colPrimary : Qt.rgba(1, 1, 1, 0.2)
+
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                shadowEnabled: true; shadowColor: Qt.rgba(0, 0, 0, 0.6)
+                                shadowBlur: 1.0
+                                shadowVerticalOffset: 8
+                            }
+
+                            Item {
+                                anchors.fill: parent
+                                anchors.margins: arcCard.border.width
+                                
+                                Loader {
+                                    anchors.fill: parent
+                                    sourceComponent: mediaPreviewFactory
+                                    property var itemModelData: modelData
+                                    property bool itemActive: arcDelegate.isCurrent
+                                }
+
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    maskEnabled: true
+                                    maskSource: ShaderEffectSource {
+                                        sourceItem: Rectangle {
+                                            width: arcCard.width - (arcCard.border.width * 2)
+                                            height: arcCard.height - (arcCard.border.width * 2)
+                                            radius: 12 - arcCard.border.width
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: arcCard.border.width
+                                radius: 12 - arcCard.border.width
+                                color: Qt.rgba(0, 0, 0, arcDelegate.isCurrent ? 0 : 0.4)
+                                Behavior on color { ColorAnimation { duration: 300 } }
+                            }
+
+                            Rectangle {
+                                anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
+                                anchors.margins: arcCard.border.width; height: 50; radius: 12 - arcCard.border.width
+                                color: Qt.rgba(0, 0, 0, 0.8)
+                                opacity: arcDelegate.isCurrent ? 1.0 : 0.0
+                                Behavior on opacity { NumberAnimation { duration: 300 } }
+
+                                Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; height: 16; color: Qt.rgba(0, 0, 0, 0.8) }
+                                StyledText {
+                                    anchors.centerIn: parent
+                                    text: (modelData.fileName || "").replace(/\.[^/.]+$/, "")
+                                    color: "white"
+                                    font.pixelSize: Appearance.font.pixelSize.medium
+                                    font.weight: Font.Bold
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: arcMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (!arcDelegate.isCurrent) arcListView.currentIndex = index
+                                else wallpaperSelectorContent.selectWallpaperPath(modelData.actualPath || modelData.filePath)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        StyledText {
+            visible: {
+                if (wallpaperSelectorContent.currentViewMode === 0) return sliceListView.count === 0
+                if (wallpaperSelectorContent.currentViewMode === 1) return gridListView.count === 0
+                if (wallpaperSelectorContent.currentViewMode === 2) return carouselListView.count === 0
+                if (wallpaperSelectorContent.currentViewMode === 3) return arcListView.count === 0
+                return false
+            }
+            anchors.centerIn: parent
+            text: Translation.tr("No wallpapers found in ") + wallpaperSelectorContent.currentWallpaperDir
+            font.family: Appearance.font.family.reading
+            color: Appearance.colors.colOnLayer0
         }
     }
 }
