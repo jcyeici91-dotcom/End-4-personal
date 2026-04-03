@@ -643,6 +643,15 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "flip_to_front"
+            text: Translation.tr("Interactive mode (Keep focused visible)")
+            checked: Config.options.bar.workspaces.interactiveFocus ?? false
+            onCheckedChanged: {
+                Config.options.bar.workspaces.interactiveFocus = checked;
+            }
+        }
+
         ConfigSpinBox {
             icon: "touch_long"
             text: Translation.tr("Number show delay when pressing Super (ms)")

@@ -192,7 +192,7 @@ Item {
 
         workspaceOccupied = Array.from({ length: shown }, (_, i) => {
             const wsId = base + i + 1
-            return list.some(w => w && !w.floating && (w.monitor === root.monitorIndex) && (w.workspace?.id === wsId))
+            return list.some(w => w && (w.monitor === root.monitorIndex) && (w.workspace?.id === wsId))
         })
 
         const occSet = new Set()
@@ -201,7 +201,7 @@ Item {
         for (let i = 0; i < list.length; i++) {
             const w = list[i]
             const wsId = w?.workspace?.id
-            if (!w || w.floating) continue
+            if (!w) continue
             if (w.monitor !== root.monitorIndex) continue
             if (!wsId || wsId <= 0) continue
             occSet.add(wsId)
@@ -214,13 +214,13 @@ Item {
     }
 
     function getWindowCount(workspaceId) {
-        return HyprlandData.windowList.filter(w => w.workspace.id === workspaceId && !w.floating).length
+        return HyprlandData.windowList.filter(w => w.workspace.id === workspaceId).length
     }
 
     Connections {
         target: HyprlandData
         function onWindowListChanged() {
-            const windowsOnMonitor = HyprlandData.windowList.filter(win => win.monitor === root.monitorIndex && !win.floating)
+            const windowsOnMonitor = HyprlandData.windowList.filter(win => win.monitor === root.monitorIndex)
             windowsOnMonitor.sort((a, b) => a.at[0] - b.at[0])
 
             root.monitorWindows = windowsOnMonitor.map(win => {
@@ -523,21 +523,59 @@ Item {
 
                 readonly property bool hasIconsHere: showIcons && ((monitorWindows?.some(w => w && w.workspace === workspaceValue)) ?? false)
 
-                readonly property var winsHere: root.showIcons
-                    ? (root.monitorWindows?.filter(win => win && win.workspace === workspaceValue)?.slice(0, Config.options.bar.workspaces.maxWindowCount) ?? [])
-                    : []
+         readonly property var winsHere: {
+                    const _t = root.focusToken;
+                    if (!root.showIcons || !root.monitorWindows) return [];
+                    
+                    const allW = root.monitorWindows.filter(w => w && w.workspace === workspaceValue);
+                    const maxC = Config.options.bar.workspaces.maxWindowCount || 5;
+                    const isInteractive = Config.options.bar.workspaces.interactiveFocus || false;
+                    
+                    if (allW.length <= maxC) {
+                        return allW;
+                    }
+                    
+                    if (!isInteractive) {
+                        return allW.slice(0, maxC);
+                    }
+                    
+                    const focusedClass = (root.activeWindow?.class ?? root.activeWindow?.appId ?? root.activeWindow?.app_id ?? "").toLowerCase();
+                    const focusedTitle = (root.activeWindow?.title ?? "").toLowerCase();
+                    
+                    let fIdx = -1;
+                    if (focusedClass !== "" || focusedTitle !== "") {
+                        for (let i = 0; i < allW.length; i++) {
+                            const wClass = (allW[i]?.class || allW[i]?.appId || "").toLowerCase();
+                            const wTitle = (allW[i]?.title || "").toLowerCase();
+                            if ((focusedClass !== "" && wClass === focusedClass) || 
+                                (focusedTitle !== "" && wTitle === focusedTitle)) {
+                                fIdx = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (fIdx >= maxC) {
+                        let res = allW.slice(0, maxC - 1);
+                        res.push(allW[fIdx]);
+                        return res;
+                    }
+                    
+                    return allW.slice(0, maxC);
+                }
 
                 function appKeyFor(w) {
                     return (w?.class || w?.appId || w?.title || w?.icon || "").toLowerCase();
                 }
 
-                readonly property string focusedAddress: (root.activeWindow?.address ?? "")
-                readonly property string focusedClass: (root.activeWindow?.class ?? root.activeWindow?.appId ?? root.activeWindow?.app_id ?? "")
-                readonly property string focusedTitle: (root.activeWindow?.title ?? "")
+                readonly property string focusedAddress: { const _t = root.focusToken; return (root.activeWindow?.address ?? ""); }
+                readonly property string focusedClass: { const _t = root.focusToken; return (root.activeWindow?.class ?? root.activeWindow?.appId ?? root.activeWindow?.app_id ?? ""); }
+                readonly property string focusedTitle: { const _t = root.focusToken; return (root.activeWindow?.title ?? ""); }
 
                 readonly property string focusedAppKey: (focusedClass || focusedTitle).toLowerCase()
 
                 readonly property int focusedIconIndex: {
+                    const _t = root.focusToken;
                     if (!background.isActive) return -1
                     if (!root.showIcons) return -1
                     if (!winsHere || winsHere.length === 0) return -1
@@ -566,6 +604,7 @@ Item {
                 }
 
                 readonly property int focusedAppCountHere: {
+                    const _t = root.focusToken;
                     if (!background.isActive) return 0
                     if (!focusedAppKey || focusedAppKey.length === 0) return 0
                     return (winsHere ?? []).filter(w => appKeyFor(w) === focusedAppKey).length

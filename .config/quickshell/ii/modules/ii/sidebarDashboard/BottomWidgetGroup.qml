@@ -5,27 +5,23 @@ import qs.services
 import QtQuick
 import QtQuick.Layouts
 
-// --- IMPORTS DE LOS WIDGETS ---
 import qs.modules.ii.sidebarDashboard.calendar
 import qs.modules.ii.sidebarDashboard.todo
 import qs.modules.ii.sidebarDashboard.pomodoro
 import qs.modules.ii.sidebarDashboard.calculator // Calculadora
-import qs.modules.ii.sidebarDashboard.notepad    // Notepad
-import qs.modules.ii.sidebarDashboard.sysmon     // System Monitor (NUEVO)
 
 Rectangle {
     id: root
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
     clip: true
-    // Altura ajustada para que quepan bien los gráficos del sistema
-    implicitHeight: collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : 380 
+     implicitHeight: collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : 380 
     
     property int selectedTab: Persistent.states.sidebar.bottomGroup.tab
     property int previousIndex: -1
     property bool collapsed: Persistent.states.sidebar.bottomGroup.collapsed
     
-    // --- LISTA DE PESTAÑAS (TABS) ---
+   
     property var tabs: [
         {
             "type": "calendar",
@@ -50,20 +46,7 @@ Rectangle {
             "name": Translation.tr("Calculator"),
             "icon": "calculate",
             "widget": "calculator/CalculatorWidget.qml"
-        },
-        {
-            "type": "notepad",
-            "name": Translation.tr("Notes"),
-            "icon": "edit_note",
-            "widget": "notepad/NotepadWidget.qml"
-        },
-        {
-            // --- AQUÍ ESTÁ EL MONITOR DE SISTEMA ---
-            "type": "sysmon",
-            "name": Translation.tr("System"),
-            "icon": "memory", // Icono de chip/memoria
-            "widget": "sysmon/SystemMonitorWidget.qml"
-        }
+            }
     ]
 
     Behavior on implicitHeight {
@@ -107,7 +90,6 @@ Rectangle {
         }
     }
 
-    // VISTA COLAPSADA (MINIMIZADA)
     RowLayout {
         id: collapsedBottomWidgetGroupRow
         opacity: collapsed ? 1 : 0
@@ -148,7 +130,7 @@ Rectangle {
         }
     }
 
-    // VISTA EXPANDIDA (NORMAL)
+
     RowLayout {
         id: bottomWidgetGroupRow
 
@@ -166,7 +148,7 @@ Rectangle {
         anchors.fill: parent
         spacing: 20
 
-        // BARRA LATERAL DE PESTAÑAS (NAVEGACIÓN)
+
         Item {
             Layout.fillHeight: true
             Layout.fillWidth: false
@@ -174,7 +156,7 @@ Rectangle {
             Layout.topMargin: 10
             implicitWidth: tabBar.implicitWidth
             
-            // Botones de las pestañas
+
             NavigationRailTabArray {
                 id: tabBar
                 anchors.verticalCenter: parent.verticalCenter
@@ -192,15 +174,14 @@ Rectangle {
                         buttonText: modelData.name
                         buttonIcon: modelData.icon
                         onPressed: {
-                            root.previousIndex = root.selectedTab // Guardar previo para animación
+                            root.previousIndex = root.selectedTab 
                             root.selectedTab = index;
                             Persistent.states.sidebar.bottomGroup.tab = index;
                         }
                     }
                 }
             }
-            // Botón de colapsar
-            CalendarHeaderButton {
+               CalendarHeaderButton {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 forceCircle: true
@@ -216,16 +197,14 @@ Rectangle {
             }
         }
 
-        // ÁREA DE CONTENIDO (Donde se muestra el widget)
-        Item {
+            Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
             Loader {
                 id: tabStack
                 anchors.fill: parent
-                // Ajuste para evitar solapamiento
-                anchors.bottomMargin: 0 
+                   anchors.bottomMargin: 0 
                 anchors.topMargin: 0
 
                 Component.onCompleted: {
@@ -233,32 +212,27 @@ Rectangle {
                 }
 
                 onSourceChanged: {
-                    // Resetear opacidad al cambiar fuente para asegurar visibilidad
                     tabStack.opacity = 1
                 }
             }
             
-            // Lógica de cambio de pestaña
-            Connections {
+              Connections {
                 target: root
                 function onSelectedTabChanged() {
-                     // Determinar dirección de animación
-                    if (root.selectedTab > root.previousIndex)
+                       if (root.selectedTab > root.previousIndex)
                         switchAnim.down = true;
                     else
                         switchAnim.down = false;
                     
-                    // Ejecutar animación manual
-                    switchAnim.restart()
+                              switchAnim.restart()
                 }
             }
             
-            // Animación manual secuencial para cambio de pestaña
             SequentialAnimation {
                 id: switchAnim
                 property bool down: false
                 
-                // 1. Desvanecer salida
+
                 ParallelAnimation {
                     NumberAnimation {
                         target: tabStack
@@ -276,16 +250,15 @@ Rectangle {
                     }
                 }
                 
-                // 2. Cambiar Fuente (Instante)
+        
                 ScriptAction {
                     script: {
                         tabStack.source = root.tabs[root.selectedTab].widget
-                        // Resetear margen para la entrada
-                        tabStack.anchors.topMargin = 10 * -(switchAnim.down ? -1 : 1)
+                           tabStack.anchors.topMargin = 10 * -(switchAnim.down ? -1 : 1)
                     }
                 }
                 
-                // 3. Desvanecer entrada
+       
                 ParallelAnimation {
                     NumberAnimation {
                         target: tabStack.anchors

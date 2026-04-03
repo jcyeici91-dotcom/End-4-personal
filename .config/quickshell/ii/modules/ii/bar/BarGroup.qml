@@ -235,17 +235,7 @@ Item {
         }
     }
 
-    Component {
-        id: glassLineBackgroundComponent
-        GlassLineBackground {
-            isBottom: root.isBottom
-            themeIsDark: root.themeIsDark
-            effectiveShowBorder: root.effectiveShowBorder && root.isContainer && !root.isBorderless
-            borderOpacity: root.borderOpacity
-        }
-    }
-
-    Component {
+     Component {
         id: notchBackgroundComponent
         Item { }
     }

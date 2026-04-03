@@ -201,7 +201,7 @@
         "bottom": false,
         "cornerStyle": 1,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "hybrid",
+        "groupBackgroundStyle": "rounded",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -305,6 +305,7 @@
             "activeIndicatorOpacity": 100,
             "alwaysShowNumbers": true,
             "dynamicWorkspaces": true,
+            "interactiveFocus": true,
             "maxWindowCount": 2,
             "monochromeIcons": false,
             "numberMap": [
