@@ -30,19 +30,13 @@ Item {
     property bool premiumActiveIndicatorGlow: true
     property bool premiumActiveIndicatorBorder: true
     property bool neonBorders: true
-    property bool activeParticles: false
 
-    property bool premiumIconHoverDot: false
-    property int hoverDotSize: Math.round(8 * autoScaleFactor)
-    property int hoverDotBottomMargin: Math.round(3 * autoScaleFactor)
     property bool premiumIconHoverPulse: true
-
     property bool premiumFocusedIconFx: true
     property bool focusedIconChip: true
     property bool focusedIconRing: true
     property bool focusedIconGlow: true
     property bool focusedIconPulse: true
-    property bool focusedIconCornerDot: false
 
     property real focusedChipOpacity: 0.22
     property real focusedChipBorderOpacity: 0.45
@@ -66,7 +60,6 @@ Item {
     property bool superNumbersEnabled: true
     property bool superShowNumbers: false
     
-    // 👇 ADAPTACIÓN: Delay extraído de la config original 👇
     property int superNumbersDelayMs: Config.options.bar.workspaces.showNumberDelay ?? 100
 
     property real workspaceIconSizeFactor: 0.69
@@ -76,10 +69,6 @@ Item {
 
     readonly property real currentBarHeight: Appearance.sizes.barHeight
     readonly property real autoScaleFactor: Math.min(1.0, currentBarHeight / 42.0)
-
-    property int hoverPillWidth: hoverDotSize
-    property int hoverPillHeight: Math.max(2, Math.round(hoverDotSize / 3))
-    property int hoverPillRadius: Math.round(hoverPillHeight / 2)
 
     property int activeDotWidth: bottomActiveDotSize
     property int activeDotHeight: Math.max(2, Math.round(bottomActiveDotSize / 3))
@@ -94,8 +83,6 @@ Item {
     property real activeIndicatorInsetOneWindowFactor: 0.10
     property real activeIndicatorInsetDefaultFactor: 0.10
 
-    property int activeParticlesCount: 5
-
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
     readonly property Toplevel activeWindow: ToplevelManager.activeToplevel
 
@@ -104,7 +91,6 @@ Item {
     readonly property int monitorIndex: barLoader.monitorIndex
     property int workspaceOffset: useWorkspaceMap ? (workspaceMap[monitorIndex] ?? 0) : 0
 
-    // 👇 ADAPTACIÓN: Lógica de Dynamic Workspaces 👇
     readonly property bool dynamicWorkspaces: Config.options.bar.workspaces.dynamicWorkspaces
     readonly property int workspacesShown: dynamicWorkspaces
         ? ((workspaceMap[monitorIndex + 1] ?? workspaceMap[monitorIndex] + Config.options.bar.workspaces.shown) - workspaceMap[monitorIndex])
@@ -159,7 +145,6 @@ Item {
         property real pulsePhase: 0.0
     }
 
-    // 👇 ADAPTACIÓN: Lógica de Dynamic Workspaces (Ocultar vacíos si dynamic está activo) 👇
     function isWorkspaceVisible(wsIndex) {
         const wsId = workspaceGroup * workspacesShown + wsIndex + 1 + workspaceOffset
         const isActive = wsId === (monitor?.activeWorkspace?.id ?? 1)
@@ -174,13 +159,11 @@ Item {
 
         let slots = []
         for (let i = 0; i < shown; i++) {
-            // Si dynamicWorkspaces está activo, solo agregamos los ocupados o el activo.
             if (!dynamicWorkspaces || isWorkspaceVisible(i)) {
                 slots.push(base + i + 1)
             }
         }
 
-        // Si NO es dynamic, mantenemos la lógica original de llenado de espacios vacíos con los de fuera del grupo
         if (!dynamicWorkspaces) {
             const inGroup = new Set(slots)
             let outsideOccupied = Array.from(occSet).filter(id => id > 0 && !inGroup.has(id)).sort((a, b) => a - b)
@@ -240,14 +223,21 @@ Item {
             const windowsOnMonitor = HyprlandData.windowList.filter(win => win.monitor === root.monitorIndex && !win.floating)
             windowsOnMonitor.sort((a, b) => a.at[0] - b.at[0])
 
-            root.monitorWindows = windowsOnMonitor.map(win => ({
-                icon: Quickshell.iconPath(AppSearch.guessIcon(win?.class), "image-missing"),
-                workspace: win.workspace?.id,
-                class: win?.class ?? "",
-                title: win?.title ?? "",
-                address: win?.address ?? "",
-                appId: win?.appId ?? win?.app_id ?? ""
-            }))
+            root.monitorWindows = windowsOnMonitor.map(win => {
+                const appStr = win?.class || win?.appId || win?.app_id || "";
+                let guessedIcon = AppSearch.guessIcon(appStr);
+                if (!guessedIcon) guessedIcon = appStr.toLowerCase();
+                if (appStr.toLowerCase().includes("gedit")) guessedIcon = "org.gnome.gedit";
+                
+                return {
+                    icon: Quickshell.iconPath(guessedIcon, "image-missing"),
+                    workspace: win.workspace?.id,
+                    class: appStr,
+                    title: win?.title || "",
+                    address: win?.address || "",
+                    appId: appStr
+                }
+            })
 
             root.updateWorkspaceOccupied()
         }
@@ -279,7 +269,6 @@ Item {
     onWorkspaceGroupChanged: updateWorkspaceOccupied()
     onWorkspacesShownChanged: updateWorkspaceOccupied()
 
-    // 👇 ADAPTACIÓN: Lógica original del Timer para mostrar números al presionar Super 👇
     Timer {
         id: superNumbersTimer
         interval: root.superNumbersDelayMs
@@ -462,39 +451,6 @@ Item {
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.15 + (activeIndicatorPulse.pulsePhase * 0.08))
         }
-
-        Repeater {
-            model: (fxEnabled && activeParticles) ? root.activeParticlesCount : 0
-            Rectangle {
-                width: Math.round(1 + Math.random() * 2)
-                height: width
-                radius: width / 2
-                antialiasing: true
-                color: "white"
-                opacity: 0.2 + Math.random() * 0.4
-
-                x: Math.round(Math.random() * activeIndicator.width)
-                y: Math.round(Math.random() * activeIndicator.height)
-
-                property real destX: Math.round(Math.random() * activeIndicator.width)
-                property real destY: Math.round(Math.random() * activeIndicator.height)
-
-                Behavior on x { NumberAnimation { duration: 3000 + Math.random() * 2000; easing.type: Easing.InOutQuad } }
-                Behavior on y { NumberAnimation { duration: 3000 + Math.random() * 2000; easing.type: Easing.InOutQuad } }
-
-                Timer {
-                    running: fxEnabled && activeParticles
-                    interval: 3000 + Math.random() * 2000
-                    repeat: true
-                    onTriggered: {
-                        parent.destX = Math.round(Math.random() * activeIndicator.width)
-                        parent.destY = Math.round(Math.random() * activeIndicator.height)
-                        parent.x = parent.destX
-                        parent.y = parent.destY
-                    }
-                }
-            }
-        }
     }
 
     GridLayout {
@@ -510,7 +466,6 @@ Item {
         visible: fxOccupiedBackground
 
         Repeater {
-            // 👇 ADAPTACIÓN: El Repeater itera sobre los espacios visibles 👇
             model: root.visibleWorkspaces.length
 
             delegate: Rectangle {
@@ -551,7 +506,6 @@ Item {
         rows: root.vertical ? 99 : 1
 
         Repeater {
-            // 👇 ADAPTACIÓN: El Repeater itera sobre los espacios visibles 👇
             model: root.visibleWorkspaces.length
 
             delegate: MouseArea {
@@ -574,22 +528,14 @@ Item {
                     : []
 
                 function appKeyFor(w) {
-                    const c = (w?.class ?? (w?.appId ?? ""))
-                    const t = (w?.title ?? "")
-                    if (c && c.length > 0) return c
-                    if (t && t.length > 0) return t
-                    return (w?.icon ?? "")
+                    return (w?.class || w?.appId || w?.title || w?.icon || "").toLowerCase();
                 }
 
                 readonly property string focusedAddress: (root.activeWindow?.address ?? "")
                 readonly property string focusedClass: (root.activeWindow?.class ?? root.activeWindow?.appId ?? root.activeWindow?.app_id ?? "")
                 readonly property string focusedTitle: (root.activeWindow?.title ?? "")
 
-                readonly property string focusedAppKey: {
-                    if (focusedClass && focusedClass.length > 0) return focusedClass
-                    if (focusedTitle && focusedTitle.length > 0) return focusedTitle
-                    return ""
-                }
+                readonly property string focusedAppKey: (focusedClass || focusedTitle).toLowerCase()
 
                 readonly property int focusedIconIndex: {
                     if (!background.isActive) return -1
@@ -603,15 +549,17 @@ Item {
                     }
 
                     if (focusedClass && focusedClass.length > 0) {
+                        const targetClass = focusedClass.toLowerCase()
                         for (let j = 0; j < winsHere.length; j++) {
-                            const k = (winsHere[j]?.class ?? (winsHere[j]?.appId ?? ""))
-                            if (k === focusedClass) return j
+                            const k = (winsHere[j]?.class || winsHere[j]?.appId || "").toLowerCase()
+                            if (k === targetClass) return j
                         }
                     }
 
                     if (focusedTitle && focusedTitle.length > 0) {
+                        const targetTitle = focusedTitle.toLowerCase()
                         for (let k2 = 0; k2 < winsHere.length; k2++) {
-                            if ((winsHere[k2]?.title ?? "") === focusedTitle) return k2
+                            if ((winsHere[k2]?.title || "").toLowerCase() === targetTitle) return k2
                         }
                     }
                     return -1
@@ -806,7 +754,6 @@ Item {
                                     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 }
 
-                                // 👇 ADAPTACIÓN: Monochrome Icons (Filtro desaturado para los iconos) 👇
                                 Loader {
                                     active: Config.options.bar.workspaces.monochromeIcons
                                     anchors.fill: mainAppIcon
@@ -881,29 +828,6 @@ Item {
                             shadowHorizontalOffset: 0
                             shadowVerticalOffset: 0
                         }
-                    }
-                }
-
-                Item {
-                    anchors.fill: parent
-                    z: 3.9
-                    visible: fxEnabled && premium && premiumIconHoverDot && root.showIcons && background.isActive && background.hoveringAnyIcon
-                    readonly property int count: background.winsHere.length
-                    readonly property real iconW: root.individualIconBoxHeight
-                    readonly property real totalW: count * iconW
-                    readonly property real startX: (background.width - totalW) / 2
-                    readonly property int idx: Math.max(0, Math.min(background.hoveredIconIndex, Math.max(0, count - 1)))
-
-                    Rectangle {
-                        width: root.hoverPillWidth
-                        height: root.hoverPillHeight
-                        radius: root.hoverPillRadius
-                        color: Appearance.colors.colPrimary
-                        x: startX + idx * iconW + (iconW - width) / 2
-                        y: background.height - height - root.hoverDotBottomMargin
-                        opacity: parent.visible ? 1 : 0
-                        Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                     }
                 }
             }

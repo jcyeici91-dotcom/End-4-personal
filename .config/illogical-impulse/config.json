@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "amber_oat"
+            "type": "saffron_latte"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -264,9 +264,9 @@
             "cpuWarningThreshold": 90,
             "memoryWarningThreshold": 95,
             "showCat": false,
-            "showCpu": true,
-            "showRam": true,
-            "showTemperature": false,
+            "showCpu": false,
+            "showRam": false,
+            "showTemperature": true,
             "swapWarningThreshold": 85
         },
         "screenList": [
@@ -400,7 +400,7 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 4898,
+            "colorTemperature": 3614,
             "from": "19:00",
             "to": "06:30"
         }

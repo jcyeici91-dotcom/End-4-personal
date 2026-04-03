@@ -14,7 +14,6 @@ Scope {
     id: bar
 
     Variants {
-        // For each monitor
         id: barVariant
 
         readonly property var variantModel: {
@@ -31,7 +30,7 @@ Scope {
             active: GlobalStates.barOpen && !GlobalStates.screenLocked
             required property ShellScreen modelData
             property int monitorIndex: barVariant.variantModel.indexOf(modelData)
-            component: PanelWindow { // Bar window
+            component: PanelWindow {
                 id: barRoot
                 screen: barLoader.modelData
 
@@ -39,12 +38,11 @@ Scope {
                 property bool hasActiveWindows: false
                 property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
-                // 🔥 LA REGLA EXCLUSIVA 🔥
-                // Detectamos si estamos exactamente en Float + Transparente + Hybrid
                 property bool isFloatTranspHybrid: Config.options.bar.cornerStyle === 1 && !showBarBackground && Config.options.bar.groupBackgroundStyle === "hybrid"
-
-                // Calculamos el gap de flotación. Si estamos en la combinación especial, lo anulamos (0) para que se pegue al borde.
                 property int floatGap: (Config.options.bar.cornerStyle === 1 && !isFloatTranspHybrid) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
+
+                property bool isHugTranspHybrid: Config.options.bar.cornerStyle === 0 && !showBarBackground && Config.options.bar.groupBackgroundStyle === "hybrid"
+                property int hugPushGap: isHugTranspHybrid ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
 
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
@@ -81,22 +79,19 @@ Scope {
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 
-                // La matemática de colisión: Alto de la barra + Gap (que será 0 en la combinación especial)
-                property int totalReservedSpace: Appearance.sizes.barHeight + floatGap
+                property int totalReservedSpace: Appearance.sizes.barHeight + floatGap + hugPushGap
 
                 exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 : totalReservedSpace
                 exclusionMode: exclusiveZone > 0 ? ExclusionMode.Normal : ExclusionMode.Ignore
                 
                 WlrLayershell.namespace: "quickshell:bar"
                 
-                // Restauramos la suma del floatGap al implicitHeight para que dibuje el margen cuando sea necesario
-                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + floatGap
+                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + floatGap + hugPushGap
                 mask: Region {
                     item: hoverMaskRegion
                 }
                 color: "transparent"
 
-                // Positioning
                 anchors {
                     top: !Config.options.bar.bottom
                     bottom: Config.options.bar.bottom
@@ -109,7 +104,6 @@ Scope {
                     bottom: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
                 }
 
-                // Include in focus grab
                 Component.onCompleted: {
                     GlobalFocusGrab.addPersistent(barRoot);
                 }
@@ -144,7 +138,6 @@ Scope {
                             left: parent.left
                             top: parent.top
                             bottom: undefined
-                            // Volvemos a usar el floatGap (que dinámicamente será 0 o el valor real)
                             topMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : barRoot.floatGap
                             bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
                             rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
@@ -171,13 +164,11 @@ Scope {
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-                                // Lo aplicamos también para la parte inferior
                                 anchors.bottomMargin: ((Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : barRoot.floatGap) + ((Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1)
                             }
                         }
                     }
 
-                    // --- LÓGICA MAESTRA DE BORDES REDONDEADOS ---
                     Loader {
                         id: roundDecorators
                         
@@ -230,7 +221,6 @@ Scope {
                             }
                         }
                     }
-                    // --- FIN LÓGICA MAESTRA ---
                 }
             }
         }

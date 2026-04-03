@@ -28,6 +28,7 @@ Item {
 
     readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
     readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
+    
     readonly property string resolvedStyle: {
         if (followGlobalBarStyle) {
             const s = _styleFromUIState()
@@ -38,17 +39,25 @@ Item {
 
     readonly property bool bgIsGlass: resolvedStyle === "glass"
     readonly property bool bgIsSolid: resolvedStyle === "solid"
-    readonly property bool bgIsAdaptive: resolvedStyle === "adaptive"
 
-    readonly property bool showSolidBackground: bgIsSolid || (bgIsAdaptive && hasActiveWindows)
-    readonly property bool useGlassMode: bgIsGlass || (bgIsAdaptive && !hasActiveWindows)
+    readonly property bool showSolidBackground: bgIsSolid
+    readonly property bool useGlassMode: bgIsGlass
 
     readonly property bool useHybridGroups: ((Config?.options?.bar?.groupBackgroundStyle ?? "rounded") === "hybrid")
-    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle ?? 0)
+    
+    readonly property int cornerStyle: (Config?.options?.bar?.cornerStyle === 1) ? 1 : 0
     readonly property bool isBottom: (Config?.options?.bar?.bottom ?? false)
 
     readonly property int hybridResizeMs: 85
     readonly property int pillGap: 8
+
+    readonly property int hyprGap: Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8
+    
+    readonly property bool isHugTranspHybrid: root.cornerStyle === 0 && !root.showSolidBackground && root.useHybridGroups
+    readonly property int hybridPushDown: isHugTranspHybrid ? hyprGap : 0
+
+    readonly property bool applyFloatPadding: root.cornerStyle === 1 || isHugTranspHybrid
+    readonly property int baseTopMargin: applyFloatPadding ? 6 : 0
 
     property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
     property var leftList: []
@@ -63,7 +72,6 @@ Item {
         switch (v) {
             case 0: return "glass"
             case 1: return "solid"
-            case 2: return "adaptive"
             default: return "solid"
         }
     }
@@ -71,7 +79,7 @@ Item {
     function _styleFromUIState() {
         if (typeof UIState === 'undefined') return ""
         const s = UIState.surfaceStyle
-        return (s === "solid" || s === "glass" || s === "adaptive") ? s : ""
+        return (s === "solid" || s === "glass") ? s : ""
     }
 
     function resolveMonitorForThisBar() {
@@ -144,17 +152,10 @@ Item {
         onTriggered: root.recomputeHasWindows()
     }
 
-    Connections {
-        enabled: root.bgIsAdaptive
-        target: HyprlandData
-        function onWindowListChanged() { hyprRecomputeTimer.restart() }
-        function onMonitorsChanged() { hyprRecomputeTimer.restart() }
-    }
-
-    onMonitorIndexChanged: if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
+    onMonitorIndexChanged: hyprRecomputeTimer.restart()
     onScreenChanged: {
         recomputeBrightnessMonitor()
-        if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
+        hyprRecomputeTimer.restart()
     }
 
     onHasActiveWindowsChanged: sendWrappedFrameState()
@@ -165,7 +166,7 @@ Item {
 
     Loader {
         z: -11
-        active: root.showSolidBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
+        active: root.showSolidBackground && root.cornerStyle === 1 && Config.options.bar.floatStyleShadow
         anchors.fill: barBackground
         sourceComponent: StyledRectangularShadow {
             anchors.fill: undefined
@@ -178,10 +179,10 @@ Item {
         z: -10
         anchors {
             fill: parent
-            margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut - 1) : 0
+            margins: root.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut - 1) : 0
         }
         color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.full : 0
+        radius: root.cornerStyle === 1 ? Appearance.rounding.full : 0
         
         border.width: 0 
         border.color: "transparent"
@@ -196,6 +197,7 @@ Item {
         id: leftStopper
         anchors {
             top: parent.top
+            topMargin: root.hybridPushDown
             bottom: parent.bottom
             left: parent.left
             leftMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
@@ -206,7 +208,7 @@ Item {
         id: leftSectionLoader
         anchors {
             top: parent.top
-            topMargin: root.cornerStyle === 1 ? 6 : 0
+            topMargin: root.baseTopMargin + root.hybridPushDown
             left: leftStopper.right
         }
         active: !root.useHybridGroups 
@@ -232,6 +234,7 @@ Item {
         id: middleSection
         anchors {
             top: parent.top
+            topMargin: root.hybridPushDown
             bottom: parent.bottom
             horizontalCenter: parent.horizontalCenter
         }
@@ -263,7 +266,7 @@ Item {
                 RowLayout {
                     anchors {
                         top: parent.top
-                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        topMargin: root.baseTopMargin
                         bottom: parent.bottom
                         right: centerCenter.left
                         rightMargin: 4
@@ -284,7 +287,7 @@ Item {
                     id: centerCenter
                     anchors {
                         top: parent.top
-                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        topMargin: root.baseTopMargin
                         bottom: parent.bottom
                         horizontalCenter: parent.horizontalCenter
                     }
@@ -302,7 +305,7 @@ Item {
                 RowLayout {
                     anchors {
                         top: parent.top
-                        topMargin: root.cornerStyle === 1 ? 6 : 0
+                        topMargin: root.baseTopMargin
                         bottom: parent.bottom
                         left: centerCenter.right
                         leftMargin: 4
@@ -327,42 +330,42 @@ Item {
                 id: hybridRoot
                 anchors.fill: parent
 
-               property int floatGapPull: (Config.options.bar.cornerStyle === 1 && !root.showSolidBackground) ? (Appearance.sizes.hyprlandGapsOut > 0 ? Appearance.sizes.hyprlandGapsOut : 8) : 0
+                property int notchPullGap: !root.showSolidBackground ? root.hyprGap : 0
 
-                    Rectangle {
+                Rectangle {
                     anchors.left: centerNotch.left
                     anchors.right: centerNotch.right
                     anchors.top: !root.isBottom ? parent.top : undefined
                     anchors.bottom: root.isBottom ? parent.bottom : undefined
                     
-                    anchors.topMargin: !root.isBottom ? -hybridRoot.floatGapPull : 0
-                    anchors.bottomMargin: root.isBottom ? -hybridRoot.floatGapPull : 0
+                    anchors.topMargin: !root.isBottom ? -hybridRoot.notchPullGap : 0
+                    anchors.bottomMargin: root.isBottom ? -hybridRoot.notchPullGap : 0
                     
-                    height: hybridRoot.floatGapPull + (centerNotch.height / 2)
+                    height: hybridRoot.notchPullGap + (centerNotch.height / 2)
                     color: centerNotch.effectiveFill
-                    visible: hybridRoot.floatGapPull > 0
+                    visible: hybridRoot.notchPullGap > 0
                 }
 
-                   RoundCorner {
+                RoundCorner {
                     anchors.right: centerNotch.left
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
                     
-                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
-                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
+                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
                     
                     width: height
                     color: centerNotch.effectiveFill
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.TopRight
                 }
 
-                    RoundCorner {
+                RoundCorner {
                     anchors.left: centerNotch.right
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
                     
-                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
-                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.floatGapPull) : 0
+                    anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
+                    anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
                     
                     width: height
                     color: centerNotch.effectiveFill
@@ -379,10 +382,10 @@ Item {
                     }
                 }
 
-                   Bar.BarGroup {
+                Bar.BarGroup {
                     id: centerNotch
                     
-                  anchors.top: parent.top
+                    anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
                     
@@ -417,23 +420,23 @@ Item {
                                 arr = arr.concat(Config.options.bar.layouts.left);
                             }
                             
-                           if (root.leftList) arr = arr.concat(root.leftList);
+                            if (root.leftList) arr = arr.concat(root.leftList);
                             if (root.centerList) arr = arr.concat(root.centerList);
                             if (root.rightList) arr = arr.concat(root.rightList);
                             
-                             if (Config.options.bar.layouts.right) {
+                            if (Config.options.bar.layouts.right) {
                                 arr = arr.concat(Config.options.bar.layouts.right);
                             }
                             
                             return arr.filter(Boolean);
                         }
                         delegate: BarComponent {
-                          property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
+                            property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
                             property bool isRightItem: Config.options.bar.layouts.right ? Config.options.bar.layouts.right.some(e => e && modelData && e.id === modelData.id) : false
                             
                             list: isLeftItem ? Config.options.bar.layouts.left : (isRightItem ? Config.options.bar.layouts.right : Config.options.bar.layouts.center)
                             
-                       barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
+                            barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
                             
                             originalIndex: list.findIndex(e => e && modelData && e.id === modelData.id)
                         }
@@ -447,6 +450,7 @@ Item {
         id: rightStopper
         anchors {
             top: parent.top
+            topMargin: root.hybridPushDown
             bottom: parent.bottom
             right: parent.right
         }
@@ -457,11 +461,11 @@ Item {
         id: rightSectionLoader
         anchors {
             top: parent.top
-            topMargin: root.cornerStyle === 1 ? 6 : 0
+            topMargin: root.baseTopMargin + root.hybridPushDown
             right: rightStopper.left
             rightMargin: Math.ceil(Appearance.rounding.screenRounding / 2)
         }
-        active: !root.useHybridGroups // Desactivado en modo hybrid
+        active: !root.useHybridGroups
         sourceComponent: rightClassicComponent
     }
 
@@ -485,6 +489,7 @@ Item {
         z: -2 
         anchors {
             top: parent.top
+            topMargin: root.hybridPushDown
             bottom: parent.bottom
             left: middleSection.right
             right: parent.right
@@ -500,7 +505,7 @@ Item {
     Component.onCompleted: {
         recomputeBrightnessMonitor()
         recomputeCenterSplit()
-        if (root.bgIsAdaptive) hyprRecomputeTimer.restart()
+        hyprRecomputeTimer.restart()
         sendWrappedFrameState()
     }
 }

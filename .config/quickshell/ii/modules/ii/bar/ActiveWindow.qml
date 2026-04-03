@@ -1,4 +1,3 @@
-// ActiveWindow.qml
 import qs
 import qs.services
 import qs.modules.common
@@ -18,7 +17,6 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
-    // INTERRUPTOR MAESTRO 
     property bool enableAnimations: Config.options.appearance.enableAnimations
 
     property bool vertical: false
@@ -26,34 +24,12 @@ Item {
     readonly property bool isRightSide: Config.options.bar.bottom || Config.runtime.bar.position === "right"
 
     property int maxSize: 165
-    property bool isFixedSize: Config.options.bar.activeWindow.fixedSize
     
-    property int fixedSize: vertical ? 180 : 250
-    readonly property int capsuleSize: isFixedSize ? fixedSize : maxSize
-
     readonly property int dynamicMargin: root.vertical ? 6 : Math.max(2, Math.round(root.height * 0.05))
-    readonly property int dynamicIconSize: Math.max(16, Math.min(22, Math.round(root.height * 0.50)))
     readonly property int dynamicTitleSize: Math.max(10, Math.min(13, Math.round(root.height * 0.30)))
     readonly property int dynamicLabelSize: Math.max(7, Math.min(9, Math.round(root.height * 0.18)))
 
-    readonly property bool followGlobalBarStyle: (Config?.options?.bar?.followGlobalBarStyle ?? false)
-    readonly property int barBackgroundStyleFromConfig: (Config?.options?.bar?.barBackgroundStyle ?? 1)
-
-    readonly property string resolvedStyle: {
-        if (followGlobalBarStyle) {
-            const s = UIState.surfaceStyle
-            if (s !== "") return s
-        }
-        switch (barBackgroundStyleFromConfig) {
-        case 1: return "solid"
-        case 2: return "adaptive"
-              case 4: return "line"
-        default: return "solid"
-        }
-    }
-
     property bool hideBackground: true
-
     property bool parallaxEnabled: true
     property bool prismaticBorder: true
 
@@ -74,13 +50,8 @@ Item {
     readonly property real labelOpacity: 1.0
 
     readonly property bool titleShadowEnabled: true
-    readonly property color titleShadowColor: themeIsDark
-        ? Qt.rgba(0, 0, 0, 0.55)
-        : Qt.rgba(0, 0, 0, 0.18)
-
-    readonly property color labelShadowColor: themeIsDark
-        ? Qt.rgba(0, 0, 0, 0.45)
-        : Qt.rgba(0, 0, 0, 0.12)
+    readonly property color titleShadowColor: themeIsDark ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(0, 0, 0, 0.18)
+    readonly property color labelShadowColor: themeIsDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.12)
 
     readonly property color capsuleFill: Appearance.colors.colLayer1
     readonly property color capsuleBorder: Appearance.colors.colLayer3
@@ -90,33 +61,41 @@ Item {
         id: internal
 
         property bool focusingThisMonitor: HyprlandData.activeWorkspace?.monitor == monitor?.name
-        property var biggestWindow: HyprlandData.biggestWindowForWorkspace(
-            HyprlandData.monitors[root.monitor?.id]?.activeWorkspace.id
-        )
+        property var biggestWindow: HyprlandData.biggestWindowForWorkspace(HyprlandData.monitors[root.monitor?.id]?.activeWorkspace.id)
 
         property bool isDesktop: !root.activeWindow && !biggestWindow
 
         property string classText: {
-            if (focusingThisMonitor && root.activeWindow?.activated)
-                return root.activeWindow?.appId || root.activeWindow?.class || "System"
+            if (focusingThisMonitor && root.activeWindow?.activated) return root.activeWindow?.appId || root.activeWindow?.class || "System"
             if (biggestWindow) return biggestWindow.class
             return "Desktop"
         }
 
         property string titleText: {
-            if (focusingThisMonitor && root.activeWindow?.activated)
-                return root.activeWindow?.title || "Unknown"
+            if (focusingThisMonitor && root.activeWindow?.activated) return root.activeWindow?.title || "Unknown"
             if (biggestWindow) return biggestWindow.title
             return `Workspace ${monitor?.activeWorkspace?.id ?? 1}`
         }
-
-        property string iconSource: {
-            return Quickshell.iconPath(AppSearch.guessIcon(classText), "computer")
-        }
     }
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : capsuleSize
-    implicitHeight: vertical ? capsuleSize : Appearance.sizes.barHeight
+    TextMetrics {
+        id: classTextMetrics
+        text: internal.classText.toUpperCase()
+        font.pixelSize: root.dynamicLabelSize
+        font.bold: true
+    }
+
+    TextMetrics {
+        id: titleTextMetrics
+        text: internal.titleText
+        font.pixelSize: root.dynamicTitleSize
+        font.bold: true
+    }
+
+    readonly property real calculatedWidth: Math.max(classTextMetrics.width, titleTextMetrics.width) + 24
+
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : Math.min(root.maxSize, calculatedWidth)
+    implicitHeight: vertical ? Math.min(root.maxSize, calculatedWidth) : Appearance.sizes.barHeight
 
     Behavior on implicitWidth { 
         enabled: enableAnimations
@@ -132,21 +111,18 @@ Item {
         to: 360
         duration: 10000
         loops: Animation.Infinite
-        running: root.prismaticBorder && root.visible && root.enableAnimations // Detiene la rotación del borde si las animaciones están apagadas
+        running: root.prismaticBorder && root.visible && root.enableAnimations
     }
 
     Rectangle {
         id: bgCapsule
-
         visible: !root.hideBackground
         anchors.fill: parent
         anchors.margins: 2
         radius: root.vertical ? (width / 2) : 10
         antialiasing: true
         clip: true
-
         color: root.capsuleFill
-
         border.width: 1
         border.color: ColorUtils.transparentize(root.capsuleBorder, root.themeIsDark ? 0.35 : 0.50)
 
@@ -163,7 +139,6 @@ Item {
             color: "transparent"
             border.width: 1.5
             opacity: root.prismaticBorder ? 0.85 : 0.0
-
             layer.enabled: root.prismaticBorder
             layer.effect: ConicalGradient {
                 angle: root.prismAngle
@@ -180,7 +155,10 @@ Item {
 
     Item {
         anchors.fill: parent
-        anchors.margins: root.dynamicMargin
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        anchors.topMargin: root.dynamicMargin
+        anchors.bottomMargin: root.dynamicMargin
         x: root.parallaxOffset.x
         y: root.parallaxOffset.y
 
@@ -193,150 +171,91 @@ Item {
             NumberAnimation { duration: 120; easing.type: Easing.OutQuad } 
         }
 
-        RowLayout {
-            anchors.fill: parent
-            spacing: 6
+        Column {
+            width: parent.width
+            anchors.verticalCenter: parent.verticalCenter
             visible: !root.vertical
+            spacing: -1
 
-            Item {
-                Layout.preferredWidth: root.dynamicIconSize
-                Layout.preferredHeight: root.dynamicIconSize
-                Layout.alignment: Qt.AlignVCenter
+            StyledText {
+                width: parent.width
+                visible: root.height >= 33
+                text: internal.classText.toUpperCase()
+                font.pixelSize: root.dynamicLabelSize
+                font.bold: true
+                color: root.labelColor
+                opacity: root.labelOpacity
+                elide: Text.ElideRight
 
-                Image {
-                    id: appIcon
-                    anchors.centerIn: parent
-                    width: parent.width
-                    height: parent.height
-                    source: internal.iconSource
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                    mipmap: true
-                    onSourceChanged: if (enableAnimations) popAnim.restart() // Ejecuta popAnim solo si las animaciones están encendidas
-
-                    SequentialAnimation {
-                        id: popAnim
-                        NumberAnimation { target: appIcon; property: "scale"; from: 0.5; to: 1.2; duration: 200; easing.type: Easing.OutBack }
-                        NumberAnimation { target: appIcon; property: "scale"; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
-                    }
-                }
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 0.8
-                    shadowOpacity: root.themeIsDark ? 0.34 : 0.22
-                    shadowVerticalOffset: 1
+                layer.enabled: root.titleShadowEnabled
+                layer.effect: DropShadow {
+                    verticalOffset: root.themeIsDark ? 1 : 0
+                    radius: root.themeIsDark ? 6 : 3
+                    samples: root.themeIsDark ? 14 : 8
+                    color: root.labelShadowColor
                 }
             }
 
-            Column {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                spacing: -1
+            Item {
+                width: parent.width
+                height: titleTextMetrics.height
+                clip: true
 
                 StyledText {
-                    width: parent.width
-                    visible: root.height >= 33
-                    text: internal.classText.toUpperCase()
-                    font.pixelSize: root.dynamicLabelSize
+                    id: mainTitle
+                    text: internal.titleText
+                    font.pixelSize: root.dynamicTitleSize
                     font.bold: true
-                    color: root.labelColor
-                    opacity: root.labelOpacity
-                    elide: Text.ElideRight
+                    color: root.titleColor
+                    width: parent.width
+                    anchors.verticalCenter: parent.verticalCenter
+                    
+                    property bool shouldScroll: titleTextMetrics.width > parent.width
 
                     layer.enabled: root.titleShadowEnabled
                     layer.effect: DropShadow {
                         verticalOffset: root.themeIsDark ? 1 : 0
-                        radius: root.themeIsDark ? 6 : 3
-                        samples: root.themeIsDark ? 14 : 8
-                        color: root.labelShadowColor
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: titleTextMetrics.height
-                    clip: true
-
-                    TextMetrics {
-                        id: titleTextMetrics
-                        text: internal.titleText
-                        font.pixelSize: root.dynamicTitleSize
-                        font.bold: true
+                        radius: root.themeIsDark ? 8 : 4
+                        samples: root.themeIsDark ? 16 : 10
+                        color: root.titleShadowColor
                     }
 
-                    StyledText {
-                        id: mainTitle
-                        text: internal.titleText
-                        font.pixelSize: root.dynamicTitleSize
-                        font.bold: true
-                        color: root.titleColor
-                        width: parent.width
-                        anchors.verticalCenter: parent.verticalCenter
-                        
-                        property bool shouldScroll: titleTextMetrics.width > parent.width
-
-                        layer.enabled: root.titleShadowEnabled
-                        layer.effect: DropShadow {
-                            verticalOffset: root.themeIsDark ? 1 : 0
-                            radius: root.themeIsDark ? 8 : 4
-                            samples: root.themeIsDark ? 16 : 10
-                            color: root.titleShadowColor
+                    SequentialAnimation on x {
+                        running: mainTitle.shouldScroll && root.visible && mouseArea.containsMouse && root.enableAnimations
+                        loops: Animation.Infinite
+                        PauseAnimation { duration: root.titleScrollPauseStartMs }
+                        NumberAnimation {
+                            to: -(titleTextMetrics.width - mainTitle.parent.width)
+                            duration: Math.max(250, Math.round(1000 * ((titleTextMetrics.width - mainTitle.parent.width) / root.titleScrollPxPerSecond)))
+                            easing.type: Easing.InOutSine
                         }
-
-                        SequentialAnimation on x {
-                            running: mainTitle.shouldScroll && root.visible && mouseArea.containsMouse && root.enableAnimations // Solo haz scroll si enableAnimations está en true
-                            loops: Animation.Infinite
-                            PauseAnimation { duration: root.titleScrollPauseStartMs }
-                            NumberAnimation {
-                                to: -(titleTextMetrics.width - mainTitle.parent.width)
-                                duration: Math.max(250, Math.round(1000 * ((titleTextMetrics.width - mainTitle.parent.width) / root.titleScrollPxPerSecond)))
-                                easing.type: Easing.InOutSine
-                            }
-                            PauseAnimation { duration: root.titleScrollPauseEndMs }
-                            NumberAnimation { to: 0; duration: 500; easing.type: Easing.InOutSine }
-                        }
+                        PauseAnimation { duration: root.titleScrollPauseEndMs }
+                        NumberAnimation { to: 0; duration: 500; easing.type: Easing.InOutSine }
                     }
                 }
             }
         }
 
-        ColumnLayout {
+        Item {
             anchors.fill: parent
             visible: root.vertical
-            spacing: 8
+            clip: true
 
             Item {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: root.dynamicIconSize
-                Layout.preferredHeight: root.dynamicIconSize
-                Image {
-                    anchors.fill: parent
-                    source: internal.iconSource
-                    fillMode: Image.PreserveAspectFit
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                Item {
-                    width: parent.height
-                    height: parent.width
+                width: parent.height
+                height: parent.width
+                anchors.centerIn: parent
+                rotation: root.isRightSide ? 90 : -90
+                
+                StyledText {
                     anchors.centerIn: parent
-                    rotation: root.isRightSide ? 90 : -90
-                    StyledText {
-                        anchors.centerIn: parent
-                        text: internal.titleText
-                        font.pixelSize: root.dynamicTitleSize
-                        font.bold: true
-                        color: root.titleColor
-                        width: parent.width
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                    text: internal.titleText
+                    font.pixelSize: root.dynamicTitleSize
+                    font.bold: true
+                    color: root.titleColor
+                    width: parent.width
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
@@ -368,9 +287,9 @@ Item {
             }
         }
         onPositionChanged: {
-            if (!root.parallaxEnabled || !enableAnimations) return // Evita el parallax si animaciones apagadas
+            if (!root.parallaxEnabled || !enableAnimations) return 
             root.parallaxOffset = Qt.point((width/2 - mouseX) * 0.05, (height/2 - mouseY) * 0.05)
         }
-        onClicked: if(enableAnimations) clickSquish.restart() // Ejecuta el efecto squish si las animaciones están activadas
+        onClicked: if(enableAnimations) clickSquish.restart()
     }
 }

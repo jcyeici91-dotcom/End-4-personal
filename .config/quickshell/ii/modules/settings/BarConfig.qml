@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import qs.services
@@ -19,14 +21,13 @@ ContentPage {
         "system_tray": systemTray,
         "workspaces": workspaces,
         "timer": timerAndPomodoro,
-        "system_monitor": systemMonitor // 👇 AÑADIDO PARA EL SCROLL 👇
+        "system_monitor": systemMonitor
     })
 
     function scrollTo(stringId) {
         const item = componentMap[stringId]
         page.contentY = item.y
     }
-
 
     ContentSection {
         icon: "mobile_layout"
@@ -94,7 +95,6 @@ ContentPage {
         }
     }
 
-       // POSITIONING (posición + auto-hide)
     ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")
@@ -140,8 +140,7 @@ ContentPage {
         }
     }
 
-      //  APPEARANCE (esquinas, grupos, fondo)
-        ContentSection {
+    ContentSection {
         icon: "palette"
         title: Translation.tr("Appearance")
 
@@ -156,11 +155,15 @@ ContentPage {
                     currentValue: Config.options.bar.cornerStyle
                     onSelected: newValue => {
                         Config.options.bar.cornerStyle = newValue;
+                        if (newValue === 0 && Config.options.bar.groupBackgroundStyle === "hybrid") {
+                            Config.options.bar.borderless = false;
+                            Config.options.bar.groupBackgroundStyle = "rounded";
+                        }
                     }
                     options: [
                         { displayName: Translation.tr("Hug"),   icon: "line_curve",  value: 0 },
                         { displayName: Translation.tr("Float"), icon: "page_header", value: 1 }
-                         ]
+                    ]
                 }
             }
 
@@ -188,6 +191,8 @@ ContentPage {
                         } else if (newValue === "hybrid") {
                             Config.options.bar.borderless = false
                             Config.options.bar.groupBackgroundStyle = "hybrid"
+                            Config.options.bar.cornerStyle = 1
+                            Config.options.bar.barBackgroundStyle = 0
                         }
                     }
 
@@ -210,18 +215,20 @@ ContentPage {
                 currentValue: Config.options.bar.barBackgroundStyle
                 onSelected: newValue => {
                     Config.options.bar.barBackgroundStyle = newValue;
+                    if (newValue === 1 && Config.options.bar.groupBackgroundStyle === "hybrid") {
+                        Config.options.bar.borderless = false;
+                        Config.options.bar.groupBackgroundStyle = "rounded";
+                    }
                 }
 
-                // 0: Transparent | 1: Visible |
                 options: [
                     { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
                     { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
-                   ]
+                ]
             }
         }
     }
 
-    // SIZES 
     ContentSection {
         icon: "open_in_full"
         title: Translation.tr("Bar sizes")
@@ -369,7 +376,6 @@ ContentPage {
 
     }
     
-    // 👇 NUEVA SECCIÓN DE SYSTEM MONITOR AÑADIDA 👇
     ContentSection {
         id: systemMonitor
         icon: "monitor_heart"
@@ -407,7 +413,6 @@ ContentPage {
             }
         }
     }
-    // 👆 FIN DE LA NUEVA SECCIÓN 👆
 
     ContentSection {
         icon: "notifications"
