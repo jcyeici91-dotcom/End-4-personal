@@ -71,26 +71,31 @@ ContentPage {
         icon: "open_in_full"
         title: Translation.tr("Bar sizes")
 
-        ConfigSpinBox {
-            icon: "height"
-            text: Translation.tr("Bar height")
-            value: Config.options.bar.sizes.height
-            from: 30
-            to: 50
-            stepSize: 1
-            onValueChanged: {
-                Config.options.bar.sizes.height = value;
+        ConfigRow {
+            uniform: true
+
+            ConfigSpinBox {
+                icon: "height"
+                text: Translation.tr("Bar height")
+                value: Config.options.bar.sizes.height
+                from: 30
+                to: 50
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.bar.sizes.height = value;
+                }
             }
-        }
-        ConfigSpinBox {
-            icon: "width"
-            text: Translation.tr("Bar width")
-            value: Config.options.bar.sizes.width
-            from: 30
-            to: 50
-            stepSize: 1
-            onValueChanged: {
-                Config.options.bar.sizes.width = value;
+
+            ConfigSpinBox {
+                icon: "width"
+                text: Translation.tr("Bar width")
+                value: Config.options.bar.sizes.width
+                from: 30
+                to: 50
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.bar.sizes.width = value;
+                }
             }
         }
     }
@@ -206,58 +211,59 @@ ContentPage {
             }
         }
 
-        ContentSubsection {
-            title: Translation.tr("Bar background style")
-            tooltip: Translation.tr("Adaptive style makes the bar background transparent when there are no active windows")
-            Layout.fillWidth: false
+        ConfigRow {
+            ContentSubsection {
+                title: Translation.tr("Bar background style")
+                tooltip: Translation.tr("Adaptive style makes the bar background transparent when there are no active windows")
+                Layout.fillWidth: false
 
-            ConfigSelectionArray {
-                currentValue: Config.options.bar.barBackgroundStyle
-                onSelected: newValue => {
-                    Config.options.bar.barBackgroundStyle = newValue;
-                    if (newValue === 1 && Config.options.bar.groupBackgroundStyle === "hybrid") {
-                        Config.options.bar.borderless = false;
-                        Config.options.bar.groupBackgroundStyle = "rounded";
+                ConfigSelectionArray {
+                    currentValue: Config.options.bar.barBackgroundStyle
+                    onSelected: newValue => {
+                        Config.options.bar.barBackgroundStyle = newValue;
+                        if (newValue === 1 && Config.options.bar.groupBackgroundStyle === "hybrid") {
+                            Config.options.bar.borderless = false;
+                            Config.options.bar.groupBackgroundStyle = "rounded";
+                        }
                     }
-                }
 
-                options: [
-                    { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
-                    { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
-                ]
+                    options: [
+                        { displayName: Translation.tr("Visible"),     icon: "visibility",         value: 1 },
+                        { displayName: Translation.tr("Transparent"), icon: "opacity",            value: 0 }
+                    ]
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Rounding style")
+                tooltip: Translation.tr("Sharp mode is experimental")
+                Layout.fillWidth: false
+                ConfigSelectionArray {
+                    currentValue: Config.options.appearance.sharpMode
+                    onSelected: newValue => {
+                        Config.options.appearance.sharpMode = newValue;
+                        if (!Config.options.appearance.toggleWindowRounding) return;
+                        if (newValue) {
+                            Quickshell.execDetached(["hyprctl", "keyword", "decoration:rounding", "0"])
+                        } else {
+                            Quickshell.execDetached(["hyprctl", "keyword", "decoration:rounding", "18"])
+                        }
+                    }
+                    options: [ 
+                        { displayName: Translation.tr("Default"), icon: "rounded_corner", value: false }, 
+                        { displayName: Translation.tr("Sharp"), icon: "square", value: true }
+                    ]
+                }
             }
         }
-    }
-
-    ContentSection {
-        icon: "open_in_full"
-        title: Translation.tr("Bar sizes")
 
         ConfigRow {
-            uniform: true
-
-            ConfigSpinBox {
-                icon: "height"
-                text: Translation.tr("Bar height")
-                value: Config.options.bar.sizes.height
-                from: 30
-                to: 50
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.bar.sizes.height = value;
-                }
-            }
-
-            ConfigSpinBox {
-                icon: "width"
-                text: Translation.tr("Bar width")
-                value: Config.options.bar.sizes.width
-                from: 30
-                to: 50
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.bar.sizes.width = value;
-                }
+            visible: Config.options.bar.barBackgroundStyle === 0
+            ConfigSwitch {
+                buttonIcon: "diamond"
+                text: Translation.tr("Enable Crystal Overlay")
+                checked: Config.options.bar.crystalEffect
+                onCheckedChanged: { Config.options.bar.crystalEffect = checked }
             }
         }
     }

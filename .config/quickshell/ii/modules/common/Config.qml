@@ -296,6 +296,7 @@ Singleton {
                 property string topLeftIcon: "spark"
 
                 property int barBackgroundStyle: 1
+                property bool crystalEffect: false
 
                 property bool verbose: true
                 property bool vertical: false
@@ -632,6 +633,10 @@ Singleton {
             property JsonObject sidebar: JsonObject {
                 property string position: "default"
                 property bool keepRightSidebarLoaded: true
+                
+                property bool floatStyle: false
+                property int floatingGap: 12
+                
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300

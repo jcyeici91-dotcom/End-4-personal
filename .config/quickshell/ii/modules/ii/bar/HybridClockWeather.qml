@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.modules.common
+import Quickshell.Io
 
 Item {
     id: root
@@ -49,24 +50,6 @@ Item {
         NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: false
-        acceptedButtons: Qt.NoButton
-
-        onWheel: (wheel) => {
-            if (wheel.angleDelta.y === 0) return
-            if (root.wheelLocked) {
-                wheel.accepted = true
-                return
-            }
-            root.wheelLocked = true
-            wheelCooldown.restart()
-            root.togglePage()
-            wheel.accepted = true
-        }
-    }
-
     component AnimatedPage: Loader {
         id: page
         property bool shown: false
@@ -110,5 +93,41 @@ Item {
         id: weatherLoader
         source: "weather/WeatherBar.qml"
         shown: root.showWeather
+    }
+
+    // ===================================================================
+    // EL ESCUDO (Z-Index Superior)
+    // Al estar al final del archivo, este MouseArea cubre TODO el widget, 
+    // bloquea el evento viejo y lanza DashCentral obligatoriamente.
+    // ===================================================================
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+        onClicked: (mouse) => {
+            if (mouse.button === Qt.LeftButton) {
+                // AQUÍ FORZAMOS LA APERTURA DE TU DASH CENTRAL
+                Ipc.send("dashCentral", "toggle")
+            } 
+            else if (mouse.button === Qt.RightButton) {
+                // Conservamos el clic derecho para que expanda el reloj
+                if (!root.showWeather && clockLoader.item) {
+                    clockLoader.item.expanded = !clockLoader.item.expanded
+                }
+            }
+        }
+
+        onWheel: (wheel) => {
+            if (wheel.angleDelta.y === 0) return
+            if (root.wheelLocked) {
+                wheel.accepted = true
+                return
+            }
+            root.wheelLocked = true
+            wheelCooldown.restart()
+            root.togglePage()
+            wheel.accepted = true
+        }
     }
 }

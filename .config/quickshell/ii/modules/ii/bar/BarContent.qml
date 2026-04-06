@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 
-import qs.modules.ii.bar.weather
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -11,6 +10,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import Quickshell.Io
+import qs.modules.ii.bar.weather
 import "." as Bar
 
 Item {
@@ -58,6 +58,9 @@ Item {
 
     readonly property bool applyFloatPadding: root.cornerStyle === 1 || isHugTranspHybrid
     readonly property int baseTopMargin: applyFloatPadding ? 6 : 0
+
+    readonly property bool useCrystalEffect: (Config?.options?.bar?.crystalEffect ?? false)
+    readonly property bool drawMainCrystal: root.useCrystalEffect && root.showSolidBackground && !root.useHybridGroups
 
     property var fullModel: (Config?.options?.bar?.layouts?.center ?? [])
     property var leftList: []
@@ -174,6 +177,19 @@ Item {
         }
     }
 
+    Loader {
+        z: -11
+        anchors.fill: barBackground
+        active: root.drawMainCrystal
+        sourceComponent: BarBgOverlayGlassBlur {
+            useGlassMode: true
+            showSolidBackground: false
+            backgroundColor: "transparent"
+            cornerStyle: root.cornerStyle
+            position: root.isBottom ? "bottom" : "top"
+        }
+    }
+
     Rectangle {
         id: barBackground
         z: -10
@@ -183,13 +199,26 @@ Item {
         }
         color: root.showSolidBackground ? Appearance.colors.colLayer0 : "transparent"
         radius: root.cornerStyle === 1 ? Appearance.rounding.full : 0
-        
         border.width: 0 
         border.color: "transparent"
+        visible: !root.drawMainCrystal
 
         Behavior on color {
             enabled: enableAnimations
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+        }
+    }
+
+    Loader {
+        z: -9
+        anchors.fill: barBackground
+        active: root.drawMainCrystal
+        sourceComponent: BarBgCrystalOverlay {
+            useGlassMode: true
+            showSolidBackground: false
+            backgroundColor: "transparent"
+            cornerStyle: root.cornerStyle
+            position: root.isBottom ? "bottom" : "top"
         }
     }
 
@@ -258,8 +287,8 @@ Item {
                     z: -1
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
-                        if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll()
+                        GlobalStates.dashOpen = !GlobalStates.dashOpen
+                        if (GlobalStates.dashOpen) Notifications.timeoutAll()
                     }
                 }
 
@@ -337,10 +366,8 @@ Item {
                     anchors.right: centerNotch.right
                     anchors.top: !root.isBottom ? parent.top : undefined
                     anchors.bottom: root.isBottom ? parent.bottom : undefined
-                    
                     anchors.topMargin: !root.isBottom ? -hybridRoot.notchPullGap : 0
                     anchors.bottomMargin: root.isBottom ? -hybridRoot.notchPullGap : 0
-                    
                     height: hybridRoot.notchPullGap + (centerNotch.height / 2)
                     color: centerNotch.effectiveFill
                     visible: hybridRoot.notchPullGap > 0
@@ -350,10 +377,8 @@ Item {
                     anchors.right: centerNotch.left
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
-                    
                     anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
                     anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
-                    
                     width: height
                     color: centerNotch.effectiveFill
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.TopRight
@@ -363,10 +388,8 @@ Item {
                     anchors.left: centerNotch.right
                     anchors.top: root.isBottom ? centerNotch.top : parent.top
                     anchors.bottom: root.isBottom ? parent.bottom : centerNotch.bottom
-                    
                     anchors.topMargin: !root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
                     anchors.bottomMargin: root.isBottom ? (-centerNotch.edgeInset - hybridRoot.notchPullGap) : 0
-                    
                     width: height
                     color: centerNotch.effectiveFill
                     corner: root.isBottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft
@@ -377,36 +400,30 @@ Item {
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton
                     onClicked: {
-                        GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
-                        if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll()
+                        GlobalStates.dashOpen = !GlobalStates.dashOpen
+                        if (GlobalStates.dashOpen) Notifications.timeoutAll()
                     }
                 }
 
                 Bar.BarGroup {
                     id: centerNotch
-                    
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
-                    
                     anchors.topMargin: !root.isBottom ? -edgeInset : 0
                     anchors.bottomMargin: root.isBottom ? -edgeInset : 0
-                    
                     vertical: false
-                    
                     spacing: root.pillGap 
                     padding: 6
                     edgeInset: 2
                     isContainer: true
                     autoHide: true
-                    
                     isNotch: true            
                     showBorder: false        
                     showHighlight: false    
                     unifyChildChips: true   
-                    
                     width: implicitWidth
-                                      
+                                          
                     Behavior on width { 
                         enabled: enableAnimations
                         NumberAnimation { duration: root.hybridResizeMs; easing.type: Easing.OutCubic } 
@@ -415,29 +432,22 @@ Item {
                     Repeater {
                         model: {
                             let arr = [];
-                            
                             if (Config.options.bar.layouts.left) {
                                 arr = arr.concat(Config.options.bar.layouts.left);
                             }
-                            
                             if (root.leftList) arr = arr.concat(root.leftList);
                             if (root.centerList) arr = arr.concat(root.centerList);
                             if (root.rightList) arr = arr.concat(root.rightList);
-                            
                             if (Config.options.bar.layouts.right) {
                                 arr = arr.concat(Config.options.bar.layouts.right);
                             }
-                            
                             return arr.filter(Boolean);
                         }
                         delegate: BarComponent {
                             property bool isLeftItem: Config.options.bar.layouts.left ? Config.options.bar.layouts.left.some(e => e && modelData && e.id === modelData.id) : false
                             property bool isRightItem: Config.options.bar.layouts.right ? Config.options.bar.layouts.right.some(e => e && modelData && e.id === modelData.id) : false
-                            
                             list: isLeftItem ? Config.options.bar.layouts.left : (isRightItem ? Config.options.bar.layouts.right : Config.options.bar.layouts.center)
-                            
                             barSection: isLeftItem ? 0 : (isRightItem ? 2 : 1) 
-                            
                             originalIndex: list.findIndex(e => e && modelData && e.id === modelData.id)
                         }
                     }
@@ -485,6 +495,24 @@ Item {
     }
 
     FocusedScrollMouseArea {
+        id: barLeftSideMouseArea
+        z: -2 
+        anchors {
+            top: parent.top
+            topMargin: root.hybridPushDown
+            bottom: parent.bottom
+            left: parent.left
+            right: middleSection.left
+        }
+        implicitHeight: Appearance.sizes.baseBarHeight
+        onPressed: event => {
+            if (event.button === Qt.LeftButton) {
+                GlobalStates.policiesPanelOpen = !GlobalStates.policiesPanelOpen;
+            }
+        }
+    }
+
+    FocusedScrollMouseArea {
         id: barRightSideMouseArea
         z: -2 
         anchors {
@@ -497,7 +525,7 @@ Item {
         implicitHeight: Appearance.sizes.baseBarHeight
         onPressed: event => {
             if (event.button === Qt.LeftButton) {
-                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+                GlobalStates.dashboardPanelOpen = !GlobalStates.dashboardPanelOpen;
             }
         }
     }

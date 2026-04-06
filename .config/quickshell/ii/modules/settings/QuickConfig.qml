@@ -18,7 +18,6 @@ ContentPage {
 
     property bool allowHeavyLoad: false
     
-    // Variables para la galería de wallpapers
     property string wallpapersDir: (Directories.home && ("" + Directories.home).length > 0)
                                   ? ("" + Directories.home + "/Pictures/Wallpapers")
                                   : ((Quickshell.env("HOME") || "/home/jcgomez91") + "/Pictures/Wallpapers")
@@ -51,8 +50,6 @@ ContentPage {
         stdout: SplitParser { onRead: function(_) {} }
         stderr: SplitParser { onRead: function(_) {} }
     }
-
-    // 👇 COMPONENTES DEL DISEÑO MODIFICADO 👇
 
     component LightDarkSegmented: Item {
         id: seg
@@ -213,7 +210,6 @@ ContentPage {
 
         implicitHeight: titleRow.implicitHeight + 10 + (tp.itemHeight + tp.stripPadding * 2) + (scrubWrap.visible ? (6 + tp.scrubHeight) : 0)
 
-        // 👇 CORRECCIÓN: Los Built-in originales se quedan como estaban 👇
         readonly property list<string> builtInColorSchemes: [
             "angel", "angel_light", "ayu", "cobalt2", "cursor", "dracula", "flexoki",
             "frappe", "github", "gruvbox", "kanagawa", "latte", "macchiato",
@@ -224,7 +220,6 @@ ContentPage {
         
         property list<string> customColorSchemes: (Config.options.appearance.customColorSchemes ?? [])
         
-        // 👇 CORRECCIÓN: ¡Todos los temas de tu carpeta van aquí! (Custom Themes) 👇
         readonly property list<string> extraCustomSchemes: [
             "espresso", "mocha_cream", "ink_olive", "carbon_amber", "midnight_plum",
             "obsidian_teal", "cocoa_rose", "night_sand", "smoke_blue", "noir_copper",
@@ -281,7 +276,6 @@ ContentPage {
             m.push({ kind: "chip", title: Translation.tr("Custom") })
             for (let k = 0; k < tp.effectiveCustomSchemes.length; k++) {
                 const c = tp.effectiveCustomSchemes[k]
-                // 👇 Al ser 'customTheme: true', buscará en ~/.config/illogical-impulse/themes/ 👇
                 m.push({ kind: "theme", scheme: c, display: tp.formatText(c, false), customTheme: true, builtInTheme: false })
             }
             tp.combinedModel = m
@@ -408,7 +402,6 @@ ContentPage {
                                 colorSchemeDisplayName: modelData.display
                                 customTheme: modelData.customTheme
                                 builtInTheme: modelData.builtInTheme
-                                // Dejamos el LazyLoad original para que no se trabe, pero ahora en Custom.
                                 shouldLoad: themeWrap.themeIndex < tp.loadedThemeCount
                             }
                         }
@@ -752,7 +745,6 @@ ContentPage {
         }
     }
 
-    // 👇 SECCIÓN PRINCIPAL: REEMPLAZADA CON EL DISEÑO NUEVO 👇
 
     ContentSection {
         icon: "format_paint"
@@ -878,7 +870,6 @@ ContentPage {
         }
     }
 
-    // 👇 SECCIÓN ORIGINAL: "BAR & SCREEN" (INTACTA) 👇
 
     ContentSection {
         icon: "screenshot_monitor"
@@ -978,9 +969,18 @@ ContentPage {
                 }
             }
         }
+
+        ConfigRow {
+            visible: Config.options.bar.barBackgroundStyle === 0
+            ConfigSwitch {
+                buttonIcon: "diamond"
+                text: Translation.tr("Enable Crystal Overlay")
+                checked: Config.options.bar.crystalEffect
+                onCheckedChanged: { Config.options.bar.crystalEffect = checked }
+            }
+        }
     }
 
-    // 👇 NUEVA SECCIÓN DE RENDIMIENTO 👇
     ContentSection {
         icon: "speed"
         title: Translation.tr("Performance & Animations")
@@ -996,4 +996,4 @@ ContentPage {
             }
         }
     }
-    }
+}

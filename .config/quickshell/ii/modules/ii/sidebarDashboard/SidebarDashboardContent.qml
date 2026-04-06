@@ -44,10 +44,14 @@ Item {
 
     readonly property real shapeRadius: Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18
 
-    // --- LÓGICA DE FLOTACIÓN (HUG/DOCKED) ---
-    readonly property bool isFloatOrHybrid: _opts ? ((_opts.bar?.cornerStyle === 1) || (_opts.bar?.barBackgroundStyle === 0) || (_opts.bar?.barBackgroundStyle === 3)) : false
-    readonly property int floatingGap: 12
-    // ----------------------------------------
+    // --- LÓGICA DE FLOTACIÓN INTELIGENTE ---
+    // Determinamos si la barra principal está "flotando" (separada del borde superior)
+    readonly property bool isMainBarFloating: _opts ? ((_opts.bar?.cornerStyle === 1) || (_opts.bar?.barBackgroundStyle === 0) || (_opts.bar?.barBackgroundStyle === 3)) : false
+    
+    // El sidebar flota si el usuario lo forzó en config O si la barra principal está flotando.
+    readonly property bool isFloating: (root._opts?.sidebar?.floatStyle ?? false) || isMainBarFloating
+    readonly property int floatingGap: root._opts?.sidebar?.floatingGap ?? 12
+    // ---------------------------------------
 
     property real pillSpacing: sidebarPadding
     readonly property real pillsRowWidth: sidebarWidth - sidebarPadding * 2 - shapeRadius
@@ -73,16 +77,14 @@ Item {
         id: sidebarRightBackground
         anchors.fill: parent
         
-        // Se aplican márgenes si la barra está flotando
-        anchors.topMargin: root.isFloatOrHybrid ? root.floatingGap : 0
-        anchors.bottomMargin: root.isFloatOrHybrid ? root.floatingGap : 0
-        anchors.leftMargin: root.isFloatOrHybrid && !root.isOnRight ? root.floatingGap : 0
-        anchors.rightMargin: root.isFloatOrHybrid && root.isOnRight ? root.floatingGap : 0
+        anchors.topMargin: root.isFloating ? root.floatingGap : 0
+        anchors.bottomMargin: root.isFloating ? root.floatingGap : 0
+        anchors.leftMargin: root.isFloating && !root.isOnRight ? root.floatingGap : 0
+        anchors.rightMargin: root.isFloating && root.isOnRight ? root.floatingGap : 0
 
-        // Loader para cambiar dinámicamente entre la forma unida o la forma flotante
         Loader {
             anchors.fill: parent
-            sourceComponent: root.isFloatOrHybrid ? floatingBgComponent : unitedBgComponent
+            sourceComponent: root.isFloating ? floatingBgComponent : unitedBgComponent
         }
 
         Component {
@@ -175,9 +177,8 @@ Item {
             anchors.fill: parent
             anchors.topMargin: sidebarPadding
             anchors.bottomMargin: sidebarPadding
-            // Ajuste de margen interior para que sea simétrico si está flotando
-            anchors.leftMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? root.shapeRadius : 0))
-            anchors.rightMargin: sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnRight ? 0 : root.shapeRadius))
+            anchors.leftMargin: sidebarPadding + (root.isFloating ? root.shapeRadius : (root.isOnRight ? root.shapeRadius : 0))
+            anchors.rightMargin: sidebarPadding + (root.isFloating ? root.shapeRadius : (root.isOnRight ? 0 : root.shapeRadius))
             spacing: sidebarPadding
 
             SystemButtonRow {

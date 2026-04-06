@@ -31,12 +31,12 @@ Item {
             width: parent.width - page.pad * 2
             spacing: page.rowGap
 
-            Blocks.HeaderBlock {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 160   
-                theme: page.theme
-                dashboard: dashboard
-            }
+        //    Blocks.HeaderBlock {
+          //      Layout.fillWidth: true
+           //     Layout.preferredHeight: 160   
+  //              theme: page.theme
+      //          dashboard: dashboard
+        //    }
 
             GridLayout {
                 Layout.fillWidth: true
@@ -51,12 +51,12 @@ Item {
                     musicModel: music
                 }
 
-                Blocks.SystemVitalityBlock {
-                    Layout.columnSpan: 2
-                    Layout.fillWidth: true
-                    theme: page.theme
-                    dashboard: dashboard
-                }
+             //   Blocks.SystemVitalityBlock {
+            //        Layout.columnSpan: 2
+             //       Layout.fillWidth: true
+              //      theme: page.theme
+             //       dashboard: dashboard
+           //     }
 
                 UI.CryptoCard {
                     Layout.columnSpan: 2

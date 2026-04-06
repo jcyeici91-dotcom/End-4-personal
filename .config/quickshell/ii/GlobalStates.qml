@@ -16,6 +16,7 @@ Singleton {
     property bool barOpen: true
     property bool crosshairOpen: false
     property bool mediaControlsOpen: false
+    property bool dashOpen: false // <--- AQUÍ ESTÁ EL NUEVO ESTADO PARA DASHCENTRAL
     property bool osdBrightnessOpen: false
     property bool osdVolumeOpen: false
     property bool oskOpen: false

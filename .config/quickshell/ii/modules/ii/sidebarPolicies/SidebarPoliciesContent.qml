@@ -53,11 +53,15 @@ Item {
     }
     
     readonly property real shapeRadius: Appearance.rounding ? (Appearance.rounding.screenRounding || 18) : 18
-
-    // --- LÓGICA DE FLOTACIÓN (HUG/DOCKED) ---
-    readonly property bool isFloatOrHybrid: (Config.options.bar.cornerStyle === 1) || (Config.options.bar.barBackgroundStyle === 0) || (Config.options.bar.barBackgroundStyle === 3)
-    readonly property int floatingGap: 12
-    // ----------------------------------------
+    
+    // --- LÓGICA DE FLOTACIÓN INTELIGENTE ---
+    // Determinamos si la barra principal está "flotando" (separada del borde superior)
+    readonly property bool isMainBarFloating: (Config.options.bar.cornerStyle === 1) || (Config.options.bar.barBackgroundStyle === 0) || (Config.options.bar.barBackgroundStyle === 3)
+    
+    // El sidebar flota si el usuario lo forzó en config O si la barra principal está flotando.
+    readonly property bool isFloating: Config.options.sidebar.floatStyle || isMainBarFloating
+    readonly property int floatingGap: Config.options.sidebar.floatingGap
+    // ---------------------------------------
 
     function focusActiveItem() {
         if (swipeView.currentItem && swipeView.currentItem.forceActiveFocus)
@@ -74,16 +78,14 @@ Item {
     Item {
         anchors.fill: parent
 
-        // Se aplican márgenes si la barra está flotando
-        anchors.topMargin: root.isFloatOrHybrid ? root.floatingGap : 0
-        anchors.bottomMargin: root.isFloatOrHybrid ? root.floatingGap : 0
-        anchors.leftMargin: root.isFloatOrHybrid && root.isOnLeft ? root.floatingGap : 0
-        anchors.rightMargin: root.isFloatOrHybrid && !root.isOnLeft ? root.floatingGap : 0
+        anchors.topMargin: root.isFloating ? root.floatingGap : 0
+        anchors.bottomMargin: root.isFloating ? root.floatingGap : 0
+        anchors.leftMargin: root.isFloating && root.isOnLeft ? root.floatingGap : 0
+        anchors.rightMargin: root.isFloating && !root.isOnLeft ? root.floatingGap : 0
 
-        // Loader para cambiar dinámicamente entre la forma unida o la forma flotante
         Loader {
             anchors.fill: parent
-            sourceComponent: root.isFloatOrHybrid ? floatingBgComponent : unitedBgComponent
+            sourceComponent: root.isFloating ? floatingBgComponent : unitedBgComponent
         }
 
         Component {
@@ -176,9 +178,8 @@ Item {
             anchors.fill: parent
             anchors.topMargin: root.sidebarPadding
             anchors.bottomMargin: root.sidebarPadding
-            // Ajuste de margen interior para que sea simétrico si está flotando
-            anchors.leftMargin: root.sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnLeft ? 0 : root.shapeRadius))
-            anchors.rightMargin: root.sidebarPadding + (root.isFloatOrHybrid ? root.shapeRadius : (root.isOnLeft ? root.shapeRadius : 0))
+            anchors.leftMargin: root.sidebarPadding + (root.isFloating ? root.shapeRadius : (root.isOnLeft ? 0 : root.shapeRadius))
+            anchors.rightMargin: root.sidebarPadding + (root.isFloating ? root.shapeRadius : (root.isOnLeft ? root.shapeRadius : 0))
             spacing: 16
 
             Rectangle {

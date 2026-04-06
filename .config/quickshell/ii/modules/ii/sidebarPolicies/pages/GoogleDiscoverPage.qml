@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -61,19 +62,24 @@ Item {
 
     readonly property int esOffsetMinutes: -6 * 60
 
-    property string searchQuery: ""
-    property bool inSearchMode: false
-
-    ListModel { id: newsModel }
-    ListModel { id: scoresModel }
+    // --- MODELOS DE LIGAS (8 Bloques) ---
+    ListModel { id: mSpain }
+    ListModel { id: mEngland }
+    ListModel { id: mGermany }
+    ListModel { id: mFrance }
+    ListModel { id: mItaly }
+    ListModel { id: mUEFA }
+    ListModel { id: mAmericas }
+    ListModel { id: mIntl }
 
     ColumnLayout {
         id: mainLayout
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        spacing: 16
+        spacing: 20
 
+        // Buscador de Google
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 52
@@ -95,7 +101,6 @@ Item {
                 spacing: 12
 
                 Text {
-                    visible: !root.inSearchMode
                     textFormat: Text.RichText
                     text:
                         "<span style='color:#4285F4'>G</span>" +
@@ -110,14 +115,6 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                 }
 
-                MaterialSymbol {
-                    visible: root.inSearchMode
-                    text: "arrow_back"
-                    color: root.textMain
-                    font.pixelSize: 24
-                    TapHandler { onTapped: resetSearch() }
-                }
-
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
@@ -128,7 +125,7 @@ Item {
                     selectByMouse: true
 
                     Text {
-                        text: "Buscar noticias, equipos..."
+                        text: "Buscar en Google..."
                         color: root.textSub
                         font.pixelSize: 18
                         visible: !parent.text && !parent.activeFocus
@@ -137,9 +134,8 @@ Item {
 
                     onAccepted: {
                         if (text.trim() !== "") {
-                            root.inSearchMode = true
-                            root.searchQuery = text.trim()
-                            procNews.loadNews()
+                            procBrowser.openUrl("https://www.google.com/search?q=" + encodeURIComponent(text.trim()))
+                            text = ""
                             focus = false
                         }
                     }
@@ -150,7 +146,12 @@ Item {
                     color: root.accent
                     font.pixelSize: 24
                     TapHandler {
-                        onTapped: procBrowser.openUrl("https://www.google.com/search?q=" + encodeURIComponent(searchInput.text))
+                        onTapped: {
+                            if (searchInput.text.trim() !== "") {
+                                procBrowser.openUrl("https://www.google.com/search?q=" + encodeURIComponent(searchInput.text.trim()))
+                                searchInput.text = ""
+                            }
+                        }
                     }
                 }
 
@@ -158,13 +159,42 @@ Item {
             }
         }
 
+        // --- BLOQUES DE PARTIDOS (Se ocultan solos si no hay partidos) ---
+        ScoresCarousel { titleText: "🇪🇸 España (La Liga, Copa, Supercopa)"; sourceModel: mSpain }
+        ScoresCarousel { titleText: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra (Premier, FA, Carabao)"; sourceModel: mEngland }
+        ScoresCarousel { titleText: "🇩🇪 Alemania (Bundesliga, Pokal)"; sourceModel: mGermany }
+        ScoresCarousel { titleText: "🇫🇷 Francia (Ligue 1, Coupe)"; sourceModel: mFrance }
+        ScoresCarousel { titleText: "🇮🇹 Italia (Serie A, Coppa)"; sourceModel: mItaly }
+        ScoresCarousel { titleText: "⭐ UEFA (Champions, Europa, Conference)"; sourceModel: mUEFA }
+        ScoresCarousel { titleText: "🌎 América (SV, MX, BR, AR, CO, USA)"; sourceModel: mAmericas }
+        ScoresCarousel { titleText: "🏆 Internacional (Mundial, Copa América, Elim.)"; sourceModel: mIntl }
+
+        Item { Layout.preferredHeight: 10; Layout.fillWidth: true }
+    }
+
+    // Componente Carrusel Reutilizable
+    component ScoresCarousel : ColumnLayout {
+        property string titleText: ""
+        property var sourceModel: null
+        
+        spacing: 8
+        visible: sourceModel.count > 0
+        Layout.fillWidth: true
+
+        Text {
+            text: titleText
+            color: root.textMain
+            font.bold: true
+            font.pixelSize: 14
+            Layout.leftMargin: 8
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 128
-            visible: !root.inSearchMode
 
             ListView {
-                id: scoresList
+                id: list
                 anchors.fill: parent
                 orientation: ListView.Horizontal
                 spacing: 12
@@ -174,16 +204,15 @@ Item {
                 flickableDirection: Flickable.HorizontalFlick
                 boundsBehavior: Flickable.StopAtBounds
                 cacheBuffer: 1200
+                model: sourceModel
 
                 Behavior on contentX { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                 function minX() { return originX }
                 function maxX() { return Math.max(originX, originX + contentWidth - width) }
-
-                function setX(x) { contentX = clamp(x, minX(), maxX()) }
+                function setX(x) { contentX = root.clamp(x, minX(), maxX()) }
                 function clampNow() { setX(contentX) }
                 function pageStepPx() { return Math.max(160, Math.floor(width * 0.85)) }
-
                 function scrollPage(side) {
                     var step = pageStepPx()
                     if (side === "left") setX(contentX - step)
@@ -196,12 +225,10 @@ Item {
                 onMovementEnded: clampNow
 
                 WheelHandler {
-                    target: scoresList
+                    target: list
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     onWheel: (wheel) => {
-                        var dx = 0
-                        var dy = 0
-
+                        var dx = 0; var dy = 0;
                         if (wheel.pixelDelta) { dx = wheel.pixelDelta.x; dy = wheel.pixelDelta.y }
                         if ((dx === 0 && dy === 0) && wheel.angleDelta) { dx = wheel.angleDelta.x; dy = wheel.angleDelta.y }
 
@@ -209,22 +236,17 @@ Item {
                         var factor = wheel.pixelDelta && (wheel.pixelDelta.x !== 0 || wheel.pixelDelta.y !== 0) ? 1.0 : 0.35
                         var delta = dominant * factor
 
-                        scoresList.setX(scoresList.contentX - delta)
+                        list.setX(list.contentX - delta)
                         wheel.accepted = true
                     }
                 }
-
-                model: scoresModel
 
                 delegate: Rectangle {
                     width: 305
                     height: 118
                     radius: 16
-
-                    // Agregado el color de fondo aquí para reemplazar el cristal
                     color: Appearance.colors.colLayer0
                     clip: true
-
                     border.width: 1
                     border.color: root.outlineSoft
 
@@ -370,127 +392,8 @@ Item {
                 }
             }
 
-            CarouselEdgeArrow {
-                side: "left"
-                list: scoresList
-                visibleWhenCount: scoresModel.count
-                onTriggered: scoresList.scrollPage("left")
-            }
-            CarouselEdgeArrow {
-                side: "right"
-                list: scoresList
-                visibleWhenCount: scoresModel.count
-                onTriggered: scoresList.scrollPage("right")
-            }
-        }
-
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 520
-            clip: true
-
-            ListView {
-                id: newsList
-                anchors.fill: parent
-                spacing: 16
-                model: newsModel
-                clip: true
-
-                header: Item {
-                    width: newsList.width
-                    height: root.inSearchMode ? 28 : 0
-                    visible: root.inSearchMode
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 4
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "Resultados para: " + root.searchQuery
-                        color: root.textSub
-                        font.pixelSize: 11
-                    }
-                }
-
-                delegate: Rectangle {
-                    width: newsList.width
-                    height: 280
-                    color: "transparent"
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        spacing: 0
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 160
-                            radius: 16
-                            color: Appearance.colors.colLayer0
-                            clip: true
-
-                            Image {
-                                anchors.fill: parent
-                                source: model.image
-                                fillMode: Image.PreserveAspectCrop
-                                visible: status === Image.Ready && model.image !== ""
-                            }
-
-                            Rectangle {
-                                anchors.fill: parent
-                                visible: parent.children[0].status !== Image.Ready
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: root._rgba(root.textMain, root.themeIsDark ? 0.10 : 0.08) }
-                                    GradientStop { position: 1.0; color: root._rgba(root.textMain, root.themeIsDark ? 0.06 : 0.05) }
-                                }
-                                MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    text: "newspaper"
-                                    color: root._rgba(root.textMain, 0.35)
-                                    font.pixelSize: 40
-                                }
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.margins: 8
-                            spacing: 4
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-                                Rectangle {
-                                    width: 7; height: 7; radius: 3.5
-                                    color: model.isSV ? root.success : root.textSub
-                                }
-                                Text {
-                                    text: model.source
-                                    color: root.textMain
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                                Text { text: model.time; color: root.textSub; font.pixelSize: 11 }
-                            }
-
-                            Text {
-                                text: model.title
-                                color: root.textMain
-                                font.family: "Roboto"
-                                font.pixelSize: 16
-                                font.bold: true
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
-                                maximumLineCount: 3
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
-
-                    TapHandler { onTapped: procBrowser.openUrl(model.link) }
-                }
-            }
+            CarouselEdgeArrow { side: "left"; list: list; visibleWhenCount: sourceModel.count; onTriggered: list.scrollPage("left") }
+            CarouselEdgeArrow { side: "right"; list: list; visibleWhenCount: sourceModel.count; onTriggered: list.scrollPage("right") }
         }
     }
 
@@ -574,25 +477,10 @@ Item {
                     repeatTimer.stop()
                 }
             }
-            onCanceled: {
-                arrow.pressed = false
-                repeatTimer.stop()
-            }
-            onTapped: { }
+            onCanceled: { arrow.pressed = false; repeatTimer.stop() }
         }
 
         HoverHandler { onHoveredChanged: arrow.hovered = hovered }
-
-        Keys.onReturnPressed: triggered()
-        Keys.onEnterPressed: triggered()
-        focusPolicy: Qt.StrongFocus
-    }
-
-    function resetSearch() {
-        root.inSearchMode = false
-        root.searchQuery = ""
-        searchInput.text = ""
-        procNews.loadNews()
     }
 
     function clamp(v, lo, hi) {
@@ -633,6 +521,24 @@ Item {
         } catch (e) { return NaN }
     }
 
+    function getDayLabel(isoDate) {
+        if (!isoDate) return "";
+        var d = esDateFromIso(isoDate);
+        if (!d) return "";
+        var now = esDateFromIso(new Date().toISOString());
+        
+        var dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        var nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        var diffTime = dDate.getTime() - nowDate.getTime();
+        var diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+        
+        if (diffDays === 0) return "HOY";
+        if (diffDays === -1) return "AYER";
+        if (diffDays === 1) return "MAÑANA";
+        return two(d.getDate()) + "/" + two(d.getMonth() + 1);
+    }
+
     Process {
         id: procBrowser
         function openUrl(link) {
@@ -645,7 +551,6 @@ Item {
         id: procNotify
         property string appName: "Fútbol"
         property string iconName: "dialog-information"
-
         property int timeoutMsNormal: 7000
         property int timeoutMsImportant: 9000
 
@@ -656,14 +561,10 @@ Item {
         function send(title, body, urgency) {
             var u = urgency || "normal"
             var t = (u === "critical") ? timeoutMsImportant : timeoutMsNormal
-
             var hints = ""
             if (useColorHints) {
-                hints =
-                    " -h string:bgcolor:" + escapeSh(hintBg) +
-                    " -h string:fgcolor:" + escapeSh(hintFg)
+                hints = " -h string:bgcolor:" + escapeSh(hintBg) + " -h string:fgcolor:" + escapeSh(hintFg)
             }
-
             command = ["bash", "-lc",
                        "notify-send -a \"" + escapeSh(appName) + "\" -u " + u +
                        " -t " + t +
@@ -736,15 +637,9 @@ Item {
             if (!shouldFetch(eventId, state, eventDateIso)) return
 
             queue.push({
-                leagueKey: leagueKey,
-                eventId: eventId,
-                leagueName: leagueName,
-                homeName: homeName,
-                awayName: awayName,
-                hs: hs,
-                as: as,
-                state: state,
-                eventDateIso: eventDateIso
+                leagueKey: leagueKey, eventId: eventId, leagueName: leagueName,
+                homeName: homeName, awayName: awayName, hs: hs, as: as,
+                state: state, eventDateIso: eventDateIso
             })
             pump()
         }
@@ -845,7 +740,6 @@ Item {
 
             notifiedLineupByEvent[job.eventId] = true
 
-            // ALINEACIONES ===
             var title = "Alineaciones Confirmadas"
             var body = job.homeName + " vs " + job.awayName + "\n" + job.leagueName
             if (a) body += "\n\n" + a
@@ -908,14 +802,8 @@ Item {
         function request(leagueKey, eventId, leagueName, homeName, awayName, hs, as, detail) {
             if (!eventId || !leagueKey) return
             queue.push({
-                leagueKey: leagueKey,
-                eventId: eventId,
-                leagueName: leagueName,
-                homeName: homeName,
-                awayName: awayName,
-                hs: hs,
-                as: as,
-                detail: detail
+                leagueKey: leagueKey, eventId: eventId, leagueName: leagueName,
+                homeName: homeName, awayName: awayName, hs: hs, as: as, detail: detail
             })
             pump()
         }
@@ -972,15 +860,13 @@ Item {
             return safe(ev, "participants.0.athlete.displayName", "") ||
                    safe(ev, "participants.0.athlete.shortName", "") ||
                    safe(ev, "athletes.0.displayName", "") ||
-                   safe(ev, "player.displayName", "") ||
-                   ""
+                   safe(ev, "player.displayName", "") || ""
         }
 
         function extractTeam(ev) {
             return safe(ev, "team.displayName", "") ||
                    safe(ev, "team.shortDisplayName", "") ||
-                   safe(ev, "competitor.displayName", "") ||
-                   ""
+                   safe(ev, "competitor.displayName", "") || ""
         }
 
         function extractClock(ev) { return safe(ev, "clock.displayValue", "") || safe(ev, "time", "") || "" }
@@ -1041,28 +927,53 @@ Item {
     Process {
         id: procScores
 
+        // Lista completa y categorizada de torneos
         property var leagues: [
-            { key: "eng.1", name: "Premier League" },
-            { key: "esp.1", name: "La Liga" },
-            { key: "ita.1", name: "Serie A" },
-            { key: "ger.1", name: "Bundesliga" },
-            { key: "fra.1", name: "Ligue 1" },
-            { key: "uefa.champions", name: "UEFA Champions League" },
-            { key: "uefa.europa", name: "UEFA Europa League" }
+            // España
+            { group: "spain", key: "esp.1", name: "La Liga" },
+            { group: "spain", key: "esp.copa_del_rey", name: "Copa del Rey" },
+            { group: "spain", key: "esp.super_cup", name: "Supercopa de España" },
+            // Inglaterra
+            { group: "england", key: "eng.1", name: "Premier League" },
+            { group: "england", key: "eng.fa", name: "FA Cup" },
+            { group: "england", key: "eng.league_cup", name: "EFL Cup" },
+            // Alemania
+            { group: "germany", key: "ger.1", name: "Bundesliga" },
+            { group: "germany", key: "ger.dfb_pokal", name: "DFB Pokal" },
+            // Francia
+            { group: "france", key: "fra.1", name: "Ligue 1" },
+            { group: "france", key: "fra.coupe_de_france", name: "Coupe de France" },
+            // Italia
+            { group: "italy", key: "ita.1", name: "Serie A" },
+            { group: "italy", key: "ita.coppa_italia", name: "Coppa Italia" },
+            // UEFA
+            { group: "uefa", key: "uefa.champions", name: "Champions League" },
+            { group: "uefa", key: "uefa.europa", name: "Europa League" },
+            { group: "uefa", key: "uefa.europa.conf", name: "Conference League" },
+            { group: "uefa", key: "uefa.super_cup", name: "Supercopa UEFA" },
+            // América
+            { group: "americas", key: "slv.1", name: "Primera División SV" },
+            { group: "americas", key: "mex.1", name: "Liga MX" },
+            { group: "americas", key: "bra.1", name: "Brasileirão" },
+            { group: "americas", key: "col.1", name: "Liga BetPlay" },
+            { group: "americas", key: "arg.1", name: "Liga Profesional AR" },
+            { group: "americas", key: "usa.1", name: "MLS" },
+            // Internacional
+            { group: "intl", key: "fifa.world", name: "Copa Mundial" },
+            { group: "intl", key: "conmebol.america", name: "Copa América" },
+            { group: "intl", key: "fifa.worldq.conmebol", name: "Elim. CONMEBOL" },
+            { group: "intl", key: "fifa.worldq.concacaf", name: "Elim. CONCACAF" },
+            { group: "intl", key: "fifa.worldq.uefa", name: "Elim. UEFA" }
         ]
 
-        property var dayOffsets: [-1, 0, 1, 2, 3]
         property int leagueIndex: 0
-        property int dayIndex: 0
-        property int maxMatches: 80
         property bool loading: false
         property var pendingScores: []
         property var seenIds: ({})
-
         property bool initializedOnce: false
+
         property var lastScoreByEvent: ({})
         property var lastNotifyAtByEvent: ({})
-
         property var notifiedPreByEvent: ({})
         property var notifiedFinalByEvent: ({})
         property var lastStateByEvent: ({})
@@ -1077,27 +988,15 @@ Item {
             pendingScores = []
             seenIds = ({})
             leagueIndex = 0
-            dayIndex = 0
             loadNext()
         }
 
-        function addDays(d, offset) {
-            var x = new Date(d)
-            x.setDate(x.getDate() + offset)
-            return x
-        }
-
-        function pad2(n) { return (n < 10 ? "0" : "") + n }
-        function yyyymmdd(d) { return "" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) }
-
         function loadNext() {
             if (leagueIndex >= leagues.length) { finalizeScores(); return }
-            if (dayIndex >= dayOffsets.length) { leagueIndex++; dayIndex = 0; loadNext(); return }
 
             var lg = leagues[leagueIndex]
-            var off = dayOffsets[dayIndex]
-            var dateStr = yyyymmdd(addDays(new Date(), off))
-            var url = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + lg.key + "/scoreboard?dates=" + dateStr
+            // Usamos la URL sin fechas para que ESPN devuelva la jornada actual automáticamente. Ultra rápido.
+            var url = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + lg.key + "/scoreboard"
 
             command = ["curl", "-s", "-L", url]
             running = true
@@ -1126,12 +1025,6 @@ Item {
             if (!home && competitors.length > 0) home = competitors[0]
             if (!away && competitors.length > 1) away = competitors[1]
             return { home: home, away: away }
-        }
-
-        function dayLabelFromOffset(off) {
-            if (off === 0) return "HOY"
-            if (off === -1) return "AYER"
-            return "D+" + off
         }
 
         function statusRank(state) {
@@ -1202,15 +1095,11 @@ Item {
                 return
             }
 
+            // Ordenamos todos los partidos
             pendingScores.sort(function(a, b) {
                 var ra = statusRank(a.status)
                 var rb = statusRank(b.status)
                 if (ra !== rb) return ra - rb
-
-                var da = a.dayOffset, db = b.dayOffset
-                var pa = (da === 0 ? 0 : (da > 0 ? 1 : 2))
-                var pb = (db === 0 ? 0 : (db > 0 ? 1 : 2))
-                if (pa !== pb) return pa - pb
 
                 var ta = timeRank(a.eventDate)
                 var tb = timeRank(b.eventDate)
@@ -1219,12 +1108,24 @@ Item {
                 return (a.statusText || "").localeCompare(b.statusText || "")
             })
 
-            if (pendingScores.length > maxMatches)
-                pendingScores = pendingScores.slice(0, maxMatches)
+            // Limpiamos los 8 modelos
+            mSpain.clear(); mEngland.clear(); mGermany.clear(); mFrance.clear();
+            mItaly.clear(); mUEFA.clear(); mAmericas.clear(); mIntl.clear();
 
-            scoresModel.clear()
-            for (var i = 0; i < pendingScores.length; i++)
-                scoresModel.append(pendingScores[i])
+            // Repartimos los partidos a su bloque correspondiente
+            for (var i = 0; i < pendingScores.length; i++) {
+                var item = pendingScores[i]
+                var grp = item.group
+
+                if (grp === "spain") mSpain.append(item)
+                else if (grp === "england") mEngland.append(item)
+                else if (grp === "germany") mGermany.append(item)
+                else if (grp === "france") mFrance.append(item)
+                else if (grp === "italy") mItaly.append(item)
+                else if (grp === "uefa") mUEFA.append(item)
+                else if (grp === "americas") mAmericas.append(item)
+                else if (grp === "intl") mIntl.append(item)
+            }
 
             loading = false
             initializedOnce = true
@@ -1233,7 +1134,6 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var lg = procScores.leagues[procScores.leagueIndex]
-                var off = procScores.dayOffsets[procScores.dayIndex]
 
                 try {
                     var json = JSON.parse(text)
@@ -1276,9 +1176,12 @@ Item {
 
                         var kickoffLocal = ""
                         var kickoffDetail = ""
-                        if (state === "pre" && eventDate !== "") {
+                        var dayLabelStr = ""
+                        
+                        if (eventDate !== "") {
                             kickoffLocal = fmtTimeES(eventDate)
                             kickoffDetail = fmtDetailES(eventDate)
+                            dayLabelStr = getDayLabel(eventDate)
                         }
 
                         var prevState = procScores.lastStateByEvent[eid] || ""
@@ -1296,199 +1199,49 @@ Item {
                             procScores.maybeNotifyFinal(eid, lg.name, homeName, awayName, hs, as)
                         }
 
-                        procMatchSummary.request(
-                            lg.key, eid, lg.name,
-                            homeName, awayName,
-                            hs, as,
-                            state, eventDate
-                        )
+                        procMatchSummary.request(lg.key, eid, lg.name, homeName, awayName, hs, as, state, eventDate)
 
                         var scoreStr = (state === "pre") ? "vs" : (hs + " - " + as)
-
-                        var linkUrl = procScores.safe(
-                            e, "links.0.href",
-                            "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName)
-                        )
+                        var linkUrl = procScores.safe(e, "links.0.href", "https://www.google.com/search?q=" + encodeURIComponent(homeName + " vs " + awayName))
 
                         procScores.pendingScores.push({
                             "id": eid,
+                            "group": lg.group,
+                            "leagueKey": lg.key,
                             "league": lg.name,
-                            "dayLabel": procScores.dayLabelFromOffset(off),
-                            "dayOffset": off,
+                            "dayLabel": dayLabelStr,
                             "eventDate": eventDate,
-
                             "homeTeam": homeName,
                             "homeLogo": homeLogo,
                             "awayTeam": awayName,
                             "awayLogo": awayLogo,
-
                             "fullScore": scoreStr,
                             "status": state,
                             "statusText": shortDetail,
-
                             "kickoffLocal": kickoffLocal,
                             "kickoffDetail": kickoffDetail,
-
                             "link": linkUrl
                         })
                     }
-                } catch (e) {
-                    console.log("Error parsing scores (" + lg.name + "): " + e)
+                } catch (err) {
+                    console.log("Error parsing scores (" + lg.name + "): " + err)
                 }
 
-                procScores.dayIndex++
+                procScores.leagueIndex++
                 procScores.loadNext()
             }
         }
     }
 
-     Process {
-        id: procNews
-
-        property var queue: []
-        property var collected: []
-        property bool loading: false
-        property int maxItems: 30
-        property bool _currentIsSV: false
-
-        function loadNews() {
-            newsModel.clear()
-            collected = []
-            queue = []
-            loading = true
-
-            if (root.inSearchMode) {
-                queue.push({ url: "https://news.google.com/rss/search?q=" + encodeURIComponent(root.searchQuery) + "&hl=es-419&gl=US&ceid=US:es-419", isSV: false })
-            } else {
-                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=US&ceid=US:es-419", isSV: false })
-                queue.push({ url: "https://news.google.com/rss?hl=es-419&gl=SV&ceid=SV:es-419", isSV: true })
-                queue.push({ url: "https://news.google.com/rss/search?q=" + encodeURIComponent("El Salvador") + "&hl=es-419&gl=SV&ceid=SV:es-419", isSV: true })
-            }
-
-            loadNext()
-        }
-
-        function loadNext() {
-            if (queue.length === 0) { finalize(); return }
-            var next = queue.shift()
-            _currentIsSV = next.isSV
-            command = ["curl", "-s", "-L", next.url]
-            running = true
-        }
-
-        function finalize() {
-            var seen = ({})
-            var out = []
-            for (var i = 0; i < collected.length; i++) {
-                var it = collected[i]
-                if (!it.link) continue
-                if (seen[it.link] === true) continue
-                seen[it.link] = true
-                out.push(it)
-            }
-
-            out.sort(function(a, b) { return (b.ts || 0) - (a.ts || 0) })
-
-            newsModel.clear()
-            var take = Math.min(maxItems, out.length)
-            for (var k = 0; k < take; k++) newsModel.append(out[k])
-            loading = false
-        }
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (text && text.length > 80) {
-                    var items = parseXMLToItems(text, procNews._currentIsSV)
-                    for (var i = 0; i < items.length; i++)
-                        procNews.collected.push(items[i])
-                }
-                procNews.loadNext()
-            }
-        }
-    }
-
-    function parseXMLToItems(xml, isSV) {
-        var results = []
-        var itemRegex = /<item>([\s\S]*?)<\/item>/g
-        var match
-        var count = 0
-
-        while ((match = itemRegex.exec(xml)) !== null && count < 40) {
-            var c = match[1]
-            var t = (c.match(/<title>(.*?)<\/title>/) || ["",""])[1].replace("<![CDATA[","").replace("]]>","")
-            var l = (c.match(/<link>(.*?)<\/link>/) || ["",""])[1]
-            var d = (c.match(/<pubDate>(.*?)<\/pubDate>/) || ["",""])[1]
-            var s = (c.match(/<source[^>]*>(.*?)<\/source>/) || ["","Noticias"])[1]
-
-            var img = ""
-            var descM = c.match(/<description>([\s\S]*?)<\/description>/)
-            if (descM) {
-                var src = descM[1].match(/src="([^"]+)"/)
-                if (src) img = src[1]
-            }
-            if (img === "" || img.includes("tracker")) {
-                var seed = root.inSearchMode ? root.searchQuery : (isSV ? "elsalvador" : "world")
-                img = "https://loremflickr.com/500/300/" + encodeURIComponent(seed) + "?lock=" + count
-            }
-
-            var ts = 0
-            var time = "Ahora"
-            if (d) {
-                var dd = new Date(d)
-                ts = dd.getTime()
-                if (!isNaN(ts)) {
-                    var diff = Date.now() - ts
-                    var mins = Math.max(0, Math.floor(diff / 60000))
-                    var hrs = Math.floor(mins / 60)
-                    if (mins < 60) time = mins + " min"
-                    else if (hrs < 24) time = hrs + " h"
-                    else time = Math.floor(hrs / 24) + " d"
-                }
-            }
-
-            var dash = t.lastIndexOf(" - ")
-            if (dash > 0) t = t.substring(0, dash)
-
-            results.push({
-                "title": decodeHtml(t),
-                "link": l,
-                "source": s,
-                "time": time,
-                "image": img,
-                "ts": ts,
-                "isSV": !!isSV
-            })
-            count++
-        }
-        return results
-    }
-
-    function decodeHtml(s) {
-        return ("" + s)
-            .replace(/&quot;/g, "\"")
-            .replace(/&apos;/g, "'")
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&#39;/g, "'")
-    }
-
+    // Actualiza los resultados cada 2 minutos (óptimo para no colapsar peticiones y tener en vivo)
     Timer {
-        interval: 15000
+        interval: 120000
         running: true
         repeat: true
         onTriggered: procScores.startLoadScores()
     }
 
-    Timer {
-        interval: 300000 // Cada 5 minutos
-        running: true
-        repeat: true
-        onTriggered: procNews.loadNews()
-    }
-    
     Component.onCompleted: {
-        procNews.loadNews()
         procScores.startLoadScores()
     }
 }

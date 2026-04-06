@@ -102,6 +102,8 @@ Item {
     readonly property bool appAwake: (Qt.application.state !== Qt.ApplicationSuspended && Qt.application.state !== Qt.ApplicationHidden)
     readonly property bool fxEnabled: premium && visible && hyprReady && appAwake && Config.options.appearance.enableAnimations
 
+    readonly property bool useCrystalEffect: (Config.options?.bar?.crystalEffect ?? false)
+    
     property list<bool> workspaceOccupied: []
     property var workspaceOccupiedById: ({})
     property list<int> visibleWorkspaces: []
@@ -132,7 +134,7 @@ Item {
 
     property real spinningAngle: 0.0
     NumberAnimation on spinningAngle {
-        running: fxEnabled && neonBorders
+        running: fxEnabled && neonBorders && !root.useCrystalEffect
         loops: Animation.Infinite
         from: 0
         to: 360
@@ -260,7 +262,7 @@ Item {
             const activeId = monitor?.activeWorkspace?.id ?? -1
             const occ = (root.workspaceOccupiedById && root.workspaceOccupiedById[activeId] === true)
 
-            if (fxEnabled && fxOccupiedBackground && occ) {
+            if (fxEnabled && fxOccupiedBackground && occ && !root.useCrystalEffect) {
                 triggerOccupiedBurst(idx, 1.0)
             }
         }
@@ -334,7 +336,8 @@ Item {
         anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
         anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
 
-        color: Appearance.colors.colPrimary
+        color: root.useCrystalEffect ? "transparent" : Appearance.colors.colPrimary
+
         radius: Appearance.rounding.full
         antialiasing: true
 
@@ -390,7 +393,7 @@ Item {
         implicitWidth: root.vertical ? individualIconBoxHeight : Math.round(indicatorLength)
 
         SequentialAnimation {
-            running: fxEnabled && premiumActiveIndicatorPulse && fxActiveIndicatorPill
+            running: fxEnabled && premiumActiveIndicatorPulse && fxActiveIndicatorPill && !root.useCrystalEffect
             loops: Animation.Infinite
 
             NumberAnimation {
@@ -409,7 +412,7 @@ Item {
             anchors.centerIn: parent
             width: Math.round(parent.width + 4)
             height: Math.round(parent.height + 4)
-            visible: fxEnabled && neonBorders
+            visible: fxEnabled && neonBorders && !root.useCrystalEffect
 
             Rectangle {
                 anchors.fill: parent
@@ -432,7 +435,7 @@ Item {
             }
         }
 
-        layer.enabled: fxEnabled && fxActiveIndicatorPill && premiumActiveIndicatorGlow
+        layer.enabled: fxEnabled && fxActiveIndicatorPill && premiumActiveIndicatorGlow && !root.useCrystalEffect
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowBlur: 1.0 + (activeIndicatorPulse.pulsePhase * 0.5)
@@ -448,8 +451,10 @@ Item {
             antialiasing: true
             visible: premiumActiveIndicatorBorder && fxActiveIndicatorPill
             color: "transparent"
-            border.width: 1
-            border.color: Qt.rgba(1, 1, 1, 0.15 + (activeIndicatorPulse.pulsePhase * 0.08))
+            border.width: root.useCrystalEffect ? 1 : 1
+            border.color: root.useCrystalEffect 
+                ? Qt.rgba(1, 1, 1, 0.05) 
+                : Qt.rgba(1, 1, 1, 0.15 + (activeIndicatorPulse.pulsePhase * 0.08))
         }
     }
 
@@ -482,7 +487,9 @@ Item {
                 bottomLeftRadius: radius
                 bottomRightRadius: radius
 
-                color: ColorUtils.transparentize(Appearance.m3colors.m3secondaryContainer, premium ? 0.30 : 0.40)
+                color: root.useCrystalEffect 
+                    ? "transparent"
+                    : ColorUtils.transparentize(Appearance.m3colors.m3secondaryContainer, premium ? 0.30 : 0.40)
 
                 readonly property bool isOccupied: (root.workspaceOccupiedById && root.workspaceOccupiedById[wsId] === true) && !(!activeWindow?.activated && monitor?.activeWorkspace?.id === wsId)
 
@@ -696,12 +703,16 @@ Item {
                                 height: parent.height + Math.round(8 * root.autoScaleFactor)
                                 radius: 999
                                 visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconChip && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
-                                color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipOpacity : root.sameAppChipOpacity)
-                                border.width: 1
-                                border.color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipBorderOpacity : root.sameAppChipBorderOpacity)
+                                color: root.useCrystalEffect 
+                                    ? "transparent" 
+                                    : Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipOpacity : root.sameAppChipOpacity)
+                                border.width: root.useCrystalEffect ? 0 : 1
+                                border.color: root.useCrystalEffect 
+                                    ? "transparent" 
+                                    : Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, iconCell.isFocusedIconExact ? root.focusedChipBorderOpacity : root.sameAppChipBorderOpacity)
                                 opacity: visible ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-                                layer.enabled: fxEnabled && (root.focusedIconGlow || root.sameAppGlow)
+                                layer.enabled: fxEnabled && (root.focusedIconGlow || root.sameAppGlow) && !root.useCrystalEffect
                                 layer.effect: MultiEffect {
                                     shadowEnabled: true
                                     shadowBlur: iconCell.isFocusedIconExact ? 1.0 : 0.85
@@ -719,8 +730,10 @@ Item {
                                 radius: 999
                                 visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconRing && (iconCell.isFocusedIconExact || iconCell.showSameAppFx)
                                 color: "transparent"
-                                border.width: 2
-                                border.color: Qt.rgba(1, 1, 1, iconCell.isFocusedIconExact ? 0.75 : root.sameAppRingOpacity)
+                                border.width: root.useCrystalEffect ? 1 : 2
+                                border.color: root.useCrystalEffect 
+                                    ? Qt.rgba(1, 1, 1, 0.05) 
+                                    : Qt.rgba(1, 1, 1, iconCell.isFocusedIconExact ? 0.75 : root.sameAppRingOpacity)
                                 opacity: visible ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                             }
@@ -731,7 +744,7 @@ Item {
                                 width: parent.width + Math.round(6 * root.autoScaleFactor)
                                 height: parent.height + Math.round(6 * root.autoScaleFactor)
                                 radius: 999
-                                visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconPulse && iconCell.isFocusedIconExact
+                                visible: fxEnabled && premium && !iconCell.superFx && premiumFocusedIconFx && root.focusedIconPulse && iconCell.isFocusedIconExact && !root.useCrystalEffect
                                 color: Appearance.colors.colPrimary
                                 opacity: 0
 
@@ -821,11 +834,11 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: root.bottomActiveDotBottomMargin
-                                color: Appearance.colors.colPrimary
+                                color: root.useCrystalEffect ? "white" : Appearance.colors.colPrimary
                                 opacity: 1.0
-                                border.width: root.bottomActiveDotOutline ? 1 : 0
+                                border.width: root.bottomActiveDotOutline && !root.useCrystalEffect ? 1 : 0
                                 border.color: Qt.rgba(0, 0, 0, root.bottomActiveDotOutlineOpacity)
-                                layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                                layer.enabled: fxEnabled && root.bottomActiveDotGlow && !root.useCrystalEffect
                                 layer.effect: MultiEffect {
                                     shadowEnabled: true
                                     shadowBlur: root.bottomActiveDotGlowBlur
@@ -854,11 +867,11 @@ Item {
                         radius: root.activeDotRadius
                         x: parent.midCenter - width / 2
                         y: parent.height - height - root.bottomActiveDotBottomMargin
-                        color: Appearance.colors.colPrimary
+                        color: root.useCrystalEffect ? "white" : Appearance.colors.colPrimary
                         opacity: 1.0
-                        border.width: root.bottomActiveDotOutline ? 1 : 0
+                        border.width: root.bottomActiveDotOutline && !root.useCrystalEffect ? 1 : 0
                         border.color: Qt.rgba(0, 0, 0, root.bottomActiveDotOutlineOpacity)
-                        layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                        layer.enabled: fxEnabled && root.bottomActiveDotGlow && !root.useCrystalEffect
                         layer.effect: MultiEffect {
                             shadowEnabled: true
                             shadowBlur: root.bottomActiveDotGlowBlur
@@ -907,7 +920,9 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
-            color: activeWorkspace ? Qt.rgba(1, 1, 1, 1) : (hasWindows ? Qt.rgba(1, 1, 1, 0.75) : Qt.rgba(1, 1, 1, 0.45))
+            color: activeWorkspace 
+                ? "white" 
+                : (hasWindows ? (root.useCrystalEffect ? Qt.rgba(1,1,1,0.7) : Qt.rgba(1, 1, 1, 0.75)) : Qt.rgba(1, 1, 1, 0.45))
             Behavior on opacity { animation: Appearance.animation.elementMove.numberAnimation.createObject(this) }
         }
 
@@ -936,10 +951,11 @@ Item {
                         width: pillLayer.pillW
                         height: pillLayer.pillH
                         radius: root.wsIndicatorPillRadius
-                        color: indColor
-                        border.width: 1
+                        color: root.useCrystalEffect ? "white" : indColor
+                        opacity: root.useCrystalEffect ? 0.8 : 1.0
+                        border.width: root.useCrystalEffect ? 0 : 1
                         border.color: Qt.rgba(0, 0, 0, 0.25)
-                        layer.enabled: fxEnabled && root.bottomActiveDotGlow
+                        layer.enabled: fxEnabled && root.bottomActiveDotGlow && !root.useCrystalEffect
                         layer.effect: MultiEffect {
                             shadowEnabled: true
                             shadowBlur: root.bottomActiveDotGlowBlur

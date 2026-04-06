@@ -40,7 +40,7 @@
         },
         "palette": {
             "accentColor": "",
-            "type": "saffron_latte"
+            "type": "noir_copper"
         },
         "sharpMode": false,
         "toggleWindowRounding": true,
@@ -119,12 +119,12 @@
                     "constantlyRotate": true,
                     "dateInClock": true,
                     "dateStyle": "bubble",
-                    "dialNumberStyle": "full",
-                    "hourHandStyle": "hollow",
+                    "dialNumberStyle": "none",
+                    "hourHandStyle": "fill",
                     "hourMarks": true,
                     "minuteHandStyle": "medium",
-                    "secondHandStyle": "classic",
-                    "sides": 14,
+                    "secondHandStyle": "dot",
+                    "sides": 9,
                     "timeIndicators": true
                 },
                 "digital": {
@@ -151,8 +151,8 @@
                 "showOnlyWhenLocked": false,
                 "style": "cookie",
                 "styleLocked": "cookie",
-                "x": 420.1802571614578,
-                "y": 301.95594200721075
+                "x": 326.8395057091343,
+                "y": 263.3825057592139
             },
             "media": {
                 "backgroundShape": "Cookie6Sided",
@@ -172,14 +172,14 @@
                     "opacity": 0.15,
                     "smoothing": 2
                 },
-                "x": 2709.581261268029,
-                "y": 1658.2942770933491
+                "x": 2983.054649939904,
+                "y": 1675.7341120793271
             },
             "weather": {
                 "enable": true,
                 "placementStrategy": "free",
-                "x": 2749.2364470653047,
-                "y": 193.13730093149007
+                "x": 2723.5817245092144,
+                "y": 264.0085073617788
             }
         }
     },
@@ -196,12 +196,13 @@
                 "enable": true
             }
         },
-        "barBackgroundStyle": 0,
+        "barBackgroundStyle": 1,
         "borderless": false,
         "bottom": false,
         "cornerStyle": 1,
+        "crystalEffect": false,
         "floatStyleShadow": true,
-        "groupBackgroundStyle": "rounded",
+        "groupBackgroundStyle": "rect",
         "indicators": {
             "notifications": {
                 "showUnreadCount": true
@@ -401,15 +402,15 @@
         },
         "night": {
             "automatic": true,
-            "colorTemperature": 3614,
+            "colorTemperature": 4288,
             "from": "19:00",
             "to": "06:30"
         }
     },
     "lock": {
         "blur": {
-            "enable": true,
-            "extraZoom": 1.1,
+            "enable": false,
+            "extraZoom": 1.5,
             "radius": 100
         },
         "centerClock": true,
@@ -582,6 +583,8 @@
             "valueScroll": true,
             "visualize": false
         },
+        "floatStyle": false,
+        "floatingGap": 12,
         "keepRightSidebarLoaded": true,
         "position": "default",
         "quickSliders": {
@@ -592,7 +595,7 @@
         },
         "quickToggles": {
             "android": {
-                "columns": 5,
+                "columns": 6,
                 "toggles": [
                     {
                         "size": 2,

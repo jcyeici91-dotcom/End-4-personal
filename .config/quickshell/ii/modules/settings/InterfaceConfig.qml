@@ -158,7 +158,7 @@ ContentPage {
             onCheckedChanged: {
                 Config.options.sidebar.ai.showProviderAndModelButtons = checked;
             }
-        }    
+        }   
     }
 
     ContentSection {
@@ -562,6 +562,20 @@ ContentPage {
                 text: Translation.tr("When enabled keeps the content of the right sidebar loaded to reduce the delay when opening,\nat the cost of around 15MB of consistent RAM usage. Delay significance depends on your system's performance.\nUsing a custom kernel like linux-cachyos might help")
             }
         }
+
+        // --- NUEVO INTERRUPTOR PARA EL ESTILO FLOTANTE ---
+        ConfigSwitch {
+            buttonIcon: "layers"
+            text: Translation.tr('Floating sidebar style')
+            checked: Config.options.sidebar.floatStyle
+            onCheckedChanged: {
+                Config.options.sidebar.floatStyle = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Turn on to make the sidebar float. Turn off to attach it to the screen edge.")
+            }
+        }
+        // --------------------------------------------------
 
         ConfigRow {
             ContentSubsection {
@@ -1031,7 +1045,5 @@ ContentPage {
             }
         }
     }
-
-    
 
 }

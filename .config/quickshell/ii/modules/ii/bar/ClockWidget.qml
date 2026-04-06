@@ -86,11 +86,9 @@ MouseArea {
     onClicked: (mouse) => {
         if (!root.interactionsEnabled) return;
 
-        if (mouse.button === Qt.LeftButton) {
-            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
-            if (GlobalStates.mediaControlsOpen) Notifications.timeoutAll();
-        }
-        else if (mouse.button === Qt.RightButton) {
+        // Se eliminó la llamada a mediaControlsOpen del clic izquierdo
+        // Solo dejamos la expansión del reloj con clic derecho
+        if (mouse.button === Qt.RightButton) {
             root.expanded = !root.expanded;
         }
     }

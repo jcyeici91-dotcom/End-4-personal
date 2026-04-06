@@ -84,9 +84,13 @@ Item {
     readonly property bool hasContent: gridLayout.visibleChildren.length > 0
     readonly property bool shouldBeVisible: autoHide ? hasContent : true
 
+    readonly property bool useCrystalEffect: (Config.options?.bar?.crystalEffect ?? false)
+    readonly property bool isMainBarSolid: (Config.options?.bar?.barBackgroundStyle === 1 || Config.options?.bar?.barBackgroundStyle === "visible")
+    readonly property bool drawGroupCrystal: root.useCrystalEffect && (!isMainBarSolid || isHybridBg)
+
     readonly property bool effectiveShowBorder: (!bridgeMode) && (!isNotch) && (showBorder || usePillsBg || useRectBg)
     
-    readonly property bool effectiveShowHighlight: (!bridgeMode) && (!isNotch) && showHighlight
+    readonly property bool effectiveShowHighlight: (!bridgeMode) && (!isNotch) && showHighlight && !root.useCrystalEffect
 
     readonly property int effectiveEdgeInset: (bridgeMode || disableFloatInset) ? 0 : (cornerIsFloat ? Math.max(2, edgeInset) : edgeInset)
 
@@ -150,9 +154,8 @@ Item {
     }
 
     readonly property color effectiveFill: {
-        if (!root.isContainer || root.isBorderless)
-            return "transparent"
-        
+        if (!root.isContainer || root.isBorderless) return "transparent"
+        if (root.useCrystalEffect) return "transparent"
         return root.colBackground
     }
 
@@ -167,7 +170,7 @@ Item {
         if (!root.effectiveShowBorder) return 0
         if (!root.isContainer || root.isBorderless) return 0
         if (root.useLineBg) return 0
-        
+        if (root.useCrystalEffect) return 0
         return (isVisibleBg && (usePillsBg || useRectBg)) ? 1.5 : 1
     }
 
@@ -220,6 +223,36 @@ Item {
 
         anchors.leftMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
         anchors.rightMargin: root.bridgeMode ? 0 : (root.vertical ? root.effectiveEdgeInset : 0)
+        
+        Loader {
+            id: crystalBlurLoader
+            anchors.fill: parent
+            active: root.drawGroupCrystal && root.isContainer && !root.isBorderless && (root.shouldBeVisible || root.opacity > 0)
+            sourceComponent: BarBgOverlayGlassBlur {
+                useGlassMode: true
+                showSolidBackground: false
+                backgroundColor: "transparent"
+                cornerStyle: 0
+                customMargin: 0
+                customRadius: root.baseRadius
+                position: root.isBottom ? "bottom" : "top"
+            }
+        }
+        
+        Loader {
+            id: crystalOverlayLoader
+            anchors.fill: parent
+            active: crystalBlurLoader.active
+            sourceComponent: BarBgCrystalOverlay {
+                useGlassMode: true
+                showSolidBackground: false
+                backgroundColor: "transparent"
+                cornerStyle: 0
+                customMargin: 0
+                customRadius: root.baseRadius
+                position: root.isBottom ? "bottom" : "top"
+            }
+        }
     }
 
     Loader {
